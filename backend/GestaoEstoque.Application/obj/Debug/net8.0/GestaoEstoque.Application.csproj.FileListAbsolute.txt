@@ -1,0 +1,15 @@
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\bin\Debug\net8.0\GestaoEstoque.Application.deps.json
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\bin\Debug\net8.0\GestaoEstoque.Application.dll
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\bin\Debug\net8.0\GestaoEstoque.Application.pdb
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\bin\Debug\net8.0\GestaoEstoque.Domain.dll
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\bin\Debug\net8.0\GestaoEstoque.Domain.pdb
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEstoque.Application.csproj.AssemblyReference.cache
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEstoque.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEstoque.Application.AssemblyInfoInputs.cache
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEstoque.Application.AssemblyInfo.cs
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEstoque.Application.csproj.CoreCompileInputs.cache
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEs.D3905645.Up2Date
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEstoque.Application.dll
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\refint\GestaoEstoque.Application.dll
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\GestaoEstoque.Application.pdb
+C:\Users\Gean\gestao-estoque-fullstack\backend\GestaoEstoque.Application\obj\Debug\net8.0\ref\GestaoEstoque.Application.dll
