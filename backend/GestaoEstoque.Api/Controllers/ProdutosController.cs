@@ -2,10 +2,12 @@ using GestaoEstoque.Application.Abstractions;
 using GestaoEstoque.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GestaoEstoque.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/produtos")]
 public class ProdutosController(IProdutoRepository repository) : ControllerBase
 {
@@ -32,6 +34,7 @@ public class ProdutosController(IProdutoRepository repository) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = Perfis.Administrador)]
     public async Task<ActionResult<ProdutoResponse>> Criar(ProdutoRequest request, CancellationToken ct)
     {
         try
@@ -44,6 +47,7 @@ public class ProdutosController(IProdutoRepository repository) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = Perfis.Administrador)]
     public async Task<ActionResult<ProdutoResponse>> Alterar(int id, ProdutoRequest request, CancellationToken ct)
     {
         var produto = await repository.ObterPorIdAsync(id, ct);
@@ -63,6 +67,7 @@ public class ProdutosController(IProdutoRepository repository) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = Perfis.Administrador)]
     public async Task<IActionResult> Desativar(int id, CancellationToken ct)
     {
         var produto = await repository.ObterPorIdAsync(id, ct);
