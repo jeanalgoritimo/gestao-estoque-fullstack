@@ -12,6 +12,7 @@ public class GestaoEstoqueDbContext : DbContext
     }
 
     public DbSet<Produto> Produtos => Set<Produto>();
+    public DbSet<MovimentoEstoque> MovimentosEstoque => Set<MovimentoEstoque>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

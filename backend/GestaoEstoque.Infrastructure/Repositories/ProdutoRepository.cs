@@ -63,4 +63,14 @@ public class ProdutoRepository : IProdutoRepository
 
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public Task SalvarAsync(CancellationToken cancellationToken = default) => _context.SaveChangesAsync(cancellationToken);
+
+    public void AdicionarMovimento(MovimentoEstoque movimento) => _context.MovimentosEstoque.Add(movimento);
+
+    public async Task<IReadOnlyList<MovimentoEstoque>> ListarMovimentosAsync(int produtoId, CancellationToken cancellationToken = default) =>
+        await _context.MovimentosEstoque.AsNoTracking()
+            .Where(m => m.ProdutoId == produtoId)
+            .OrderByDescending(m => m.DataUtc).ThenByDescending(m => m.Id)
+            .ToListAsync(cancellationToken);
 }

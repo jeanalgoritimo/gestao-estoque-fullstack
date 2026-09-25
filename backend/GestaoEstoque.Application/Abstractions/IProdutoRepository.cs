@@ -22,4 +22,8 @@ public interface IProdutoRepository
     Task RemoverAsync(
         Produto produto,
         CancellationToken cancellationToken = default);
+
+    Task SalvarAsync(CancellationToken cancellationToken = default);
+    void AdicionarMovimento(MovimentoEstoque movimento);
+    Task<IReadOnlyList<MovimentoEstoque>> ListarMovimentosAsync(int produtoId, CancellationToken cancellationToken = default);
 }
