@@ -77,6 +77,21 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.ToTable("Produtos", (string)null);
                 });
 
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.Usuario", b =>
+                {
+                    b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<bool>("Ativo").HasColumnType("bit");
+                    b.Property<string>("Email").IsRequired().HasMaxLength(254).HasColumnType("nvarchar(254)");
+                    b.Property<string>("Nome").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<string>("Perfil").IsRequired().HasMaxLength(20).HasColumnType("nvarchar(20)");
+                    b.Property<string>("SenhaHash").IsRequired().HasMaxLength(500).HasColumnType("nvarchar(500)");
+                    b.Property<string>("VersaoSeguranca").IsRequired().HasMaxLength(32).HasColumnType("nvarchar(32)");
+                    b.HasKey("Id");
+                    b.HasIndex("Email").IsUnique();
+                    b.ToTable("Usuarios", (string)null);
+                });
+
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.MovimentoEstoque", b =>
                 {
                     b.HasOne("GestaoEstoque.Domain.Entities.Produto", null)

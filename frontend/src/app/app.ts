@@ -3,11 +3,13 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { AuthService } from './auth.service';
 
 type TipoMovimento = 1 | 2;
 interface Produto { id: number; nome: string; categoria: string; preco: number; estoque: number; estoqueMinimo: number; ativo: boolean; estoqueBaixo: boolean; }
 interface Movimento { id: number; produtoId: number; tipo: TipoMovimento; quantidade: number; dataUtc: string; observacao: string | null; }
 interface ProdutoForm { nome: string; categoria: string; preco: number | null; estoqueMinimo: number | null; }
+interface Usuario { id: number; nome: string; email: string; perfil: 'Administrador' | 'Operador'; ativo: boolean; }
 
 @Component({
   selector: 'app-root',
@@ -17,6 +19,8 @@ interface ProdutoForm { nome: string; categoria: string; preco: number | null; e
 })
 export class App implements OnInit {
   private readonly http = inject(HttpClient);
+  readonly auth = inject(AuthService);
+  readonly usuarios = signal<Usuario[]>([]);
   readonly produtos = signal<Produto[]>([]);
   readonly movimentos = signal<Movimento[]>([]);
   readonly busca = signal('');
@@ -25,7 +29,7 @@ export class App implements OnInit {
   readonly salvando = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
-  readonly modal = signal<'produto' | 'movimento' | 'historico' | null>(null);
+  readonly modal = signal<'produto' | 'movimento' | 'historico' | 'usuarios' | 'senha' | null>(null);
   readonly selecionado = signal<Produto | null>(null);
   readonly filtrados = computed(() => {
     const termo = this.busca().trim().toLocaleLowerCase('pt-BR');
@@ -41,12 +45,19 @@ export class App implements OnInit {
   tipoMovimento: TipoMovimento = 1;
   quantidade: number | null = null;
   observacao = '';
+  loginEmail = '';
+  loginSenha = '';
+  novoUsuario = { nome: '', email: '', senha: '', perfil: 'Operador' as 'Administrador' | 'Operador' };
+  senhaAtual = '';
+  novaSenha = '';
 
-  async ngOnInit(): Promise<void> { await this.recarregar(); }
+  ngOnInit(): void { /* Login exigido a cada nova sessão; token fica somente na memória. */ }
   private formVazio(): ProdutoForm { return { nome: '', categoria: '', preco: null, estoqueMinimo: 5 }; }
   private mensagemErro(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 0) return 'Não foi possível conectar à API. Confira se ela está em execução na porta 5029.';
+      if (error.status === 401 && this.auth.usuario()) { this.auth.sair(); this.modal.set(null); return 'Sessão expirada. Entre novamente.'; }
+      if (error.status === 403) return 'Seu perfil não permite esta operação.';
       return error.error?.erro ?? error.error?.title ?? `Falha na requisição (${error.status}).`;
     }
     return 'Não foi possível concluir a operação.';
@@ -56,6 +67,50 @@ export class App implements OnInit {
     try { this.produtos.set(await firstValueFrom(this.http.get<Produto[]>('/api/produtos'))); }
     catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.carregando.set(false); }
+  }
+  async entrar(): Promise<void> {
+    this.salvando.set(true); this.erro.set('');
+    try {
+      await this.auth.entrar(this.loginEmail.trim(), this.loginSenha);
+      this.loginSenha = '';
+      await this.recarregar();
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
+    finally { this.salvando.set(false); }
+  }
+  sair(): void { this.auth.sair(); this.produtos.set([]); this.modal.set(null); this.erro.set(''); this.sucesso.set(''); }
+  async abrirUsuarios(): Promise<void> {
+    this.modal.set('usuarios'); this.erro.set(''); this.novoUsuario = { nome: '', email: '', senha: '', perfil: 'Operador' };
+    await this.carregarUsuarios();
+  }
+  private async carregarUsuarios(): Promise<void> {
+    try { this.usuarios.set(await firstValueFrom(this.http.get<Usuario[]>('/api/usuarios'))); }
+    catch (error) { this.erro.set(this.mensagemErro(error)); }
+  }
+  async criarUsuario(): Promise<void> {
+    if (this.novoUsuario.senha.length < 12 || this.novoUsuario.senha.length > 128) {
+      this.erro.set('A senha deve ter entre 12 e 128 caracteres.'); return;
+    }
+    this.salvando.set(true); this.erro.set('');
+    try {
+      await firstValueFrom(this.http.post('/api/usuarios', this.novoUsuario));
+      this.novoUsuario = { nome: '', email: '', senha: '', perfil: 'Operador' };
+      await this.carregarUsuarios(); this.sucesso.set('Usuário cadastrado.');
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
+    finally { this.salvando.set(false); }
+  }
+  async definirAtivo(usuario: Usuario): Promise<void> {
+    this.erro.set('');
+    try {
+      await firstValueFrom(this.http.patch(`/api/usuarios/${usuario.id}/ativo`, !usuario.ativo));
+      await this.carregarUsuarios();
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
+  }
+  abrirSenha(): void { this.senhaAtual = ''; this.novaSenha = ''; this.erro.set(''); this.modal.set('senha'); }
+  async alterarSenha(): Promise<void> {
+    this.salvando.set(true); this.erro.set('');
+    try { await this.auth.alterarSenha(this.senhaAtual, this.novaSenha); this.modal.set(null); this.produtos.set([]); this.sucesso.set('Senha alterada. Entre novamente.'); }
+    catch (error) { this.erro.set(this.mensagemErro(error)); }
+    finally { this.salvando.set(false); }
   }
   novoProduto(): void { this.selecionado.set(null); this.form = this.formVazio(); this.erro.set(''); this.modal.set('produto'); }
   editar(produto: Produto): void {
