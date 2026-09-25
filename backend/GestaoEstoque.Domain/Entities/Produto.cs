@@ -11,6 +11,8 @@ public class Produto
     public decimal Preco { get; private set; }
 
     public int Estoque { get; private set; }
+    public int EstoqueMinimo { get; private set; }
+    public byte[] Versao { get; private set; } = [];
 
     public bool Ativo { get; private set; }
 
@@ -22,12 +24,12 @@ public class Produto
         string nome,
         string categoria,
         decimal preco,
-        int estoque)
+        int estoqueMinimo = 5)
     {
         AlterarNome(nome);
         AlterarCategoria(categoria);
         AlterarPreco(preco);
-        AlterarEstoque(estoque);
+        AlterarEstoqueMinimo(estoqueMinimo);
 
         Ativo = true;
     }
@@ -62,14 +64,27 @@ public class Produto
         Preco = preco;
     }
 
-    public void AlterarEstoque(int estoque)
+    public void AlterarEstoqueMinimo(int estoqueMinimo)
     {
-        if (estoque < 0)
+        if (estoqueMinimo < 0)
             throw new ArgumentException(
-                "O estoque não pode ser negativo.",
-                nameof(estoque));
+                "O estoque mínimo não pode ser negativo.",
+                nameof(estoqueMinimo));
 
-        Estoque = estoque;
+        EstoqueMinimo = estoqueMinimo;
+    }
+
+    public void RegistrarEntrada(int quantidade)
+    {
+        if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
+        Estoque = checked(Estoque + quantidade);
+    }
+
+    public void RegistrarSaida(int quantidade)
+    {
+        if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
+        if (quantidade > Estoque) throw new InvalidOperationException("Estoque insuficiente.");
+        Estoque -= quantidade;
     }
 
     public void Ativar()
@@ -84,6 +99,6 @@ public class Produto
 
     public bool EstaComEstoqueBaixo()
     {
-        return Estoque < 5;
+        return Estoque <= EstoqueMinimo;
     }
 }

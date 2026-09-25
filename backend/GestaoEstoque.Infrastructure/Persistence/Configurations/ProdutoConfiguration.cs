@@ -30,6 +30,9 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.Property(produto => produto.Estoque)
             .IsRequired();
 
+        builder.Property(produto => produto.EstoqueMinimo).IsRequired();
+        builder.Property(produto => produto.Versao).IsRowVersion();
+
         builder.Property(produto => produto.Ativo)
             .IsRequired();
     }
