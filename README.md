@@ -1,10 +1,10 @@
 # Gestão de Estoque Full Stack
 
-Primeira entrega: API ASP.NET Core 8, EF Core e SQL Server Express para produtos e movimentações de estoque. A interface Angular ainda será construída.
+API ASP.NET Core 8, EF Core, SQL Server Express e interface Angular para produtos e movimentações de estoque.
 
 ## Executar no Windows
 
-1. Instale o SDK .NET 8 e SQL Server Express.
+1. Instale o SDK .NET 8, SQL Server Express e Node.js compatível com Angular 21.
 2. Ajuste `ConnectionStrings:DefaultConnection` em `backend/GestaoEstoque.Api/appsettings.Development.json` para sua instância, ou configure via variável de ambiente `ConnectionStrings__DefaultConnection`.
 3. Na pasta `backend`, execute:
 
@@ -16,6 +16,17 @@ dotnet test GestaoEstoque.Domain.Tests/GestaoEstoque.Domain.Tests.csproj
 ```
 
 Use a URL do Swagger exibida no terminal, acrescentando `/swagger`.
+
+Em outro terminal, na pasta `frontend`:
+
+```powershell
+npm ci
+npm start
+```
+
+Acesse `http://localhost:4200`. O proxy do Angular encaminha `/api` para `http://localhost:5029`; por isso execute a API com o perfil HTTP (`dotnet run --project GestaoEstoque.Api --launch-profile http`). Se usar outra porta, ajuste `frontend/proxy.conf.json`.
+
+O cadastro começa com saldo zero. Registre uma **entrada** para formar o estoque e depois teste uma **saída**. A interface inclui pesquisa, indicadores, edição, desativação e histórico.
 
 ## Fluxo da API
 
