@@ -10,7 +10,8 @@ interface Produto { id: number; nome: string; categoriaId: number; categoria: st
 interface Categoria { id: number; nome: string; ativo: boolean; }
 interface Movimento { id: number; produtoId: number; tipo: TipoMovimento; quantidade: number; dataUtc: string; observacao: string | null; }
 interface ProdutoForm { nome: string; categoriaId: number | null; preco: number | null; estoqueMinimo: number | null; }
-interface Usuario { id: number; nome: string; email: string; perfil: 'Administrador' | 'Operador'; ativo: boolean; }
+interface Usuario { id: number; nome: string; email: string; perfilId: number; perfil: string; ativo: boolean; }
+interface Perfil { id: number; nome: string; sistema: boolean; ativo: boolean; gerenciarProdutos: boolean; gerenciarCategorias: boolean; movimentarEstoque: boolean; }
 
 @Component({
   selector: 'app-root',
@@ -22,9 +23,10 @@ export class App implements OnInit {
   private readonly http = inject(HttpClient);
   readonly auth = inject(AuthService);
   readonly usuarios = signal<Usuario[]>([]);
+  readonly perfis = signal<Perfil[]>([]);
   readonly produtos = signal<Produto[]>([]);
   readonly categorias = signal<Categoria[]>([]);
-  readonly tela = signal<'visao' | 'produtos' | 'categorias'>('visao');
+  readonly tela = signal<'visao' | 'produtos' | 'categorias' | 'perfis'>('visao');
   readonly movimentos = signal<Movimento[]>([]);
   readonly busca = signal('');
   readonly somenteAtivos = signal(true);
@@ -32,7 +34,7 @@ export class App implements OnInit {
   readonly salvando = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
-  readonly modal = signal<'produto' | 'categoria' | 'movimento' | 'historico' | 'usuarios' | 'senha' | null>(null);
+  readonly modal = signal<'produto' | 'categoria' | 'perfil' | 'movimento' | 'historico' | 'usuarios' | 'senha' | null>(null);
   readonly selecionado = signal<Produto | null>(null);
   readonly filtrados = computed(() => {
     const termo = this.busca().trim().toLocaleLowerCase('pt-BR');
@@ -48,12 +50,14 @@ export class App implements OnInit {
   form: ProdutoForm = this.formVazio();
   categoriaNome = '';
   categoriaSelecionada: Categoria | null = null;
+  perfilSelecionado: Perfil | null = null;
+  perfilForm = { nome: '', gerenciarProdutos: false, gerenciarCategorias: false, movimentarEstoque: false };
   tipoMovimento: TipoMovimento = 1;
   quantidade: number | null = null;
   observacao = '';
   loginEmail = '';
   loginSenha = '';
-  novoUsuario = { nome: '', email: '', senha: '', perfil: 'Operador' as 'Administrador' | 'Operador' };
+  novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
   senhaAtual = '';
   novaSenha = '';
 
@@ -80,8 +84,41 @@ export class App implements OnInit {
     catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.carregando.set(false); }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'perfis'): void {
     this.tela.set(tela); this.erro.set(''); this.sucesso.set('');
+    if (tela === 'perfis') void this.carregarPerfis();
+  }
+  private async carregarPerfis(): Promise<void> {
+    try { this.perfis.set(await firstValueFrom(this.http.get<Perfil[]>('/api/perfis'))); }
+    catch (error) { this.erro.set(this.mensagemErro(error)); }
+  }
+  novoPerfil(): void {
+    this.perfilSelecionado = null;
+    this.perfilForm = { nome: '', gerenciarProdutos: false, gerenciarCategorias: false, movimentarEstoque: false };
+    this.erro.set(''); this.modal.set('perfil');
+  }
+  editarPerfil(perfil: Perfil): void {
+    this.perfilSelecionado = perfil;
+    this.perfilForm = { nome: perfil.nome, gerenciarProdutos: perfil.gerenciarProdutos,
+      gerenciarCategorias: perfil.gerenciarCategorias, movimentarEstoque: perfil.movimentarEstoque };
+    this.erro.set(''); this.modal.set('perfil');
+  }
+  async salvarPerfil(): Promise<void> {
+    if (!this.perfilForm.nome.trim()) { this.erro.set('Informe o nome do perfil.'); return; }
+    this.salvando.set(true); this.erro.set('');
+    try {
+      const id = this.perfilSelecionado?.id;
+      if (id) await firstValueFrom(this.http.put(`/api/perfis/${id}`, this.perfilForm));
+      else await firstValueFrom(this.http.post('/api/perfis', this.perfilForm));
+      this.modal.set(null); this.sucesso.set(id ? 'Perfil atualizado.' : 'Perfil cadastrado.');
+      await this.carregarPerfis();
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
+    finally { this.salvando.set(false); }
+  }
+  async definirPerfilAtivo(perfil: Perfil): Promise<void> {
+    this.erro.set('');
+    try { await firstValueFrom(this.http.patch(`/api/perfis/${perfil.id}/ativo`, !perfil.ativo)); await this.carregarPerfis(); }
+    catch (error) { this.erro.set(this.mensagemErro(error)); }
   }
   novaCategoria(): void {
     this.categoriaSelecionada = null; this.categoriaNome = '';
@@ -121,8 +158,8 @@ export class App implements OnInit {
   }
   sair(): void { this.auth.sair(); this.produtos.set([]); this.categorias.set([]); this.tela.set('visao'); this.modal.set(null); this.erro.set(''); this.sucesso.set(''); }
   async abrirUsuarios(): Promise<void> {
-    this.modal.set('usuarios'); this.erro.set(''); this.novoUsuario = { nome: '', email: '', senha: '', perfil: 'Operador' };
-    await this.carregarUsuarios();
+    this.modal.set('usuarios'); this.erro.set(''); this.novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
+    await Promise.all([this.carregarUsuarios(), this.carregarPerfis()]);
   }
   private async carregarUsuarios(): Promise<void> {
     try { this.usuarios.set(await firstValueFrom(this.http.get<Usuario[]>('/api/usuarios'))); }
@@ -135,7 +172,7 @@ export class App implements OnInit {
     this.salvando.set(true); this.erro.set('');
     try {
       await firstValueFrom(this.http.post('/api/usuarios', this.novoUsuario));
-      this.novoUsuario = { nome: '', email: '', senha: '', perfil: 'Operador' };
+      this.novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
       await this.carregarUsuarios(); this.sucesso.set('Usuário cadastrado.');
     } catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.salvando.set(false); }
@@ -144,6 +181,13 @@ export class App implements OnInit {
     this.erro.set('');
     try {
       await firstValueFrom(this.http.patch(`/api/usuarios/${usuario.id}/ativo`, !usuario.ativo));
+      await this.carregarUsuarios();
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
+  }
+  async alterarPerfilUsuario(usuario: Usuario, perfilId: number): Promise<void> {
+    this.erro.set('');
+    try {
+      await firstValueFrom(this.http.put(`/api/usuarios/${usuario.id}/perfil`, perfilId));
       await this.carregarUsuarios();
     } catch (error) { this.erro.set(this.mensagemErro(error)); }
   }

@@ -62,6 +62,8 @@ A migração de categorias cria registros a partir dos nomes já usados nos prod
 
 ## Login e permissões
 
-O administrador cadastra outros usuários pela opção **Usuários**. O perfil **Administrador** gerencia produtos e usuários e também movimenta estoque; **Operador** consulta produtos e registra entradas e saídas. Ambos podem alterar a própria senha. Não há cadastro público de usuários.
+O administrador cadastra outros usuários pela opção **Usuários** e cria perfis em **Perfis**. Os perfis básicos **Administrador** e **Operador** são preservados pela migração. Perfis personalizados permitem escolher separadamente as permissões de gerenciar produtos, gerenciar categorias e movimentar estoque. Somente o administrador pode cadastrar usuários e perfis. Ao alterar as permissões de um perfil, seus usuários precisam entrar novamente. Ambos podem alterar a própria senha. Não há cadastro público de usuários.
+
+Após atualizar o código, execute `dotnet ef database update` antes de iniciar a API. A migração vincula os usuários existentes aos perfis básicos, sem apagar as contas.
 
 As senhas são armazenadas com hash pelo `PasswordHasher` do ASP.NET Core. O token JWT dura duas horas e fica apenas na memória do navegador; atualizar a página exige novo login. Desativar um usuário ou alterar a senha revoga seus tokens anteriores. O login tem limite de tentativas por IP. Em produção, configure HTTPS, armazenamento seguro da chave e backup do banco antes de atender clientes.

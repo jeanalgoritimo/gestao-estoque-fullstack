@@ -8,7 +8,7 @@ public class UsuarioTests
     [Fact]
     public void DesativacaoRevogaVersaoDeSeguranca()
     {
-        var usuario = new Usuario("Maria", "MARIA@EXEMPLO.COM", "hash", Perfis.Operador);
+        var usuario = new Usuario("Maria", "MARIA@EXEMPLO.COM", "hash", 2);
         var versao = usuario.VersaoSeguranca;
         usuario.Desativar();
         Assert.False(usuario.Ativo);
@@ -17,6 +17,6 @@ public class UsuarioTests
     }
 
     [Fact]
-    public void PerfilDesconhecidoERecusado() =>
-        Assert.Throws<ArgumentException>(() => new Usuario("Maria", "maria@exemplo.com", "hash", "Dono"));
+    public void PerfilInexistenteERecusado() =>
+        Assert.Throws<ArgumentException>(() => new Usuario("Maria", "maria@exemplo.com", "hash", 0));
 }

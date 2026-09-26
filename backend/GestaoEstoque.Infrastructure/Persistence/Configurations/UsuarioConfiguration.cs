@@ -14,7 +14,8 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.Email).HasMaxLength(254).IsRequired();
         builder.HasIndex(u => u.Email).IsUnique();
         builder.Property(u => u.SenhaHash).HasMaxLength(500).IsRequired();
-        builder.Property(u => u.Perfil).HasMaxLength(20).IsRequired();
+        builder.HasOne(u => u.PerfilAcesso).WithMany().HasForeignKey(u => u.PerfilId)
+            .OnDelete(DeleteBehavior.Restrict).IsRequired();
         builder.Property(u => u.VersaoSeguranca).HasMaxLength(32).IsRequired();
     }
 }

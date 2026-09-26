@@ -87,6 +87,23 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.ToTable("Produtos", (string)null);
                 });
 
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.PerfilAcesso", b =>
+                {
+                    b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<bool>("Ativo").HasColumnType("bit");
+                    b.Property<bool>("GerenciarCategorias").HasColumnType("bit");
+                    b.Property<bool>("GerenciarProdutos").HasColumnType("bit");
+                    b.Property<bool>("MovimentarEstoque").HasColumnType("bit");
+                    b.Property<string>("Nome").IsRequired().HasMaxLength(80).HasColumnType("nvarchar(80)");
+                    b.Property<string>("NomeNormalizado").IsRequired().HasMaxLength(80).HasColumnType("nvarchar(80)");
+                    b.Property<bool>("Sistema").HasColumnType("bit");
+                    b.Property<string>("VersaoSeguranca").IsRequired().HasMaxLength(32).HasColumnType("nvarchar(32)");
+                    b.HasKey("Id");
+                    b.HasIndex("NomeNormalizado").IsUnique();
+                    b.ToTable("PerfisAcesso", (string)null);
+                });
+
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.Usuario", b =>
                 {
                     b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
@@ -94,11 +111,12 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<bool>("Ativo").HasColumnType("bit");
                     b.Property<string>("Email").IsRequired().HasMaxLength(254).HasColumnType("nvarchar(254)");
                     b.Property<string>("Nome").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
-                    b.Property<string>("Perfil").IsRequired().HasMaxLength(20).HasColumnType("nvarchar(20)");
+                    b.Property<int>("PerfilId").HasColumnType("int");
                     b.Property<string>("SenhaHash").IsRequired().HasMaxLength(500).HasColumnType("nvarchar(500)");
                     b.Property<string>("VersaoSeguranca").IsRequired().HasMaxLength(32).HasColumnType("nvarchar(32)");
                     b.HasKey("Id");
                     b.HasIndex("Email").IsUnique();
+                    b.HasIndex("PerfilId");
                     b.ToTable("Usuarios", (string)null);
                 });
 
@@ -119,6 +137,14 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                     b.Navigation("CategoriaProduto");
+                });
+
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.Usuario", b =>
+                {
+                    b.HasOne("GestaoEstoque.Domain.Entities.PerfilAcesso", "PerfilAcesso")
+                        .WithMany().HasForeignKey("PerfilId")
+                        .OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.Navigation("PerfilAcesso");
                 });
 #pragma warning restore 612, 618
         }
