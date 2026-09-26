@@ -4,7 +4,8 @@ import { firstValueFrom } from 'rxjs';
 
 export interface UsuarioLogado {
   id: number; nome: string; email: string; perfilId: number; perfil: string;
-  permissoes: { gerenciarProdutos: boolean; gerenciarCategorias: boolean; movimentarEstoque: boolean };
+  permissoes: { cadastrarProdutos: boolean; gerenciarProdutos: boolean;
+    cadastrarCategorias: boolean; gerenciarCategorias: boolean; movimentarEstoque: boolean };
 }
 interface LoginResponse { token: string; expiraUtc: string; usuario: UsuarioLogado; }
 

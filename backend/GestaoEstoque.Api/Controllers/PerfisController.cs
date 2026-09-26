@@ -11,11 +11,12 @@ namespace GestaoEstoque.Api.Controllers;
 [Route("api/perfis")]
 public class PerfisController(GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record PerfilRequest(string Nome, bool GerenciarProdutos, bool GerenciarCategorias, bool MovimentarEstoque);
+    public record PerfilRequest(string Nome, bool CadastrarProdutos, bool GerenciarProdutos,
+        bool CadastrarCategorias, bool GerenciarCategorias, bool MovimentarEstoque);
     public record PerfilResponse(int Id, string Nome, bool Sistema, bool Ativo,
-        bool GerenciarProdutos, bool GerenciarCategorias, bool MovimentarEstoque);
+        bool CadastrarProdutos, bool GerenciarProdutos, bool CadastrarCategorias, bool GerenciarCategorias, bool MovimentarEstoque);
     private static PerfilResponse Map(PerfilAcesso p) => new(p.Id, p.Nome, p.Sistema, p.Ativo,
-        p.GerenciarProdutos, p.GerenciarCategorias, p.MovimentarEstoque);
+        p.CadastrarProdutos, p.GerenciarProdutos, p.CadastrarCategorias, p.GerenciarCategorias, p.MovimentarEstoque);
 
     [HttpGet]
     public async Task<IActionResult> Listar(CancellationToken ct) =>
@@ -26,7 +27,8 @@ public class PerfisController(GestaoEstoqueDbContext db) : ControllerBase
     {
         try
         {
-            var perfil = new PerfilAcesso(request.Nome, request.GerenciarProdutos, request.GerenciarCategorias, request.MovimentarEstoque);
+            var perfil = new PerfilAcesso(request.Nome, request.GerenciarProdutos, request.GerenciarCategorias, request.MovimentarEstoque,
+                cadastrarProdutos: request.CadastrarProdutos, cadastrarCategorias: request.CadastrarCategorias);
             if (await db.PerfisAcesso.AnyAsync(p => p.NomeNormalizado == perfil.NomeNormalizado, ct))
                 return Conflict(new { erro = "Perfil já cadastrado." });
             db.PerfisAcesso.Add(perfil);
@@ -45,7 +47,8 @@ public class PerfisController(GestaoEstoqueDbContext db) : ControllerBase
         if (perfil.Sistema || !perfil.Ativo) return Conflict(new { erro = "Perfil do sistema ou inativo não pode ser editado." });
         try
         {
-            perfil.Atualizar(request.Nome, request.GerenciarProdutos, request.GerenciarCategorias, request.MovimentarEstoque);
+            perfil.Atualizar(request.Nome, request.GerenciarProdutos, request.GerenciarCategorias, request.MovimentarEstoque,
+                request.CadastrarProdutos, request.CadastrarCategorias);
             if (await db.PerfisAcesso.AnyAsync(p => p.Id != id && p.NomeNormalizado == perfil.NomeNormalizado, ct))
                 return Conflict(new { erro = "Perfil já cadastrado." });
             await db.SaveChangesAsync(ct);

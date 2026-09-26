@@ -11,7 +11,9 @@ interface Categoria { id: number; nome: string; ativo: boolean; }
 interface Movimento { id: number; produtoId: number; tipo: TipoMovimento; quantidade: number; dataUtc: string; observacao: string | null; }
 interface ProdutoForm { nome: string; categoriaId: number | null; preco: number | null; estoqueMinimo: number | null; }
 interface Usuario { id: number; nome: string; email: string; perfilId: number; perfil: string; ativo: boolean; }
-interface Perfil { id: number; nome: string; sistema: boolean; ativo: boolean; gerenciarProdutos: boolean; gerenciarCategorias: boolean; movimentarEstoque: boolean; }
+interface Perfil { id: number; nome: string; sistema: boolean; ativo: boolean;
+  cadastrarProdutos: boolean; gerenciarProdutos: boolean; cadastrarCategorias: boolean;
+  gerenciarCategorias: boolean; movimentarEstoque: boolean; }
 
 @Component({
   selector: 'app-root',
@@ -26,7 +28,7 @@ export class App implements OnInit {
   readonly perfis = signal<Perfil[]>([]);
   readonly produtos = signal<Produto[]>([]);
   readonly categorias = signal<Categoria[]>([]);
-  readonly tela = signal<'visao' | 'produtos' | 'categorias' | 'perfis'>('visao');
+  readonly tela = signal<'visao' | 'produtos' | 'categorias' | 'perfis' | 'usuarios'>('visao');
   readonly movimentos = signal<Movimento[]>([]);
   readonly busca = signal('');
   readonly somenteAtivos = signal(true);
@@ -34,7 +36,7 @@ export class App implements OnInit {
   readonly salvando = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
-  readonly modal = signal<'produto' | 'categoria' | 'perfil' | 'movimento' | 'historico' | 'usuarios' | 'senha' | null>(null);
+  readonly modal = signal<'produto' | 'categoria' | 'perfil' | 'movimento' | 'historico' | 'usuario' | 'senha' | null>(null);
   readonly selecionado = signal<Produto | null>(null);
   readonly filtrados = computed(() => {
     const termo = this.busca().trim().toLocaleLowerCase('pt-BR');
@@ -51,7 +53,8 @@ export class App implements OnInit {
   categoriaNome = '';
   categoriaSelecionada: Categoria | null = null;
   perfilSelecionado: Perfil | null = null;
-  perfilForm = { nome: '', gerenciarProdutos: false, gerenciarCategorias: false, movimentarEstoque: false };
+  perfilForm = { nome: '', cadastrarProdutos: false, gerenciarProdutos: false,
+    cadastrarCategorias: false, gerenciarCategorias: false, movimentarEstoque: false };
   tipoMovimento: TipoMovimento = 1;
   quantidade: number | null = null;
   observacao = '';
@@ -84,9 +87,10 @@ export class App implements OnInit {
     catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.carregando.set(false); }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'perfis'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'perfis' | 'usuarios'): void {
     this.tela.set(tela); this.erro.set(''); this.sucesso.set('');
     if (tela === 'perfis') void this.carregarPerfis();
+    if (tela === 'usuarios') void Promise.all([this.carregarUsuarios(), this.carregarPerfis()]);
   }
   private async carregarPerfis(): Promise<void> {
     try { this.perfis.set(await firstValueFrom(this.http.get<Perfil[]>('/api/perfis'))); }
@@ -94,12 +98,14 @@ export class App implements OnInit {
   }
   novoPerfil(): void {
     this.perfilSelecionado = null;
-    this.perfilForm = { nome: '', gerenciarProdutos: false, gerenciarCategorias: false, movimentarEstoque: false };
+    this.perfilForm = { nome: '', cadastrarProdutos: false, gerenciarProdutos: false,
+      cadastrarCategorias: false, gerenciarCategorias: false, movimentarEstoque: false };
     this.erro.set(''); this.modal.set('perfil');
   }
   editarPerfil(perfil: Perfil): void {
     this.perfilSelecionado = perfil;
-    this.perfilForm = { nome: perfil.nome, gerenciarProdutos: perfil.gerenciarProdutos,
+    this.perfilForm = { nome: perfil.nome, cadastrarProdutos: perfil.cadastrarProdutos,
+      gerenciarProdutos: perfil.gerenciarProdutos, cadastrarCategorias: perfil.cadastrarCategorias,
       gerenciarCategorias: perfil.gerenciarCategorias, movimentarEstoque: perfil.movimentarEstoque };
     this.erro.set(''); this.modal.set('perfil');
   }
@@ -157,9 +163,9 @@ export class App implements OnInit {
     finally { this.salvando.set(false); }
   }
   sair(): void { this.auth.sair(); this.produtos.set([]); this.categorias.set([]); this.tela.set('visao'); this.modal.set(null); this.erro.set(''); this.sucesso.set(''); }
-  async abrirUsuarios(): Promise<void> {
-    this.modal.set('usuarios'); this.erro.set(''); this.novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
-    await Promise.all([this.carregarUsuarios(), this.carregarPerfis()]);
+  novoUsuarioForm(): void {
+    this.erro.set(''); this.novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
+    this.modal.set('usuario');
   }
   private async carregarUsuarios(): Promise<void> {
     try { this.usuarios.set(await firstValueFrom(this.http.get<Usuario[]>('/api/usuarios'))); }
@@ -173,7 +179,7 @@ export class App implements OnInit {
     try {
       await firstValueFrom(this.http.post('/api/usuarios', this.novoUsuario));
       this.novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
-      await this.carregarUsuarios(); this.sucesso.set('Usuário cadastrado.');
+      this.modal.set(null); await this.carregarUsuarios(); this.sucesso.set('Usuário cadastrado.');
     } catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.salvando.set(false); }
   }

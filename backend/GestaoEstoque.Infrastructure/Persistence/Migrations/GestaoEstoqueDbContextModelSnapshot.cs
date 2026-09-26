@@ -92,6 +92,8 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
                     b.Property<bool>("Ativo").HasColumnType("bit");
+                    b.Property<bool>("CadastrarCategorias").HasColumnType("bit");
+                    b.Property<bool>("CadastrarProdutos").HasColumnType("bit");
                     b.Property<bool>("GerenciarCategorias").HasColumnType("bit");
                     b.Property<bool>("GerenciarProdutos").HasColumnType("bit");
                     b.Property<bool>("MovimentarEstoque").HasColumnType("bit");

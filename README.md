@@ -62,7 +62,7 @@ A migração de categorias cria registros a partir dos nomes já usados nos prod
 
 ## Login e permissões
 
-O administrador cadastra outros usuários pela opção **Usuários** e cria perfis em **Perfis**. Os perfis básicos **Administrador** e **Operador** são preservados pela migração. Perfis personalizados permitem escolher separadamente as permissões de gerenciar produtos, gerenciar categorias e movimentar estoque. Somente o administrador pode cadastrar usuários e perfis. Ao alterar as permissões de um perfil, seus usuários precisam entrar novamente. Ambos podem alterar a própria senha. Não há cadastro público de usuários.
+O administrador acessa a tela **Usuários** e clica em **Novo usuário** para cadastrar uma conta; a tela **Perfis** permite criar perfis personalizados. Os perfis básicos **Administrador** e **Operador** são preservados pela migração. O Operador pode cadastrar produtos e categorias e movimentar estoque, mas não editar/desativar produtos ou categorias nem gerenciar usuários e perfis. Perfis personalizados permitem definir essas ações separadamente. Somente o administrador cadastra usuários e perfis. Ao alterar permissões, seus usuários precisam entrar novamente. Não há cadastro público de usuários.
 
 Após atualizar o código, execute `dotnet ef database update` antes de iniciar a API. A migração vincula os usuários existentes aos perfis básicos, sem apagar as contas.
 

@@ -22,4 +22,15 @@ public class PerfilTests
         var perfil = new PerfilAcesso(Perfis.Administrador, true, true, true, sistema: true);
         Assert.Throws<InvalidOperationException>(() => perfil.DefinirAtivo(false));
     }
+
+    [Fact]
+    public void CadastroPodeSerPermitidoSemEdicao()
+    {
+        var perfil = new PerfilAcesso("Cadastro", false, false, true,
+            cadastrarProdutos: true, cadastrarCategorias: true);
+        Assert.True(perfil.CadastrarProdutos);
+        Assert.True(perfil.CadastrarCategorias);
+        Assert.False(perfil.GerenciarProdutos);
+        Assert.False(perfil.GerenciarCategorias);
+    }
 }

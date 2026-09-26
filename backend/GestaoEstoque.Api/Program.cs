@@ -64,7 +64,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(Permissoes.GerenciarProdutos, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.GerenciarProdutos)));
+    options.AddPolicy(Permissoes.CadastrarProdutos, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.CadastrarProdutos)));
     options.AddPolicy(Permissoes.GerenciarCategorias, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.GerenciarCategorias)));
+    options.AddPolicy(Permissoes.CadastrarCategorias, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.CadastrarCategorias)));
     options.AddPolicy(Permissoes.MovimentarEstoque, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.MovimentarEstoque)));
 });
 builder.Services.AddRateLimiter(options =>

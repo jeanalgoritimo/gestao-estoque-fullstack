@@ -8,7 +8,9 @@ namespace GestaoEstoque.Api.Security;
 public static class Permissoes
 {
     public const string GerenciarProdutos = "GerenciarProdutos";
+    public const string CadastrarProdutos = "CadastrarProdutos";
     public const string GerenciarCategorias = "GerenciarCategorias";
+    public const string CadastrarCategorias = "CadastrarCategorias";
     public const string MovimentarEstoque = "MovimentarEstoque";
 }
 
@@ -25,7 +27,9 @@ public class PermissaoHandler(GestaoEstoqueDbContext db) : AuthorizationHandler<
         var permitido = requirement.Nome switch
         {
             Permissoes.GerenciarProdutos => perfil.GerenciarProdutos,
+            Permissoes.CadastrarProdutos => perfil.CadastrarProdutos,
             Permissoes.GerenciarCategorias => perfil.GerenciarCategorias,
+            Permissoes.CadastrarCategorias => perfil.CadastrarCategorias,
             Permissoes.MovimentarEstoque => perfil.MovimentarEstoque,
             _ => false
         };

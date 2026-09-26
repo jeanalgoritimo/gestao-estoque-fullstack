@@ -21,7 +21,7 @@ public class CategoriasController(GestaoEstoqueDbContext db) : ControllerBase
         Ok((await db.CategoriasProduto.AsNoTracking().OrderBy(c => c.Nome).ToListAsync(ct)).Select(Map));
 
     [HttpPost]
-    [Authorize(Policy = Permissoes.GerenciarCategorias)]
+    [Authorize(Policy = Permissoes.CadastrarCategorias)]
     public async Task<IActionResult> Criar(CategoriaRequest request, CancellationToken ct)
     {
         try
