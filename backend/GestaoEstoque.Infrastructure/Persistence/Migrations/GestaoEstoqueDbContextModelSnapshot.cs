@@ -21,6 +21,18 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.CategoriaProduto", b =>
+                {
+                    b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<bool>("Ativo").HasColumnType("bit");
+                    b.Property<string>("Nome").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                    b.Property<string>("NomeNormalizado").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                    b.HasKey("Id");
+                    b.HasIndex("NomeNormalizado").IsUnique();
+                    b.ToTable("CategoriasProduto", (string)null);
+                });
+
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.MovimentoEstoque", b =>
                 {
                     b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
@@ -46,10 +58,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Categoria")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("CategoriaId").HasColumnType("int");
 
                     b.Property<int>("Estoque")
                         .HasColumnType("int");
@@ -73,6 +82,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                         .HasColumnType("rowversion");
 
                     b.HasKey("Id");
+                    b.HasIndex("CategoriaId");
 
                     b.ToTable("Produtos", (string)null);
                 });
@@ -99,6 +109,16 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ProdutoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.Produto", b =>
+                {
+                    b.HasOne("GestaoEstoque.Domain.Entities.CategoriaProduto", "CategoriaProduto")
+                        .WithMany()
+                        .HasForeignKey("CategoriaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                    b.Navigation("CategoriaProduto");
                 });
 #pragma warning restore 612, 618
         }

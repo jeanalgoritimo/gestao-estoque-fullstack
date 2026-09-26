@@ -6,9 +6,10 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 
 type TipoMovimento = 1 | 2;
-interface Produto { id: number; nome: string; categoria: string; preco: number; estoque: number; estoqueMinimo: number; ativo: boolean; estoqueBaixo: boolean; }
+interface Produto { id: number; nome: string; categoriaId: number; categoria: string; preco: number; estoque: number; estoqueMinimo: number; ativo: boolean; estoqueBaixo: boolean; }
+interface Categoria { id: number; nome: string; ativo: boolean; }
 interface Movimento { id: number; produtoId: number; tipo: TipoMovimento; quantidade: number; dataUtc: string; observacao: string | null; }
-interface ProdutoForm { nome: string; categoria: string; preco: number | null; estoqueMinimo: number | null; }
+interface ProdutoForm { nome: string; categoriaId: number | null; preco: number | null; estoqueMinimo: number | null; }
 interface Usuario { id: number; nome: string; email: string; perfil: 'Administrador' | 'Operador'; ativo: boolean; }
 
 @Component({
@@ -22,6 +23,8 @@ export class App implements OnInit {
   readonly auth = inject(AuthService);
   readonly usuarios = signal<Usuario[]>([]);
   readonly produtos = signal<Produto[]>([]);
+  readonly categorias = signal<Categoria[]>([]);
+  readonly tela = signal<'visao' | 'produtos' | 'categorias'>('visao');
   readonly movimentos = signal<Movimento[]>([]);
   readonly busca = signal('');
   readonly somenteAtivos = signal(true);
@@ -29,7 +32,7 @@ export class App implements OnInit {
   readonly salvando = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
-  readonly modal = signal<'produto' | 'movimento' | 'historico' | 'usuarios' | 'senha' | null>(null);
+  readonly modal = signal<'produto' | 'categoria' | 'movimento' | 'historico' | 'usuarios' | 'senha' | null>(null);
   readonly selecionado = signal<Produto | null>(null);
   readonly filtrados = computed(() => {
     const termo = this.busca().trim().toLocaleLowerCase('pt-BR');
@@ -40,8 +43,11 @@ export class App implements OnInit {
   readonly baixos = computed(() => this.ativos().filter(p => p.estoqueBaixo).length);
   readonly unidades = computed(() => this.ativos().reduce((total, p) => total + p.estoque, 0));
   readonly valorEstoque = computed(() => this.ativos().reduce((total, p) => total + p.estoque * p.preco, 0));
+  readonly categoriasAtivas = computed(() => this.categorias().filter(c => c.ativo));
 
   form: ProdutoForm = this.formVazio();
+  categoriaNome = '';
+  categoriaSelecionada: Categoria | null = null;
   tipoMovimento: TipoMovimento = 1;
   quantidade: number | null = null;
   observacao = '';
@@ -52,7 +58,7 @@ export class App implements OnInit {
   novaSenha = '';
 
   ngOnInit(): void { /* Login exigido a cada nova sessão; token fica somente na memória. */ }
-  private formVazio(): ProdutoForm { return { nome: '', categoria: '', preco: null, estoqueMinimo: 5 }; }
+  private formVazio(): ProdutoForm { return { nome: '', categoriaId: null, preco: null, estoqueMinimo: 5 }; }
   private mensagemErro(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 0) return 'Não foi possível conectar à API. Confira se ela está em execução na porta 5029.';
@@ -64,9 +70,45 @@ export class App implements OnInit {
   }
   async recarregar(): Promise<void> {
     this.carregando.set(true); this.erro.set('');
-    try { this.produtos.set(await firstValueFrom(this.http.get<Produto[]>('/api/produtos'))); }
+    try {
+      const [produtos, categorias] = await Promise.all([
+        firstValueFrom(this.http.get<Produto[]>('/api/produtos')),
+        firstValueFrom(this.http.get<Categoria[]>('/api/categorias'))
+      ]);
+      this.produtos.set(produtos); this.categorias.set(categorias);
+    }
     catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.carregando.set(false); }
+  }
+  navegar(tela: 'visao' | 'produtos' | 'categorias'): void {
+    this.tela.set(tela); this.erro.set(''); this.sucesso.set('');
+  }
+  novaCategoria(): void {
+    this.categoriaSelecionada = null; this.categoriaNome = '';
+    this.erro.set(''); this.modal.set('categoria');
+  }
+  editarCategoria(categoria: Categoria): void {
+    this.categoriaSelecionada = categoria; this.categoriaNome = categoria.nome;
+    this.erro.set(''); this.modal.set('categoria');
+  }
+  async salvarCategoria(): Promise<void> {
+    if (!this.categoriaNome.trim()) { this.erro.set('Informe o nome da categoria.'); return; }
+    this.salvando.set(true); this.erro.set('');
+    try {
+      const id = this.categoriaSelecionada?.id;
+      if (id) await firstValueFrom(this.http.put(`/api/categorias/${id}`, { nome: this.categoriaNome }));
+      else await firstValueFrom(this.http.post('/api/categorias', { nome: this.categoriaNome }));
+      this.modal.set(null); this.sucesso.set(id ? 'Categoria atualizada.' : 'Categoria cadastrada.');
+      await this.recarregar();
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
+    finally { this.salvando.set(false); }
+  }
+  async definirCategoriaAtiva(categoria: Categoria): Promise<void> {
+    this.erro.set('');
+    try {
+      await firstValueFrom(this.http.patch(`/api/categorias/${categoria.id}/ativo`, !categoria.ativo));
+      await this.recarregar();
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
   }
   async entrar(): Promise<void> {
     this.salvando.set(true); this.erro.set('');
@@ -77,7 +119,7 @@ export class App implements OnInit {
     } catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.salvando.set(false); }
   }
-  sair(): void { this.auth.sair(); this.produtos.set([]); this.modal.set(null); this.erro.set(''); this.sucesso.set(''); }
+  sair(): void { this.auth.sair(); this.produtos.set([]); this.categorias.set([]); this.tela.set('visao'); this.modal.set(null); this.erro.set(''); this.sucesso.set(''); }
   async abrirUsuarios(): Promise<void> {
     this.modal.set('usuarios'); this.erro.set(''); this.novoUsuario = { nome: '', email: '', senha: '', perfil: 'Operador' };
     await this.carregarUsuarios();
@@ -112,14 +154,17 @@ export class App implements OnInit {
     catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.salvando.set(false); }
   }
-  novoProduto(): void { this.selecionado.set(null); this.form = this.formVazio(); this.erro.set(''); this.modal.set('produto'); }
+  novoProduto(): void {
+    if (!this.categoriasAtivas().length) { this.tela.set('categorias'); this.erro.set('Cadastre uma categoria antes de adicionar produtos.'); return; }
+    this.selecionado.set(null); this.form = this.formVazio(); this.erro.set(''); this.modal.set('produto');
+  }
   editar(produto: Produto): void {
     this.selecionado.set(produto);
-    this.form = { nome: produto.nome, categoria: produto.categoria, preco: produto.preco, estoqueMinimo: produto.estoqueMinimo };
+    this.form = { nome: produto.nome, categoriaId: produto.categoriaId, preco: produto.preco, estoqueMinimo: produto.estoqueMinimo };
     this.erro.set(''); this.modal.set('produto');
   }
   async salvarProduto(): Promise<void> {
-    if (!this.form.nome.trim() || !this.form.categoria.trim() || this.form.preco === null || this.form.preco <= 0 ||
+    if (!this.form.nome.trim() || !this.form.categoriaId || this.form.preco === null || this.form.preco <= 0 ||
         this.form.estoqueMinimo === null || !Number.isInteger(this.form.estoqueMinimo) || this.form.estoqueMinimo < 0) {
       this.erro.set('Informe nome, categoria, preço maior que zero e estoque mínimo válido.'); return;
     }

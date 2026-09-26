@@ -3,20 +3,21 @@ using GestaoEstoque.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using GestaoEstoque.Infrastructure.Persistence;
 
 namespace GestaoEstoque.Api.Controllers;
 
 [ApiController]
 [Authorize]
 [Route("api/produtos")]
-public class ProdutosController(IProdutoRepository repository) : ControllerBase
+public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record ProdutoRequest(string Nome, string Categoria, decimal Preco, int EstoqueMinimo);
+    public record ProdutoRequest(string Nome, int CategoriaId, decimal Preco, int EstoqueMinimo);
     public record MovimentoRequest(TipoMovimento Tipo, int Quantidade, string? Observacao);
-    public record ProdutoResponse(int Id, string Nome, string Categoria, decimal Preco,
+    public record ProdutoResponse(int Id, string Nome, int CategoriaId, string Categoria, decimal Preco,
         int Estoque, int EstoqueMinimo, bool Ativo, bool EstoqueBaixo);
 
-    private static ProdutoResponse Map(Produto p) => new(p.Id, p.Nome, p.Categoria,
+    private static ProdutoResponse Map(Produto p, string? nomeCategoria = null) => new(p.Id, p.Nome, p.CategoriaId, nomeCategoria ?? p.CategoriaProduto?.Nome ?? "",
         p.Preco, p.Estoque, p.EstoqueMinimo, p.Ativo, p.EstaComEstoqueBaixo());
 
     [HttpGet]
@@ -37,11 +38,14 @@ public class ProdutosController(IProdutoRepository repository) : ControllerBase
     [Authorize(Roles = Perfis.Administrador)]
     public async Task<ActionResult<ProdutoResponse>> Criar(ProdutoRequest request, CancellationToken ct)
     {
+        var categoria = await db.CategoriasProduto.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == request.CategoriaId && c.Ativo, ct);
+        if (categoria is null) return BadRequest(new { erro = "Selecione uma categoria ativa." });
         try
         {
             var produto = await repository.AdicionarAsync(
-                new Produto(request.Nome, request.Categoria, request.Preco, request.EstoqueMinimo), ct);
-            return CreatedAtAction(nameof(Obter), new { id = produto.Id }, Map(produto));
+                new Produto(request.Nome, request.CategoriaId, request.Preco, request.EstoqueMinimo), ct);
+            return CreatedAtAction(nameof(Obter), new { id = produto.Id }, Map(produto, categoria.Nome));
         }
         catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
     }
@@ -53,14 +57,17 @@ public class ProdutosController(IProdutoRepository repository) : ControllerBase
         var produto = await repository.ObterPorIdAsync(id, ct);
         if (produto is null) return NotFound();
         if (!produto.Ativo) return Conflict(new { erro = "Produto inativo." });
+        var categoria = await db.CategoriasProduto.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == request.CategoriaId && c.Ativo, ct);
+        if (categoria is null) return BadRequest(new { erro = "Selecione uma categoria ativa." });
         try
         {
             produto.AlterarNome(request.Nome);
-            produto.AlterarCategoria(request.Categoria);
+            produto.AlterarCategoria(request.CategoriaId);
             produto.AlterarPreco(request.Preco);
             produto.AlterarEstoqueMinimo(request.EstoqueMinimo);
             await repository.SalvarAsync(ct);
-            return Ok(Map(produto));
+            return Ok(Map(produto, categoria.Nome));
         }
         catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
         catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Produto alterado por outra operação. Recarregue e tente novamente." }); }

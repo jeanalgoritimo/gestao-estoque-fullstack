@@ -19,6 +19,7 @@ public class ProdutoRepository : IProdutoRepository
     {
         return await _context.Produtos
             .AsNoTracking()
+            .Include(produto => produto.CategoriaProduto)
             .OrderBy(produto => produto.Nome)
             .ToListAsync(cancellationToken);
     }
@@ -28,6 +29,7 @@ public class ProdutoRepository : IProdutoRepository
         CancellationToken cancellationToken = default)
     {
         return await _context.Produtos
+            .Include(produto => produto.CategoriaProduto)
             .FirstOrDefaultAsync(
                 produto => produto.Id == id,
                 cancellationToken);
