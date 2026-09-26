@@ -19,8 +19,10 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
             .HasMaxLength(150)
             .IsRequired();
 
-        builder.Property(produto => produto.Categoria)
-            .HasMaxLength(100)
+        builder.HasOne(produto => produto.CategoriaProduto)
+            .WithMany()
+            .HasForeignKey(produto => produto.CategoriaId)
+            .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
 
         builder.Property(produto => produto.Preco)

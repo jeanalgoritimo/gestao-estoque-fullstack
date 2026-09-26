@@ -9,25 +9,29 @@
   <aside class="sidebar">
     <div class="brand"><span class="brand-mark">G</span><div><strong>Gestão de Estoque</strong><small>Controle inteligente</small></div></div>
     <div class="nav-label">MENU PRINCIPAL</div>
-    <nav aria-label="Menu principal"><a class="nav-active" href="#estoque">▦ <span>Visão geral</span></a><a href="#produtos">▤ <span>Produtos</span></a>@if (auth.usuario()?.perfil === 'Administrador') { <button type="button" (click)="abrirUsuarios()">♙ <span>Usuários</span></button> }</nav>
+    <nav aria-label="Menu principal"><button type="button" [class.nav-active]="tela() === 'visao'" (click)="navegar('visao')">▦ <span>Visão geral</span></button><button type="button" [class.nav-active]="tela() === 'produtos'" (click)="navegar('produtos')">▤ <span>Produtos</span></button><button type="button" [class.nav-active]="tela() === 'categorias'" (click)="navegar('categorias')">▥ <span>Categorias</span></button>@if (auth.usuario()?.perfil === 'Administrador') { <button type="button" (click)="abrirUsuarios()">♙ <span>Usuários</span></button> }</nav>
     <div class="sidebar-foot">{{ auth.usuario()?.nome }}<br><small>{{ auth.usuario()?.perfil }}</small><div><button type="button" (click)="abrirSenha()">Alterar senha</button><button type="button" (click)="sair()">Sair</button></div></div>
   </aside>
 
   <main class="content" id="estoque">
-    <header class="topbar"><span>Painel de controle <span class="breadcrumb">/ Estoque</span></span><span class="environment">● Ambiente local</span></header>
-    <section class="heading"><div><p class="eyebrow">SEU ESTOQUE EM UM SÓ LUGAR</p><h1>Visão geral</h1><p class="subtitle">Acompanhe seus produtos e mantenha o controle das movimentações.</p></div>@if (auth.usuario()?.perfil === 'Administrador') { <button class="primary" type="button" (click)="novoProduto()">＋ Novo produto</button> }</section>
+    <header class="topbar"><span>Painel de controle <span class="breadcrumb">/ {{ tela() === 'visao' ? 'Visão geral' : tela() === 'produtos' ? 'Produtos' : 'Categorias' }}</span></span><span class="environment">● Ambiente local</span></header>
+    <section class="heading"><div><p class="eyebrow">SEU ESTOQUE EM UM SÓ LUGAR</p><h1>{{ tela() === 'visao' ? 'Visão geral' : tela() === 'produtos' ? 'Produtos' : 'Categorias' }}</h1><p class="subtitle">{{ tela() === 'categorias' ? 'Organize as categorias usadas no cadastro de produtos.' : 'Acompanhe seus produtos e mantenha o controle das movimentações.' }}</p></div>@if (auth.usuario()?.perfil === 'Administrador') { @if (tela() === 'categorias') { <button class="primary" type="button" (click)="novaCategoria()">＋ Nova categoria</button> } @else { <button class="primary" type="button" (click)="novoProduto()">＋ Novo produto</button> } }</section>
 
     @if (sucesso()) { <div class="notice success" role="status">{{ sucesso() }} <button type="button" (click)="sucesso.set('')" aria-label="Fechar aviso">×</button></div> }
     @if (erro() && !modal()) { <div class="notice error" role="alert">{{ erro() }} <button type="button" (click)="recarregar()">Tentar novamente</button></div> }
 
-    <section class="cards" aria-label="Indicadores de estoque">
+    @if (tela() === 'visao') { <section class="cards" aria-label="Indicadores de estoque">
       <article class="card"><div class="card-icon blue">▤</div><p>Produtos ativos</p><strong>{{ ativos().length }}</strong><span>Cadastrados no sistema</span></article>
       <article class="card"><div class="card-icon violet">▦</div><p>Unidades em estoque</p><strong>{{ unidades() }}</strong><span>Em todos os produtos ativos</span></article>
       <article class="card"><div class="card-icon amber">!</div><p>Estoque baixo</p><strong>{{ baixos() }}</strong><span>Itens no mínimo ou abaixo</span></article>
       <article class="card"><div class="card-icon green">$</div><p>Valor em estoque</p><strong class="money">{{ moeda(valorEstoque()) }}</strong><span>Preço cadastrado × quantidade</span></article>
-    </section>
+    </section> }
 
-    <section class="panel" id="produtos">
+    @if (tela() === 'categorias') {
+      <section class="panel"><div class="panel-heading"><div><h2>Categorias cadastradas</h2><p>Selecione uma categoria ativa ao cadastrar um produto.</p></div><button class="secondary" type="button" (click)="recarregar()">↻ Atualizar</button></div>
+        <div class="category-list">@for (categoria of categorias(); track categoria.id) { <div class="category-row"><div><strong>{{ categoria.nome }}</strong><small>#{{ categoria.id }} · {{ categoria.ativo ? 'Ativa' : 'Inativa' }}</small></div>@if (auth.usuario()?.perfil === 'Administrador') { <div><button class="secondary" type="button" (click)="editarCategoria(categoria)" [disabled]="!categoria.ativo">Editar</button><button class="secondary" type="button" (click)="definirCategoriaAtiva(categoria)">{{ categoria.ativo ? 'Desativar' : 'Ativar' }}</button></div> }</div> } @empty { <p class="empty">Nenhuma categoria cadastrada.</p> }</div>
+      </section>
+    } @else { <section class="panel" id="produtos">
       <div class="panel-heading"><div><h2>Produtos</h2><p>Gerencie seu catálogo e registre entradas e saídas.</p></div><button class="secondary" type="button" (click)="recarregar()" [disabled]="carregando()">↻ Atualizar</button></div>
       <div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Buscar por nome, categoria ou código" [ngModel]="busca()" (ngModelChange)="busca.set($event)" aria-label="Buscar produtos"></label><label class="toggle"><input type="checkbox" [ngModel]="somenteAtivos()" (ngModelChange)="somenteAtivos.set($event)"> Somente ativos</label></div>
       <div class="table-wrap"><table><thead><tr><th>PRODUTO</th><th>CATEGORIA</th><th>PREÇO</th><th>ESTOQUE</th><th>SITUAÇÃO</th><th class="actions">AÇÕES</th></tr></thead><tbody>
@@ -37,17 +41,19 @@
         } @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando produtos...' : 'Nenhum produto encontrado. Cadastre o primeiro para começar.' }}</td></tr> }
       </tbody></table></div>
       <div class="panel-foot">Exibindo {{ filtrados().length }} de {{ produtos().length }} produtos</div>
-    </section>
+    </section> }
   </main>
 </div>
 }
 
 @if (modal()) {
-  <div class="overlay" (click)="fechar()"><section class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="modal() === 'produto' ? 'Produto' : modal() === 'movimento' ? 'Movimentação' : modal() === 'usuarios' ? 'Usuários' : modal() === 'senha' ? 'Alterar senha' : 'Histórico'" (click)="$event.stopPropagation()">
-    <div class="dialog-head"><div><p class="eyebrow">GESTÃO DE ESTOQUE</p><h2>{{ modal() === 'produto' ? (selecionado() ? 'Editar produto' : 'Novo produto') : modal() === 'movimento' ? (tipoMovimento === 1 ? 'Registrar entrada' : 'Registrar saída') : modal() === 'usuarios' ? 'Usuários' : modal() === 'senha' ? 'Alterar senha' : 'Histórico de movimentações' }}</h2>@if (selecionado() && (modal() === 'movimento' || modal() === 'historico')) { <p>{{ selecionado()?.nome }} · saldo atual: {{ selecionado()?.estoque }}</p> }</div><button class="close" type="button" (click)="fechar()" aria-label="Fechar">×</button></div>
+  <div class="overlay" (click)="fechar()"><section class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="modal() === 'produto' ? 'Produto' : modal() === 'categoria' ? 'Categoria' : modal() === 'movimento' ? 'Movimentação' : modal() === 'usuarios' ? 'Usuários' : modal() === 'senha' ? 'Alterar senha' : 'Histórico'" (click)="$event.stopPropagation()">
+    <div class="dialog-head"><div><p class="eyebrow">GESTÃO DE ESTOQUE</p><h2>{{ modal() === 'produto' ? (selecionado() ? 'Editar produto' : 'Novo produto') : modal() === 'categoria' ? (categoriaSelecionada ? 'Editar categoria' : 'Nova categoria') : modal() === 'movimento' ? (tipoMovimento === 1 ? 'Registrar entrada' : 'Registrar saída') : modal() === 'usuarios' ? 'Usuários' : modal() === 'senha' ? 'Alterar senha' : 'Histórico de movimentações' }}</h2>@if (selecionado() && (modal() === 'movimento' || modal() === 'historico')) { <p>{{ selecionado()?.nome }} · saldo atual: {{ selecionado()?.estoque }}</p> }</div><button class="close" type="button" (click)="fechar()" aria-label="Fechar">×</button></div>
     @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
     @if (modal() === 'produto') {
-      <form (ngSubmit)="salvarProduto()"><div class="fields"><label>Nome do produto <input name="nome" [(ngModel)]="form.nome" required maxlength="150" placeholder="Ex.: Parafuso sextavado"></label><label>Categoria <input name="categoria" [(ngModel)]="form.categoria" required maxlength="100" placeholder="Ex.: Ferragens"></label><div class="field-row"><label>Preço (R$) <input name="preco" type="number" min="0.01" step="0.01" [(ngModel)]="form.preco" required></label><label>Estoque mínimo <input name="minimo" type="number" min="0" step="1" [(ngModel)]="form.estoqueMinimo" required></label></div></div><div class="dialog-actions"><button class="secondary" type="button" (click)="fechar()">Cancelar</button><button class="primary" type="submit" [disabled]="salvando()">{{ salvando() ? 'Salvando...' : 'Salvar produto' }}</button></div></form>
+      <form (ngSubmit)="salvarProduto()"><div class="fields"><label>Nome do produto <input name="nome" [(ngModel)]="form.nome" required maxlength="150" placeholder="Ex.: Parafuso sextavado"></label><label>Categoria <select name="categoriaId" [(ngModel)]="form.categoriaId" required><option [ngValue]="null" disabled>Selecione uma categoria</option>@for (categoria of categoriasAtivas(); track categoria.id) { <option [ngValue]="categoria.id">{{ categoria.nome }}</option> }</select></label><div class="field-row"><label>Preço (R$) <input name="preco" type="number" min="0.01" step="0.01" [(ngModel)]="form.preco" required></label><label>Estoque mínimo <input name="minimo" type="number" min="0" step="1" [(ngModel)]="form.estoqueMinimo" required></label></div></div><div class="dialog-actions"><button class="secondary" type="button" (click)="fechar()">Cancelar</button><button class="primary" type="submit" [disabled]="salvando()">{{ salvando() ? 'Salvando...' : 'Salvar produto' }}</button></div></form>
+    } @else if (modal() === 'categoria') {
+      <form (ngSubmit)="salvarCategoria()"><div class="fields"><label>Nome da categoria<input name="categoriaNome" [(ngModel)]="categoriaNome" required maxlength="100" placeholder="Ex.: Ferragens"></label></div><div class="dialog-actions"><button class="secondary" type="button" (click)="fechar()">Cancelar</button><button class="primary" type="submit" [disabled]="salvando()">Salvar categoria</button></div></form>
     } @else if (modal() === 'movimento') {
       <form (ngSubmit)="salvarMovimento()"><div class="fields"><label>Tipo de movimento <select name="tipo" [(ngModel)]="tipoMovimento"><option [ngValue]="1">Entrada</option><option [ngValue]="2">Saída</option></select></label><label>Quantidade <input name="quantidade" type="number" min="1" step="1" [(ngModel)]="quantidade" required></label><label>Observação (opcional) <textarea name="observacao" [(ngModel)]="observacao" maxlength="300" rows="3" placeholder="Ex.: Compra de fornecedor"></textarea></label></div><div class="dialog-actions"><button class="secondary" type="button" (click)="fechar()">Cancelar</button><button class="primary" type="submit" [disabled]="salvando()">{{ salvando() ? 'Registrando...' : 'Registrar movimento' }}</button></div></form>
     } @else if (modal() === 'usuarios') {

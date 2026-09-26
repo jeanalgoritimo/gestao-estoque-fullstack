@@ -6,7 +6,8 @@ public class Produto
 
     public string Nome { get; private set; } = string.Empty;
 
-    public string Categoria { get; private set; } = string.Empty;
+    public int CategoriaId { get; private set; }
+    public CategoriaProduto? CategoriaProduto { get; private set; }
 
     public decimal Preco { get; private set; }
 
@@ -22,12 +23,12 @@ public class Produto
 
     public Produto(
         string nome,
-        string categoria,
+        int categoriaId,
         decimal preco,
         int estoqueMinimo = 5)
     {
         AlterarNome(nome);
-        AlterarCategoria(categoria);
+        AlterarCategoria(categoriaId);
         AlterarPreco(preco);
         AlterarEstoqueMinimo(estoqueMinimo);
 
@@ -44,14 +45,14 @@ public class Produto
         Nome = nome.Trim();
     }
 
-    public void AlterarCategoria(string categoria)
+    public void AlterarCategoria(int categoriaId)
     {
-        if (string.IsNullOrWhiteSpace(categoria))
+        if (categoriaId <= 0)
             throw new ArgumentException(
                 "A categoria é obrigatória.",
-                nameof(categoria));
+                nameof(categoriaId));
 
-        Categoria = categoria.Trim();
+        CategoriaId = categoriaId;
     }
 
     public void AlterarPreco(decimal preco)

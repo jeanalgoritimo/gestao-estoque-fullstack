@@ -36,23 +36,29 @@ npm start
 
 Acesse `http://localhost:4200` e entre com o administrador criado na primeira execução. O proxy do Angular encaminha `/api` para `http://localhost:5029`. Se usar outra porta, ajuste `frontend/proxy.conf.json`.
 
-O cadastro começa com saldo zero. Registre uma **entrada** para formar o estoque e depois teste uma **saída**. A interface inclui pesquisa, indicadores, edição, desativação e histórico.
+Cadastre uma categoria em **Categorias** antes de criar o primeiro produto. O cadastro começa com saldo zero. Registre uma **entrada** para formar o estoque e depois teste uma **saída**. O menu alterna entre Visão geral, Produtos e Categorias.
 
 ## Fluxo da API
 
 | Método | Rota | Uso |
 | --- | --- | --- |
 | GET | `/api/produtos` | Lista produtos e saldo |
-| POST | `/api/produtos` | Cria produto com `nome`, `categoria`, `preco`, `estoqueMinimo` |
+| POST | `/api/produtos` | Cria produto com `nome`, `categoriaId`, `preco`, `estoqueMinimo` |
 | GET | `/api/produtos/{id}` | Consulta produto |
 | PUT | `/api/produtos/{id}` | Altera dados cadastrais |
 | DELETE | `/api/produtos/{id}` | Desativa sem apagar histórico |
 | GET | `/api/produtos/{id}/movimentos` | Consulta entradas e saídas |
 | POST | `/api/produtos/{id}/movimentos` | Registra entrada (`tipo: 1`) ou saída (`tipo: 2`) |
+| GET | `/api/categorias` | Lista categorias |
+| POST | `/api/categorias` | Cadastra categoria (Administrador) |
+| PUT | `/api/categorias/{id}` | Renomeia categoria (Administrador) |
+| PATCH | `/api/categorias/{id}/ativo` | Ativa/desativa categoria (Administrador) |
 
 Exemplo de movimento: `{ "tipo": 1, "quantidade": 10, "observacao": "Compra inicial" }`.
 
 O saldo só é alterado por movimentações. A API recusa saída acima do saldo e usa `rowversion` para detectar alterações simultâneas. A migração cria um movimento de abertura para produtos existentes com saldo positivo.
+
+A migração de categorias cria registros a partir dos nomes já usados nos produtos, preserva seus vínculos e impede excluir categorias em uso por produtos ativos. Execute `dotnet ef database update` após atualizar o projeto antes de iniciar a API.
 
 ## Login e permissões
 
