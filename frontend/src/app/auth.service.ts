@@ -2,7 +2,10 @@ import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/commo
 import { inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-export interface UsuarioLogado { id: number; nome: string; email: string; perfil: 'Administrador' | 'Operador'; }
+export interface UsuarioLogado {
+  id: number; nome: string; email: string; perfilId: number; perfil: string;
+  permissoes: { gerenciarProdutos: boolean; gerenciarCategorias: boolean; movimentarEstoque: boolean };
+}
 interface LoginResponse { token: string; expiraUtc: string; usuario: UsuarioLogado; }
 
 @Injectable({ providedIn: 'root' })

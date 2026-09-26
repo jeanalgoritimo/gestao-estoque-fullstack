@@ -23,12 +23,15 @@ public class AuthController(GestaoEstoqueDbContext db, IPasswordHasher<Usuario> 
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
     {
         var email = request.Email?.Trim().ToLowerInvariant();
-        var usuario = await db.Usuarios.SingleOrDefaultAsync(u => u.Email == email, ct);
-        if (usuario is null || !usuario.Ativo ||
+        var usuario = await db.Usuarios.Include(u => u.PerfilAcesso).SingleOrDefaultAsync(u => u.Email == email, ct);
+        var perfil = usuario?.PerfilAcesso;
+        if (usuario is null || !usuario.Ativo || perfil is null || !perfil.Ativo ||
             hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, request.Senha ?? "") == PasswordVerificationResult.Failed)
             return Unauthorized(new { erro = "E-mail ou senha inválidos." });
         var (token, expiraUtc) = tokens.Criar(usuario);
-        return Ok(new { token, expiraUtc, usuario = new { usuario.Id, usuario.Nome, usuario.Email, usuario.Perfil } });
+        return Ok(new { token, expiraUtc, usuario = new { usuario.Id, usuario.Nome, usuario.Email,
+            PerfilId = perfil.Id, Perfil = perfil.Nome,
+            Permissoes = new { perfil.GerenciarProdutos, perfil.GerenciarCategorias, perfil.MovimentarEstoque } } });
     }
 
     [Authorize]

@@ -3,6 +3,7 @@ using GestaoEstoque.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GestaoEstoque.Api.Security;
 
 namespace GestaoEstoque.Api.Controllers;
 
@@ -20,7 +21,7 @@ public class CategoriasController(GestaoEstoqueDbContext db) : ControllerBase
         Ok((await db.CategoriasProduto.AsNoTracking().OrderBy(c => c.Nome).ToListAsync(ct)).Select(Map));
 
     [HttpPost]
-    [Authorize(Roles = Perfis.Administrador)]
+    [Authorize(Policy = Permissoes.GerenciarCategorias)]
     public async Task<IActionResult> Criar(CategoriaRequest request, CancellationToken ct)
     {
         try
@@ -37,7 +38,7 @@ public class CategoriasController(GestaoEstoqueDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = Perfis.Administrador)]
+    [Authorize(Policy = Permissoes.GerenciarCategorias)]
     public async Task<IActionResult> Renomear(int id, CategoriaRequest request, CancellationToken ct)
     {
         var categoria = await db.CategoriasProduto.FindAsync([id], ct);
@@ -56,7 +57,7 @@ public class CategoriasController(GestaoEstoqueDbContext db) : ControllerBase
     }
 
     [HttpPatch("{id:int}/ativo")]
-    [Authorize(Roles = Perfis.Administrador)]
+    [Authorize(Policy = Permissoes.GerenciarCategorias)]
     public async Task<IActionResult> DefinirAtivo(int id, [FromBody] bool ativo, CancellationToken ct)
     {
         var categoria = await db.CategoriasProduto.FindAsync([id], ct);

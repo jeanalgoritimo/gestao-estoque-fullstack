@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using GestaoEstoque.Infrastructure.Persistence;
+using GestaoEstoque.Api.Security;
 
 namespace GestaoEstoque.Api.Controllers;
 
@@ -35,7 +36,7 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     }
 
     [HttpPost]
-    [Authorize(Roles = Perfis.Administrador)]
+    [Authorize(Policy = Permissoes.GerenciarProdutos)]
     public async Task<ActionResult<ProdutoResponse>> Criar(ProdutoRequest request, CancellationToken ct)
     {
         var categoria = await db.CategoriasProduto.AsNoTracking()
@@ -51,7 +52,7 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = Perfis.Administrador)]
+    [Authorize(Policy = Permissoes.GerenciarProdutos)]
     public async Task<ActionResult<ProdutoResponse>> Alterar(int id, ProdutoRequest request, CancellationToken ct)
     {
         var produto = await repository.ObterPorIdAsync(id, ct);
@@ -74,7 +75,7 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = Perfis.Administrador)]
+    [Authorize(Policy = Permissoes.GerenciarProdutos)]
     public async Task<IActionResult> Desativar(int id, CancellationToken ct)
     {
         var produto = await repository.ObterPorIdAsync(id, ct);
@@ -92,6 +93,7 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     }
 
     [HttpPost("{id:int}/movimentos")]
+    [Authorize(Policy = Permissoes.MovimentarEstoque)]
     public async Task<IActionResult> Movimentar(int id, MovimentoRequest request, CancellationToken ct)
     {
         var produto = await repository.ObterPorIdAsync(id, ct);

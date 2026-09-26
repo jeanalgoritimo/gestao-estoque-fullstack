@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,7 @@ builder.Services.AddDbContext<GestaoEstoqueDbContext>(options =>
 
  builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissaoHandler>();
 builder.Services.AddSingleton(new JwtTokenService(signingKey, issuer, audience));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
@@ -50,14 +52,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
             var stamp = context.Principal?.FindFirstValue("security_version");
             var role = context.Principal?.FindFirstValue(ClaimTypes.Role);
             var db = context.HttpContext.RequestServices.GetRequiredService<GestaoEstoqueDbContext>();
+            var profileStamp = context.Principal?.FindFirstValue("profile_version");
             if (!int.TryParse(id, out var userId) ||
                 !await db.Usuarios.AsNoTracking().AnyAsync(u => u.Id == userId && u.Ativo &&
-                    u.VersaoSeguranca == stamp && u.Perfil == role))
+                    u.VersaoSeguranca == stamp && u.PerfilAcesso != null && u.PerfilAcesso.Ativo &&
+                    u.PerfilAcesso.VersaoSeguranca == profileStamp && u.PerfilAcesso.Nome == role))
                 context.Fail("Credenciais expiradas ou usuário desativado.");
         }
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(Permissoes.GerenciarProdutos, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.GerenciarProdutos)));
+    options.AddPolicy(Permissoes.GerenciarCategorias, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.GerenciarCategorias)));
+    options.AddPolicy(Permissoes.MovimentarEstoque, p => p.RequireAuthenticatedUser().AddRequirements(new RequisitoPermissao(Permissoes.MovimentarEstoque)));
+});
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -85,7 +94,7 @@ using (var scope = app.Services.CreateScope())
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || password.Length < 12)
             throw new InvalidOperationException("Banco sem usuários. Configure Bootstrap:AdminEmail e Bootstrap:AdminPassword (mínimo 12 caracteres) antes de iniciar a API.");
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<Usuario>>();
-        var admin = new Usuario("Administrador", email, "pendente", Perfis.Administrador);
+        var admin = new Usuario("Administrador", email, "pendente", 1);
         admin.AlterarSenha(hasher.HashPassword(admin, password));
         db.Usuarios.Add(admin);
         await db.SaveChangesAsync();
