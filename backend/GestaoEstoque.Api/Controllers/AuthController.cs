@@ -31,7 +31,8 @@ public class AuthController(GestaoEstoqueDbContext db, IPasswordHasher<Usuario> 
         var (token, expiraUtc) = tokens.Criar(usuario);
         return Ok(new { token, expiraUtc, usuario = new { usuario.Id, usuario.Nome, usuario.Email,
             PerfilId = perfil.Id, Perfil = perfil.Nome,
-            Permissoes = new { perfil.GerenciarProdutos, perfil.GerenciarCategorias, perfil.MovimentarEstoque } } });
+            Permissoes = new { perfil.CadastrarProdutos, perfil.GerenciarProdutos,
+                perfil.CadastrarCategorias, perfil.GerenciarCategorias, perfil.MovimentarEstoque } } });
     }
 
     [Authorize]

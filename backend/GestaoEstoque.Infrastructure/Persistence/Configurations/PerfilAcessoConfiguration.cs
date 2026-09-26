@@ -14,5 +14,7 @@ public class PerfilAcessoConfiguration : IEntityTypeConfiguration<PerfilAcesso>
         builder.Property(p => p.NomeNormalizado).HasMaxLength(80).IsRequired();
         builder.HasIndex(p => p.NomeNormalizado).IsUnique();
         builder.Property(p => p.VersaoSeguranca).HasMaxLength(32).IsRequired();
+        builder.Property(p => p.CadastrarProdutos).IsRequired();
+        builder.Property(p => p.CadastrarCategorias).IsRequired();
     }
 }

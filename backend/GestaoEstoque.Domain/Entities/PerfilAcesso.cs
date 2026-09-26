@@ -14,27 +14,33 @@ public class PerfilAcesso
     public bool Sistema { get; private set; }
     public bool Ativo { get; private set; }
     public bool GerenciarProdutos { get; private set; }
+    public bool CadastrarProdutos { get; private set; }
     public bool GerenciarCategorias { get; private set; }
+    public bool CadastrarCategorias { get; private set; }
     public bool MovimentarEstoque { get; private set; }
     public string VersaoSeguranca { get; private set; } = string.Empty;
 
     protected PerfilAcesso() { }
 
-    public PerfilAcesso(string nome, bool gerenciarProdutos, bool gerenciarCategorias, bool movimentarEstoque, bool sistema = false)
+    public PerfilAcesso(string nome, bool gerenciarProdutos, bool gerenciarCategorias, bool movimentarEstoque, bool sistema = false,
+        bool cadastrarProdutos = false, bool cadastrarCategorias = false)
     {
         Sistema = sistema;
-        Atualizar(nome, gerenciarProdutos, gerenciarCategorias, movimentarEstoque);
+        Atualizar(nome, gerenciarProdutos, gerenciarCategorias, movimentarEstoque, cadastrarProdutos, cadastrarCategorias);
         Ativo = true;
     }
 
-    public void Atualizar(string nome, bool gerenciarProdutos, bool gerenciarCategorias, bool movimentarEstoque)
+    public void Atualizar(string nome, bool gerenciarProdutos, bool gerenciarCategorias, bool movimentarEstoque,
+        bool cadastrarProdutos = false, bool cadastrarCategorias = false)
     {
         if (Sistema && Id != 0) throw new InvalidOperationException("Perfil do sistema não pode ser alterado.");
         if (string.IsNullOrWhiteSpace(nome) || nome.Trim().Length > 80)
             throw new ArgumentException("Nome do perfil deve ter até 80 caracteres.", nameof(nome));
         Nome = nome.Trim(); NomeNormalizado = Nome.ToUpperInvariant();
         GerenciarProdutos = gerenciarProdutos;
+        CadastrarProdutos = cadastrarProdutos;
         GerenciarCategorias = gerenciarCategorias;
+        CadastrarCategorias = cadastrarCategorias;
         MovimentarEstoque = movimentarEstoque;
         VersaoSeguranca = Guid.NewGuid().ToString("N");
     }

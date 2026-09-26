@@ -36,7 +36,7 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     }
 
     [HttpPost]
-    [Authorize(Policy = Permissoes.GerenciarProdutos)]
+    [Authorize(Policy = Permissoes.CadastrarProdutos)]
     public async Task<ActionResult<ProdutoResponse>> Criar(ProdutoRequest request, CancellationToken ct)
     {
         var categoria = await db.CategoriasProduto.AsNoTracking()
