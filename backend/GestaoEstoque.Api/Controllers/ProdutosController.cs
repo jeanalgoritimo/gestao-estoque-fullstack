@@ -24,7 +24,7 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     public async Task<ActionResult<IReadOnlyList<ProdutoResponse>>> Listar(CancellationToken ct)
     {
         var produtos = await repository.ListarAsync(ct);
-        return Ok(produtos.Select(Map).ToList());
+        return Ok(produtos.Select(p => Map(p)).ToList());
     }
 
     [HttpGet("{id:int}")]
