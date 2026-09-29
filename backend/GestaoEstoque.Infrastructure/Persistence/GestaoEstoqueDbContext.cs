@@ -11,6 +11,7 @@ public class GestaoEstoqueDbContext : DbContext
     {
     }
 
+    public DbSet<Fornecedor> Fornecedores => Set<Fornecedor>();
     public DbSet<Produto> Produtos => Set<Produto>();
     public DbSet<MovimentoEstoque> MovimentosEstoque => Set<MovimentoEstoque>();
     public DbSet<InventarioFisico> InventariosFisicos => Set<InventarioFisico>();

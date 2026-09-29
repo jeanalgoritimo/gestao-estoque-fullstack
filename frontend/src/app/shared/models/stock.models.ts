@@ -4,11 +4,21 @@ export interface Produto {
   nome: string;
   categoriaId: number;
   categoria: string;
+  fornecedorId: number | null;
+  fornecedor: string | null;
   preco: number;
   estoque: number;
   estoqueMinimo: number;
   ativo: boolean;
   estoqueBaixo: boolean;
+}
+export interface Fornecedor {
+  id: number;
+  nome: string;
+  contato: string | null;
+  email: string | null;
+  telefone: string | null;
+  ativo: boolean;
 }
 export interface Categoria {
   id: number;
@@ -44,6 +54,7 @@ export interface InventarioFisico {
   motivo: string | null;
 }
 export interface ProdutoForm {
+  fornecedorId: number | null;
   nome: string;
   categoriaId: number | null;
   preco: number | null;

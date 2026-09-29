@@ -59,6 +59,7 @@
         >
           ▤ <span>Relatórios</span>
         </button>
+        <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
         @if (auth.usuario()?.perfil === 'Administrador') {
           <button
             type="button"
@@ -123,6 +124,8 @@
                       ? 'Categorias'
                     : tela() === 'inventarios'
                       ? 'Inventário'
+                      : tela() === 'fornecedores'
+                        ? 'Fornecedores'
                       : tela() === 'relatorios'
                         ? 'Relatórios'
                         : tela() === 'usuarios'
@@ -147,6 +150,8 @@
                     ? 'Categorias'
                     : tela() === 'inventarios'
                       ? 'Inventário físico'
+                      : tela() === 'fornecedores'
+                        ? 'Fornecedores'
                       : tela() === 'relatorios'
                         ? 'Relatórios'
                       : tela() === 'usuarios'
@@ -164,6 +169,8 @@
                     ? 'Organize as categorias usadas no cadastro de produtos.'
                     : tela() === 'inventarios'
                       ? 'Conte os produtos e registre ajustes com rastreabilidade.'
+                      : tela() === 'fornecedores'
+                        ? 'Cadastre fornecedores e associe-os aos produtos.'
                       : tela() === 'relatorios'
                         ? 'Consulte a posição do estoque e exporte os dados filtrados.'
                       : 'Acompanhe seus produtos e mantenha o controle das movimentações.'
@@ -232,6 +239,8 @@
           (alterado)="recarregar()"
           (sessaoExpirada)="sair()"
         />
+      } @else if (tela() === 'fornecedores') {
+        <app-suppliers [fornecedores]="fornecedores()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (atualizar)="recarregar()" />
       } @else if (tela() === 'relatorios') {
         <app-reports [produtos]="produtos()" [carregando]="carregando()" (atualizar)="recarregar()" />
       } @else {
@@ -336,6 +345,13 @@
                 }
               </select></label
             >
+            <label>Fornecedor
+              <select name="fornecedorId" [(ngModel)]="form.fornecedorId">
+                <option [ngValue]="null">Sem fornecedor</option>
+                @for (fornecedor of fornecedores(); track fornecedor.id) {
+                  @if (fornecedor.ativo || fornecedor.id === form.fornecedorId) { <option [ngValue]="fornecedor.id">{{ fornecedor.nome }}</option> }
+                }
+              </select></label>
             <div class="field-row">
               <label
                 >Preço (R$)

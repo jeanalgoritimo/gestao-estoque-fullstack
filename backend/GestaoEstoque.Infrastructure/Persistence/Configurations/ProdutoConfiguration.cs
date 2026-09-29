@@ -25,6 +25,9 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
 
+        builder.HasOne(produto => produto.Fornecedor).WithMany()
+            .HasForeignKey(produto => produto.FornecedorId).OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(produto => produto.Preco)
             .HasPrecision(18, 2)
             .IsRequired();

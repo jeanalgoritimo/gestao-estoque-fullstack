@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   Categoria,
+  Fornecedor,
   InventarioFisico,
   Movimento,
   Perfil,
@@ -28,6 +29,18 @@ export class EstoqueApiService {
 
   produtos() {
     return firstValueFrom(this.http.get<Produto[]>('/api/produtos'));
+  }
+  fornecedores() {
+    return firstValueFrom(this.http.get<Fornecedor[]>('/api/fornecedores'));
+  }
+  criarFornecedor(form: { nome: string; contato: string; email: string; telefone: string }) {
+    return firstValueFrom(this.http.post<Fornecedor>('/api/fornecedores', form));
+  }
+  atualizarFornecedor(id: number, form: { nome: string; contato: string; email: string; telefone: string }) {
+    return firstValueFrom(this.http.put<Fornecedor>(`/api/fornecedores/${id}`, form));
+  }
+  definirFornecedorAtivo(id: number, ativo: boolean) {
+    return firstValueFrom(this.http.patch<Fornecedor>(`/api/fornecedores/${id}/ativo`, ativo));
   }
   categorias() {
     return firstValueFrom(this.http.get<Categoria[]>('/api/categorias'));
