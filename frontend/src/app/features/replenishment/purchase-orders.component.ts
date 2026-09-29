@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, output, signal, input } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { EstoqueApiService } from '../../core/api/estoque-api.service';
 import { PedidoCompra } from '../../shared/models/stock.models';
 
-@Component({ selector: 'app-purchase-orders', templateUrl: './purchase-orders.component.html' })
+@Component({ selector: 'app-purchase-orders', imports: [FormsModule], templateUrl: './purchase-orders.component.html' })
 export class PurchaseOrdersComponent implements OnInit {
   private readonly api = inject(EstoqueApiService);
   readonly podeReceber = input(false);
@@ -14,7 +15,13 @@ export class PurchaseOrdersComponent implements OnInit {
   readonly processando = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
+  readonly recebimentos = signal<Record<string, number>>({});
 
+  status(p: PedidoCompra): string {
+    if (p.situacao === 2) return 'Recebido';
+    if (p.situacao === 3) return 'Cancelado';
+    return p.itens.some(i => i.quantidadeRecebida > 0) ? 'Parcialmente recebido' : 'Aberto';
+  }
   data(valor: string): string { return new Date(valor).toLocaleString('pt-BR'); }
   ngOnInit(): void { void this.recarregar(); }
   async recarregar(): Promise<void> {
@@ -27,12 +34,29 @@ export class PurchaseOrdersComponent implements OnInit {
     if (error instanceof HttpErrorResponse) return error.error?.erro ?? `Falha na requisição (${error.status}).`;
     return 'Não foi possível concluir a operação.';
   }
+  quantidade(pedidoId: number, produtoId: number): number {
+    return this.recebimentos()[`${pedidoId}-${produtoId}`] ?? 0;
+  }
+  definirQuantidade(pedidoId: number, produtoId: number, quantidade: number): void {
+    this.recebimentos.update(atual => ({ ...atual, [`${pedidoId}-${produtoId}`]: quantidade }));
+    this.erro.set('');
+  }
   async receber(p: PedidoCompra): Promise<void> {
-    if (!confirm(`Confirmar recebimento integral do pedido #${p.id}? O estoque será atualizado.`)) return;
+    const itens = p.itens.filter(item => this.quantidade(p.id, item.produtoId) > 0)
+      .map(item => ({ produtoId: item.produtoId, quantidade: this.quantidade(p.id, item.produtoId) }));
+    if (!itens.length || p.itens.some(item => {
+      const quantidade = this.quantidade(p.id, item.produtoId);
+      return !Number.isSafeInteger(quantidade) || quantidade < 0 || quantidade > item.quantidade - item.quantidadeRecebida;
+    })) {
+      this.erro.set('Informe ao menos um recebimento com quantidade inteira positiva, sem exceder o saldo pendente.');
+      return;
+    }
+    if (!confirm(`Confirmar recebimento de ${itens.reduce((total, item) => total + item.quantidade, 0)} unidade(s) do pedido #${p.id}?`)) return;
     this.processando.set(true); this.erro.set('');
     try {
-      await this.api.receberPedidoCompra(p.id);
-      this.sucesso.set(`Pedido #${p.id} recebido e registrado no estoque.`);
+      await this.api.receberPedidoCompra(p.id, itens);
+      this.recebimentos.set({});
+      this.sucesso.set(`Recebimento do pedido #${p.id} registrado no estoque.`);
       await this.recarregar(); this.alterado.emit();
     } catch (error) { this.erro.set(this.mensagem(error)); }
     finally { this.processando.set(false); }

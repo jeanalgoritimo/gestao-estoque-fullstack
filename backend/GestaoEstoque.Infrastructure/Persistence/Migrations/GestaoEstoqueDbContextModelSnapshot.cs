@@ -55,6 +55,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<long>("PedidoCompraId").HasColumnType("bigint");
                     b.Property<int>("ProdutoId").HasColumnType("int");
                     b.Property<int>("Quantidade").HasColumnType("int");
+                    b.Property<int>("QuantidadeRecebida").HasColumnType("int");
                     b.HasKey("Id");
                     b.HasIndex("PedidoCompraId", "ProdutoId").IsUnique();
                     b.HasIndex("ProdutoId");

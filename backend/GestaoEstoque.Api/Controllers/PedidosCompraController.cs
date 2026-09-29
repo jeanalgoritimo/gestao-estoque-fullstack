@@ -15,14 +15,15 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
 {
     public record ItemRequest(int ProdutoId, int Quantidade);
     public record CriarRequest(int FornecedorId, List<ItemRequest> Itens);
-    public record ItemResponse(int ProdutoId, string Produto, int Quantidade);
+    public record ReceberRequest(List<ItemRequest> Itens);
+    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida);
     public record PedidoResponse(long Id, int FornecedorId, string Fornecedor, SituacaoPedidoCompra Situacao,
         DateTime CriadoUtc, string CriadoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome,
         List<ItemResponse> Itens);
 
     private static PedidoResponse Map(PedidoCompra p) => new(p.Id, p.FornecedorId, p.Fornecedor.Nome,
         p.Situacao, p.CriadoUtc, p.CriadoPorNome, p.EncerradoUtc, p.EncerradoPorNome,
-        p.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade)).ToList());
+        p.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeRecebida)).ToList());
     private IQueryable<PedidoCompra> Consulta() => db.PedidosCompra.AsSplitQuery()
         .Include(p => p.Fornecedor).Include(p => p.Itens).ThenInclude(i => i.Produto);
     private bool Usuario(out int id, out string nome)
@@ -84,33 +85,42 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
 
     [HttpPost("{id:long}/receber")]
     [Authorize(Policy = Permissoes.MovimentarEstoque)]
-    public async Task<IActionResult> Receber(long id, CancellationToken ct)
+    public async Task<IActionResult> Receber(long id, ReceberRequest request, CancellationToken ct)
     {
         if (!Usuario(out var usuarioId, out var nome)) return Unauthorized();
         var pedido = await db.PedidosCompra.Include(p => p.Itens).FirstOrDefaultAsync(p => p.Id == id, ct);
         if (pedido is null) return NotFound();
         if (pedido.Situacao != SituacaoPedidoCompra.Aberto)
             return Conflict(new { erro = "Pedido já encerrado." });
-        var ids = pedido.Itens.Select(i => i.ProdutoId).ToList();
+        if (request.Itens is not { Count: > 0 and <= 100 } ||
+            request.Itens.Any(i => i.ProdutoId <= 0 || i.Quantidade <= 0) ||
+            request.Itens.Select(i => i.ProdutoId).Distinct().Count() != request.Itens.Count ||
+            request.Itens.Any(i => !pedido.Itens.Any(item => item.ProdutoId == i.ProdutoId &&
+                i.Quantidade <= item.Quantidade - item.QuantidadeRecebida)))
+            return BadRequest(new { erro = "Informe quantidades positivas sem exceder o saldo pendente de cada item." });
+        var ids = request.Itens.Select(i => i.ProdutoId).ToList();
         var produtos = await db.Produtos.Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, ct);
-        if (produtos.Count != ids.Count || pedido.Itens.Any(i => !produtos[i.ProdutoId].Ativo))
+        if (produtos.Count != ids.Count || request.Itens.Any(i => !produtos[i.ProdutoId].Ativo))
             return Conflict(new { erro = "Produto inativo ou não encontrado. O pedido não pode ser recebido." });
         try
         {
-            pedido.Encerrar(SituacaoPedidoCompra.Recebido, usuarioId, nome);
-            foreach (var item in pedido.Itens)
+            foreach (var item in request.Itens)
             {
+                pedido.RegistrarRecebimento(item.ProdutoId, item.Quantidade, usuarioId, nome);
                 var produto = produtos[item.ProdutoId];
                 produto.RegistrarEntrada(item.Quantidade);
                 db.MovimentosEstoque.Add(new MovimentoEstoque(produto.Id, TipoMovimento.Entrada,
                     item.Quantidade, null, DateTime.UtcNow, $"PC-{pedido.Id}", "Recebimento de pedido de compra",
                     usuarioId, nome, null, produto.Estoque));
             }
-            // EF Core grava fechamento, saldos e movimentos em uma única transação.
+            // Atualiza o rowversion do cabeçalho também nos recebimentos parciais.
+            db.Entry(pedido).Property(p => p.Situacao).IsModified = true;
+            // EF Core grava saldos, quantidades recebidas e movimentos em uma única transação.
             await db.SaveChangesAsync(ct);
             return Ok(new { pedido.Id, pedido.Situacao });
         }
         catch (OverflowException) { return Conflict(new { erro = "Saldo excede o limite permitido." }); }
+        catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
         catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Pedido ou saldo alterado por outra operação. Recarregue." }); }
     }
 }

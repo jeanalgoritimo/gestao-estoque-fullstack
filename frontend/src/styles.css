@@ -886,3 +886,5 @@ td small {
 .supplier-form { padding: 20px; border-bottom: 1px solid #e7ecf1; }
 .supplier-form .report-actions { margin-top: 12px; }
 .replenishment-qty { width: 100px; padding: 8px; border: 1px solid #d9e1e9; border-radius: 8px; }
+.purchase-item { display: grid; gap: 4px; margin: 6px 0 12px; }
+.purchase-item label { display: flex; align-items: center; gap: 8px; }
