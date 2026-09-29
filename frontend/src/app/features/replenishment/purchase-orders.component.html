@@ -1,0 +1,12 @@
+<section class="panel"><div class="panel-heading"><div><h2>Pedidos de compra</h2><p>Consulte os últimos 100 pedidos e registre o recebimento integral.</p></div>
+  <button class="secondary" type="button" (click)="recarregar()" [disabled]="carregando()">↻ Atualizar</button></div>
+  @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
+  @if (sucesso()) { <div class="notice success" role="status">{{ sucesso() }}</div> }
+  <div class="table-wrap"><table><thead><tr><th>PEDIDO</th><th>FORNECEDOR</th><th>ITENS</th><th>CRIADO POR</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>
+    @for (p of pedidos(); track p.id) { <tr><td>#{{ p.id }}<br /><small>{{ data(p.criadoUtc) }}</small></td>
+      <td>{{ p.fornecedor }}</td><td>@for (item of p.itens; track item.produtoId) { <div>{{ item.produto }} · {{ item.quantidade }} un.</div> }</td>
+      <td>{{ p.criadoPorNome }}</td><td>{{ p.situacao === 1 ? 'Aberto' : p.situacao === 2 ? 'Recebido' : 'Cancelado' }}</td><td>
+        @if (p.situacao === 1 && podeReceber()) { <button type="button" (click)="receber(p)" [disabled]="processando()">Receber tudo</button> }
+        @if (p.situacao === 1 && administrador()) { <button type="button" (click)="cancelar(p)" [disabled]="processando()">Cancelar</button> }
+      </td></tr> } @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando pedidos...' : 'Nenhum pedido de compra.' }}</td></tr> }
+  </tbody></table></div><div class="panel-foot">O recebimento grava entradas com documento de origem PC-número do pedido.</div></section>

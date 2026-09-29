@@ -12,6 +12,8 @@ export class ReplenishmentComponent {
   readonly fornecedores = input.required<Fornecedor[]>();
   readonly carregando = input(false);
   readonly atualizar = output<void>();
+  readonly administrador = input(false);
+  readonly criarPedido = output<{ fornecedorId: number; itens: { produtoId: number; quantidade: number }[] }>();
   readonly busca = signal('');
   readonly fornecedorId = signal<number | null>(null);
   readonly apenasComFornecedor = signal(false);
@@ -45,6 +47,17 @@ export class ReplenishmentComponent {
   restaurar(): void {
     this.quantidades.set({});
     this.erro.set('');
+  }
+  solicitarPedido(): void {
+    const itens = this.filtrados();
+    const fornecedorId = this.fornecedorId();
+    if (!fornecedorId || !itens.length || itens.some(p => !this.fornecedorAtivo(p) || p.fornecedorId !== fornecedorId ||
+        !Number.isSafeInteger(this.quantidade(p)) || this.quantidade(p) < 1)) {
+      this.erro.set('Selecione um fornecedor ativo e informe quantidades inteiras positivas para seus produtos.');
+      return;
+    }
+    this.erro.set('');
+    this.criarPedido.emit({ fornecedorId, itens: itens.map(p => ({ produtoId: p.id, quantidade: this.quantidade(p) })) });
   }
   exportarCsv(): void {
     const itens = this.filtrados();

@@ -48,6 +48,39 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.ToTable("Fornecedores", (string)null);
                 });
 
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.ItemPedidoCompra", b =>
+                {
+                    b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    b.Property<long>("PedidoCompraId").HasColumnType("bigint");
+                    b.Property<int>("ProdutoId").HasColumnType("int");
+                    b.Property<int>("Quantidade").HasColumnType("int");
+                    b.HasKey("Id");
+                    b.HasIndex("PedidoCompraId", "ProdutoId").IsUnique();
+                    b.HasIndex("ProdutoId");
+                    b.ToTable("ItensPedidoCompra", (string)null);
+                });
+
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.PedidoCompra", b =>
+                {
+                    b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    b.Property<int>("FornecedorId").HasColumnType("int");
+                    b.Property<int>("Situacao").HasColumnType("int");
+                    b.Property<DateTime>("CriadoUtc").HasColumnType("datetime2");
+                    b.Property<int>("CriadoPorId").HasColumnType("int");
+                    b.Property<string>("CriadoPorNome").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<DateTime?>("EncerradoUtc").HasColumnType("datetime2");
+                    b.Property<int?>("EncerradoPorId").HasColumnType("int");
+                    b.Property<string>("EncerradoPorNome").HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<byte[]>("Versao").IsRowVersion().HasColumnType("rowversion");
+                    b.HasKey("Id");
+                    b.HasIndex("FornecedorId");
+                    b.HasIndex("CriadoPorId");
+                    b.HasIndex("EncerradoPorId");
+                    b.ToTable("PedidosCompra", (string)null);
+                });
+
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.InventarioFisico", b =>
                 {
                     b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
@@ -169,6 +202,27 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.HasIndex("Email").IsUnique();
                     b.HasIndex("PerfilId");
                     b.ToTable("Usuarios", (string)null);
+                });
+
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.ItemPedidoCompra", b =>
+                {
+                    b.HasOne("GestaoEstoque.Domain.Entities.PedidoCompra", null).WithMany("Itens")
+                        .HasForeignKey("PedidoCompraId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.Produto", "Produto").WithMany()
+                        .HasForeignKey("ProdutoId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.Navigation("Produto");
+                });
+
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.PedidoCompra", b =>
+                {
+                    b.HasOne("GestaoEstoque.Domain.Entities.Fornecedor", "Fornecedor").WithMany()
+                        .HasForeignKey("FornecedorId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.Usuario", null).WithMany()
+                        .HasForeignKey("CriadoPorId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.Usuario", null).WithMany()
+                        .HasForeignKey("EncerradoPorId").OnDelete(DeleteBehavior.Restrict);
+                    b.Navigation("Fornecedor");
+                    b.Navigation("Itens");
                 });
 
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.InventarioFisico", b =>
