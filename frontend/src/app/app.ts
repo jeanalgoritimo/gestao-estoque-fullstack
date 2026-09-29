@@ -12,6 +12,7 @@ import { ProductsComponent } from './features/products/products.component';
 import { InventoryComponent } from './features/inventory/inventory.component';
 import { SuppliersComponent } from './features/suppliers/suppliers.component';
 import { ReportsComponent } from './features/reports/reports.component';
+import { ReplenishmentComponent } from './features/replenishment/replenishment.component';
 
 import { EstoqueApiService } from './core/api/estoque-api.service';
 
@@ -40,6 +41,7 @@ import {
     InventoryComponent,
     SuppliersComponent,
     ReportsComponent,
+    ReplenishmentComponent,
   ],
   templateUrl: './app.html',
 })
@@ -52,7 +54,7 @@ export class App {
   readonly categorias = signal<Categoria[]>([]);
   readonly fornecedores = signal<Fornecedor[]>([]);
   readonly tela = signal<
-    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'relatorios' | 'perfis' | 'usuarios'
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'relatorios' | 'perfis' | 'usuarios'
   >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
@@ -141,7 +143,7 @@ export class App {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'relatorios' | 'perfis' | 'usuarios'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'relatorios' | 'perfis' | 'usuarios'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');
