@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   Categoria,
+  InventarioFisico,
   Movimento,
   Perfil,
   Produto,
@@ -82,5 +83,28 @@ export class EstoqueApiService {
   }
   alterarPerfilUsuario(id: number, perfilId: number) {
     return firstValueFrom(this.http.put(`/api/usuarios/${id}/perfil`, perfilId));
+  }
+
+  inventarios() {
+    return firstValueFrom(this.http.get<InventarioFisico[]>('/api/inventarios'));
+  }
+  abrirInventario(produtoId: number) {
+    return firstValueFrom(this.http.post<InventarioFisico>('/api/inventarios', { produtoId }));
+  }
+  registrarContagem(id: number, quantidade: number) {
+    return firstValueFrom(
+      this.http.put<InventarioFisico>(`/api/inventarios/${id}/contagem`, { quantidade }),
+    );
+  }
+  confirmarInventario(id: number, motivo: string, quantidadeEsperada: number) {
+    return firstValueFrom(
+      this.http.post<InventarioFisico>(`/api/inventarios/${id}/confirmar`, {
+        motivo,
+        quantidadeEsperada,
+      }),
+    );
+  }
+  cancelarInventario(id: number) {
+    return firstValueFrom(this.http.post(`/api/inventarios/${id}/cancelar`, {}));
   }
 }

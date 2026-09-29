@@ -33,6 +33,30 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.ToTable("CategoriasProduto", (string)null);
                 });
 
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.InventarioFisico", b =>
+                {
+                    b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    b.Property<int>("ProdutoId").HasColumnType("int");
+                    b.Property<int>("SaldoInicial").HasColumnType("int");
+                    b.Property<byte[]>("VersaoProduto").IsRequired().HasMaxLength(8).HasColumnType("varbinary(8)");
+                    b.Property<int?>("QuantidadeContada").HasColumnType("int");
+                    b.Property<int>("Situacao").HasColumnType("int");
+                    b.Property<DateTime>("AbertoUtc").HasColumnType("datetime2");
+                    b.Property<int>("AbertoPorId").HasColumnType("int");
+                    b.Property<string>("AbertoPorNome").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<DateTime?>("EncerradoUtc").HasColumnType("datetime2");
+                    b.Property<int?>("EncerradoPorId").HasColumnType("int");
+                    b.Property<string>("EncerradoPorNome").HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<string>("Motivo").HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.Property<byte[]>("Versao").IsRowVersion().HasColumnType("rowversion");
+                    b.HasKey("Id");
+                    b.HasIndex("ProdutoId").IsUnique().HasFilter("[Situacao] = 1");
+                    b.HasIndex("AbertoPorId");
+                    b.HasIndex("EncerradoPorId");
+                    b.ToTable("InventariosFisicos", (string)null);
+                });
+
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.MovimentoEstoque", b =>
                 {
                     b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
@@ -128,6 +152,16 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.HasIndex("Email").IsUnique();
                     b.HasIndex("PerfilId");
                     b.ToTable("Usuarios", (string)null);
+                });
+
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.InventarioFisico", b =>
+                {
+                    b.HasOne("GestaoEstoque.Domain.Entities.Produto", null).WithMany()
+                        .HasForeignKey("ProdutoId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.Usuario", null).WithMany()
+                        .HasForeignKey("AbertoPorId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.Usuario", null).WithMany()
+                        .HasForeignKey("EncerradoPorId").OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.MovimentoEstoque", b =>

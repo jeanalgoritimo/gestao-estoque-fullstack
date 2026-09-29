@@ -1,0 +1,109 @@
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Contagem física</h2>
+      <p>
+        Confira um produto por vez. Uma alteração no saldo após a abertura exige iniciar outra
+        contagem.
+      </p>
+    </div>
+    <button class="secondary" type="button" (click)="recarregar()" [disabled]="carregando()">
+      ↻ Atualizar
+    </button>
+  </div>
+  @if (erro()) {
+    <div class="notice error" role="alert">{{ erro() }}</div>
+  }
+  @if (sucesso()) {
+    <div class="notice success" role="status">{{ sucesso() }}</div>
+  }
+  @if (podeMovimentar()) {
+    <form class="inventory-form" (ngSubmit)="abrir()">
+      <label
+        >Produto para nova contagem
+        <select name="produto" [(ngModel)]="produtoId" required>
+          <option [ngValue]="null" disabled>Selecione</option>
+          @for (p of produtos(); track p.id) {
+            @if (p.ativo && !ocupados().has(p.id)) {
+              <option [ngValue]="p.id">{{ p.nome }} · saldo {{ p.estoque }}</option>
+            }
+          }
+        </select></label
+      >
+      <button class="primary" type="submit" [disabled]="salvando() || !produtoId">
+        Abrir contagem
+      </button>
+    </form>
+  }
+  <div class="category-list">
+    @for (i of inventarios(); track i.id) {
+      <div class="category-row">
+        <div>
+          <strong>#{{ i.id }} · {{ i.produto }}</strong
+          ><small
+            >{{ i.situacao === 1 ? 'Aberta' : i.situacao === 2 ? 'Confirmada' : 'Cancelada' }} ·
+            saldo inicial {{ i.saldoInicial }} · contagem {{ i.quantidadeContada ?? 'pendente' }} ·
+            diferença {{ i.diferenca ?? 'pendente' }} · aberta por {{ i.abertoPorNome }} em
+            {{ i.abertoUtc | date: 'dd/MM/yyyy HH:mm' }}</small
+          >
+        </div>
+        @if (i.situacao === 1 && podeMovimentar()) {
+          <button class="secondary" type="button" (click)="selecionar(i)">Conferir</button>
+        }
+      </div>
+    } @empty {
+      <p class="empty">Nenhuma contagem registrada.</p>
+    }
+  </div>
+  @if (selecionado(); as atual) {
+    <div class="inventory-detail">
+      <h3>Conferir {{ atual.produto }}</h3>
+      <p>
+        Saldo na abertura: <strong>{{ atual.saldoInicial }}</strong>
+      </p>
+      <form (ngSubmit)="registrar()" class="inventory-form">
+        <label
+          >Quantidade encontrada
+          <input
+            name="quantidade"
+            type="number"
+            min="0"
+            step="1"
+            [(ngModel)]="quantidade"
+            required /></label
+        ><button class="secondary" type="submit" [disabled]="salvando()">Registrar contagem</button>
+      </form>
+      @if (quantidade !== null) {
+        <p>
+          Diferença preliminar: <strong>{{ quantidade - atual.saldoInicial }}</strong>
+        </p>
+      }
+      @if (atual.quantidadeContada !== null) {
+        <p>
+          Diferença registrada: <strong>{{ atual.diferenca }}</strong
+          >. Confira antes de confirmar.
+        </p>
+        <form (ngSubmit)="confirmar()" class="inventory-form">
+          <label
+            >Motivo obrigatório
+            <input
+              name="motivo"
+              [(ngModel)]="motivo"
+              maxlength="150"
+              required
+              placeholder="Ex.: divergência na contagem" /></label
+          ><button
+            class="primary"
+            type="submit"
+            [disabled]="salvando() || !motivo.trim() || quantidade !== atual.quantidadeContada"
+          >
+            Confirmar ajuste
+          </button>
+        </form>
+      }
+      <button class="secondary" type="button" (click)="cancelar()" [disabled]="salvando()">
+        Cancelar contagem
+      </button>
+    </div>
+  }
+</section>

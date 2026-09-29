@@ -41,7 +41,15 @@
           [class.nav-active]="tela() === 'categorias'"
           (click)="navegar('categorias')"
         >
-          ▥ <span>Categorias</span>
+          ▥ <span>Categorias</span></button
+        ><button
+          type="button"
+          aria-label="Inventário físico"
+          title="Inventário físico"
+          [class.nav-active]="tela() === 'inventarios'"
+          (click)="navegar('inventarios')"
+        >
+          ▣ <span>Inventário</span>
         </button>
         @if (auth.usuario()?.perfil === 'Administrador') {
           <button
@@ -105,9 +113,11 @@
                     ? 'Produtos'
                     : tela() === 'categorias'
                       ? 'Categorias'
-                      : tela() === 'usuarios'
-                        ? 'Usuários'
-                        : 'Perfis'
+                      : tela() === 'inventarios'
+                        ? 'Inventário'
+                        : tela() === 'usuarios'
+                          ? 'Usuários'
+                          : 'Perfis'
               }}</span
             ></span
           >
@@ -125,9 +135,11 @@
                   ? 'Produtos'
                   : tela() === 'categorias'
                     ? 'Categorias'
-                    : tela() === 'usuarios'
-                      ? 'Usuários'
-                      : 'Perfis de acesso'
+                    : tela() === 'inventarios'
+                      ? 'Inventário físico'
+                      : tela() === 'usuarios'
+                        ? 'Usuários'
+                        : 'Perfis de acesso'
             }}
           </h1>
           <p class="subtitle">
@@ -138,7 +150,9 @@
                   ? 'Defina o que cada perfil pode fazer no sistema.'
                   : tela() === 'categorias'
                     ? 'Organize as categorias usadas no cadastro de produtos.'
-                    : 'Acompanhe seus produtos e mantenha o controle das movimentações.'
+                    : tela() === 'inventarios'
+                      ? 'Conte os produtos e registre ajustes com rastreabilidade.'
+                      : 'Acompanhe seus produtos e mantenha o controle das movimentações.'
             }}
           </p>
         </div>
@@ -173,7 +187,7 @@
           [ativos]="ativos().length"
           [unidades]="unidades()"
           [baixos]="baixos()"
-          [valorEstoque]="valorEstoque()"
+          [potencialVendas]="potencialVendas()"
         />
       } @else if (tela() === 'usuarios') {
         <app-users
@@ -196,6 +210,13 @@
           (atualizar)="recarregar()"
           (editar)="editarCategoria($event)"
           (alternarAtiva)="definirCategoriaAtiva($event)"
+        />
+      } @else if (tela() === 'inventarios') {
+        <app-inventory
+          [produtos]="produtos()"
+          [podeMovimentar]="!!auth.usuario()?.permissoes?.movimentarEstoque"
+          (alterado)="recarregar()"
+          (sessaoExpirada)="sair()"
         />
       } @else {
         <app-products
