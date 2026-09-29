@@ -6,13 +6,13 @@
     @for (p of pedidos(); track p.id) { <tr><td>#{{ p.id }}<br /><small>{{ data(p.criadoUtc) }}</small></td>
       <td>{{ p.fornecedor }}</td><td>@for (item of p.itens; track item.produtoId) {
         <div class="purchase-item"><strong>{{ item.produto }}</strong><small>Pedido: {{ item.quantidade }} · Recebido: {{ item.quantidadeRecebida }} · Pendente: {{ item.quantidade - item.quantidadeRecebida }}</small>
-          @if (p.situacao === 1 && podeReceber() && item.quantidade > item.quantidadeRecebida) {
+          @if ((p.situacao === 1 || p.situacao === 4) && podeReceber() && item.quantidade > item.quantidadeRecebida) {
             <label>Receber agora <input class="replenishment-qty" type="number" min="0" step="1" [max]="item.quantidade - item.quantidadeRecebida" [name]="'receber-' + p.id + '-' + item.produtoId" [ngModel]="quantidade(p.id, item.produtoId)" (ngModelChange)="definirQuantidade(p.id, item.produtoId, $event)" /></label>
           }
         </div>
       }</td>
-      <td>{{ p.criadoPorNome }}</td><td>{{ status(p) }}</td><td>
-        @if (p.situacao === 1 && podeReceber()) { <button type="button" (click)="receber(p)" [disabled]="processando()">Registrar recebimento</button> }
-        @if (p.situacao === 1 && administrador()) { <button type="button" (click)="cancelar(p)" [disabled]="processando()">Cancelar</button> }
+      <td>{{ p.criadoPorNome }}</td><td>{{ status(p) }} @if (p.motivoCancelamento) { <small>Motivo: {{ p.motivoCancelamento }}</small> }</td><td>
+        @if ((p.situacao === 1 || p.situacao === 4) && podeReceber()) { <button type="button" (click)="receber(p)" [disabled]="processando()">Registrar recebimento</button> }
+        @if ((p.situacao === 1 || p.situacao === 4) && administrador()) { <button type="button" (click)="cancelar(p)" [disabled]="processando()">{{ p.situacao === 4 ? 'Cancelar saldo pendente' : 'Cancelar' }}</button> }
       </td></tr> } @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando pedidos...' : 'Nenhum pedido de compra.' }}</td></tr> }
   </tbody></table></div><div class="panel-foot">O recebimento grava entradas com documento de origem PC-número do pedido.</div></section>

@@ -16,13 +16,14 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
     public record ItemRequest(int ProdutoId, int Quantidade);
     public record CriarRequest(int FornecedorId, List<ItemRequest> Itens);
     public record ReceberRequest(List<ItemRequest> Itens);
+    public record CancelarRequest(string Motivo);
     public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida);
     public record PedidoResponse(long Id, int FornecedorId, string Fornecedor, SituacaoPedidoCompra Situacao,
-        DateTime CriadoUtc, string CriadoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome,
+        DateTime CriadoUtc, string CriadoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento,
         List<ItemResponse> Itens);
 
     private static PedidoResponse Map(PedidoCompra p) => new(p.Id, p.FornecedorId, p.Fornecedor.Nome,
-        p.Situacao, p.CriadoUtc, p.CriadoPorNome, p.EncerradoUtc, p.EncerradoPorNome,
+        p.Situacao, p.CriadoUtc, p.CriadoPorNome, p.EncerradoUtc, p.EncerradoPorNome, p.MotivoCancelamento,
         p.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeRecebida)).ToList());
     private IQueryable<PedidoCompra> Consulta() => db.PedidosCompra.AsSplitQuery()
         .Include(p => p.Fornecedor).Include(p => p.Itens).ThenInclude(i => i.Produto);
@@ -68,18 +69,19 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
 
     [HttpPost("{id:long}/cancelar")]
     [Authorize(Roles = "Administrador")]
-    public async Task<IActionResult> Cancelar(long id, CancellationToken ct)
+    public async Task<IActionResult> Cancelar(long id, CancelarRequest request, CancellationToken ct)
     {
         if (!Usuario(out var usuarioId, out var nome)) return Unauthorized();
-        var pedido = await db.PedidosCompra.FirstOrDefaultAsync(p => p.Id == id, ct);
+        var pedido = await db.PedidosCompra.Include(p => p.Itens).FirstOrDefaultAsync(p => p.Id == id, ct);
         if (pedido is null) return NotFound();
         try
         {
-            pedido.Encerrar(SituacaoPedidoCompra.Cancelado, usuarioId, nome);
+            pedido.CancelarSaldo(usuarioId, nome, request.Motivo);
             await db.SaveChangesAsync(ct);
             return Ok();
         }
         catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
         catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Pedido alterado por outra operação. Recarregue." }); }
     }
 
@@ -90,7 +92,7 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
         if (!Usuario(out var usuarioId, out var nome)) return Unauthorized();
         var pedido = await db.PedidosCompra.Include(p => p.Itens).FirstOrDefaultAsync(p => p.Id == id, ct);
         if (pedido is null) return NotFound();
-        if (pedido.Situacao != SituacaoPedidoCompra.Aberto)
+        if (pedido.Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
             return Conflict(new { erro = "Pedido já encerrado." });
         if (request.Itens is not { Count: > 0 and <= 100 } ||
             request.Itens.Any(i => i.ProdutoId <= 0 || i.Quantidade <= 0) ||

@@ -74,6 +74,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("EncerradoUtc").HasColumnType("datetime2");
                     b.Property<int?>("EncerradoPorId").HasColumnType("int");
                     b.Property<string>("EncerradoPorNome").HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<string>("MotivoCancelamento").HasMaxLength(150).HasColumnType("nvarchar(150)");
                     b.Property<byte[]>("Versao").IsRowVersion().HasColumnType("rowversion");
                     b.HasKey("Id");
                     b.HasIndex("FornecedorId");
