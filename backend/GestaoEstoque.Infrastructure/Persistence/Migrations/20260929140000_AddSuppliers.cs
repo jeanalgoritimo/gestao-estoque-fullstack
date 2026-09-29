@@ -27,7 +27,13 @@ public partial class AddSuppliers : Migration
         migrationBuilder.CreateIndex("IX_Fornecedores_NomeNormalizado", "Fornecedores", "NomeNormalizado", unique: true);
         migrationBuilder.AddColumn<int>("FornecedorId", "Produtos", type: "int", nullable: true);
         migrationBuilder.CreateIndex("IX_Produtos_FornecedorId", "Produtos", "FornecedorId");
-        migrationBuilder.AddForeignKey("FK_Produtos_Fornecedores_FornecedorId", "Produtos", "FornecedorId", "Fornecedores", "Id", onDelete: ReferentialAction.Restrict);
+        migrationBuilder.AddForeignKey(
+            name: "FK_Produtos_Fornecedores_FornecedorId",
+            table: "Produtos",
+            column: "FornecedorId",
+            principalTable: "Fornecedores",
+            principalColumn: "Id",
+            onDelete: ReferentialAction.Restrict);
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)

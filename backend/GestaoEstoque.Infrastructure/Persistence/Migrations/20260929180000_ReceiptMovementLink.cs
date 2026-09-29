@@ -16,8 +16,13 @@ public partial class ReceiptMovementLink : Migration
         m.AddColumn<Guid>("RecebimentoId", "MovimentosEstoque", type: "uniqueidentifier", nullable: true);
         m.CreateIndex("IX_MovimentosEstoque_PedidoCompraId_RecebimentoId", "MovimentosEstoque",
             new[] { "PedidoCompraId", "RecebimentoId" });
-        m.AddForeignKey("FK_MovimentosEstoque_PedidosCompra_PedidoCompraId", "MovimentosEstoque", "PedidoCompraId",
-            "PedidosCompra", "Id", onDelete: ReferentialAction.Restrict);
+        m.AddForeignKey(
+            name: "FK_MovimentosEstoque_PedidosCompra_PedidoCompraId",
+            table: "MovimentosEstoque",
+            column: "PedidoCompraId",
+            principalTable: "PedidosCompra",
+            principalColumn: "Id",
+            onDelete: ReferentialAction.Restrict);
     }
 
     protected override void Down(MigrationBuilder m)
