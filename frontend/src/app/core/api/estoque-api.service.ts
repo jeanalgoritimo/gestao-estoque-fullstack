@@ -7,6 +7,7 @@ import {
   InventarioFisico,
   Movimento,
   PedidoCompra,
+  RecebimentoPedidoCompra,
   NovoPedidoCompra,
   Perfil,
   Produto,
@@ -102,6 +103,9 @@ export class EstoqueApiService {
 
   pedidosCompra() {
     return firstValueFrom(this.http.get<PedidoCompra[]>('/api/pedidos-compra'));
+  }
+  recebimentosPedidoCompra(id: number) {
+    return firstValueFrom(this.http.get<RecebimentoPedidoCompra[]>(`/api/pedidos-compra/${id}/recebimentos`));
   }
   criarPedidoCompra(input: NovoPedidoCompra) {
     return firstValueFrom(this.http.post<{ id: number }>('/api/pedidos-compra', input));

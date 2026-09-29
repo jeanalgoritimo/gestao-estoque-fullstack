@@ -121,11 +121,14 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<int?>("SaldoApos").HasColumnType("int");
                     b.Property<string>("Observacao").HasMaxLength(300).HasColumnType("nvarchar(300)");
                     b.Property<int>("ProdutoId").HasColumnType("int");
+                    b.Property<long?>("PedidoCompraId").HasColumnType("bigint");
+                    b.Property<Guid?>("RecebimentoId").HasColumnType("uniqueidentifier");
                     b.Property<int>("Quantidade").HasColumnType("int");
                     b.Property<int>("Tipo").HasColumnType("int");
                     b.HasKey("Id");
                     b.HasIndex("ProdutoId", "DataUtc");
                     b.HasIndex("UsuarioId");
+                    b.HasIndex("PedidoCompraId", "RecebimentoId");
                     b.ToTable("MovimentosEstoque", (string)null);
                 });
 
@@ -244,6 +247,8 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ProdutoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.PedidoCompra", null)
+                        .WithMany().HasForeignKey("PedidoCompraId").OnDelete(DeleteBehavior.Restrict);
                     b.HasOne("GestaoEstoque.Domain.Entities.Usuario", null)
                         .WithMany()
                         .HasForeignKey("UsuarioId")

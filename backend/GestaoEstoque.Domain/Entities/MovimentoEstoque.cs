@@ -17,6 +17,8 @@ public class MovimentoEstoque
     public string UsuarioNome { get; private set; } = string.Empty;
     public decimal? CustoUnitario { get; private set; }
     public int? SaldoApos { get; private set; }
+    public long? PedidoCompraId { get; private set; }
+    public Guid? RecebimentoId { get; private set; }
 
     protected MovimentoEstoque() { }
 
@@ -58,5 +60,14 @@ public class MovimentoEstoque
         UsuarioNome = usuarioNome.Trim();
         CustoUnitario = custoUnitario;
         SaldoApos = saldoApos;
+    }
+
+    public void VincularRecebimento(long pedidoCompraId, Guid recebimentoId)
+    {
+        if (Tipo != TipoMovimento.Entrada || pedidoCompraId <= 0 || recebimentoId == Guid.Empty ||
+            PedidoCompraId is not null || RecebimentoId is not null)
+            throw new InvalidOperationException("Vínculo de recebimento inválido.");
+        PedidoCompraId = pedidoCompraId;
+        RecebimentoId = recebimentoId;
     }
 }
