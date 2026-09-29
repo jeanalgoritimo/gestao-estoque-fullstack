@@ -89,7 +89,7 @@ export interface PedidoCompra {
   criadoPorNome: string;
   encerradoUtc: string | null;
   encerradoPorNome: string | null;
-  itens: { produtoId: number; produto: string; quantidade: number }[];
+  itens: { produtoId: number; produto: string; quantidade: number; quantidadeRecebida: number }[];
 }
 export interface NovoPedidoCompra {
   fornecedorId: number;

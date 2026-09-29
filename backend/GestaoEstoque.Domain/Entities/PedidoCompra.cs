@@ -33,6 +33,15 @@ public class PedidoCompra
         if (Itens.Any(i => i.ProdutoId == produtoId)) throw new ArgumentException("Produto repetido no pedido.");
         Itens.Add(new ItemPedidoCompra(produtoId, quantidade));
     }
+    public void RegistrarRecebimento(int produtoId, int quantidade, int usuarioId, string nome)
+    {
+        if (Situacao != SituacaoPedidoCompra.Aberto) throw new InvalidOperationException("Pedido já encerrado.");
+        var item = Itens.SingleOrDefault(i => i.ProdutoId == produtoId)
+            ?? throw new ArgumentException("Produto não pertence ao pedido.");
+        item.Receber(quantidade);
+        if (Itens.All(i => i.QuantidadeRecebida == i.Quantidade))
+            Encerrar(SituacaoPedidoCompra.Recebido, usuarioId, nome);
+    }
     public void Encerrar(SituacaoPedidoCompra situacao, int usuarioId, string nome)
     {
         if (Situacao != SituacaoPedidoCompra.Aberto) throw new InvalidOperationException("Pedido já encerrado.");
@@ -53,11 +62,18 @@ public class ItemPedidoCompra
     public int ProdutoId { get; private set; }
     public Produto Produto { get; private set; } = null!;
     public int Quantidade { get; private set; }
+    public int QuantidadeRecebida { get; private set; }
     protected ItemPedidoCompra() { }
     public ItemPedidoCompra(int produtoId, int quantidade)
     {
         if (produtoId <= 0 || quantidade <= 0) throw new ArgumentException("Item inválido.");
         ProdutoId = produtoId;
         Quantidade = quantidade;
+    }
+    public void Receber(int quantidade)
+    {
+        if (quantidade <= 0 || quantidade > Quantidade - QuantidadeRecebida)
+            throw new ArgumentException("Quantidade recebida excede o saldo pendente ou é inválida.");
+        QuantidadeRecebida = checked(QuantidadeRecebida + quantidade);
     }
 }

@@ -106,8 +106,8 @@ export class EstoqueApiService {
   criarPedidoCompra(input: NovoPedidoCompra) {
     return firstValueFrom(this.http.post<{ id: number }>('/api/pedidos-compra', input));
   }
-  receberPedidoCompra(id: number) {
-    return firstValueFrom(this.http.post(`/api/pedidos-compra/${id}/receber`, {}));
+  receberPedidoCompra(id: number, itens: { produtoId: number; quantidade: number }[]) {
+    return firstValueFrom(this.http.post(`/api/pedidos-compra/${id}/receber`, { itens }));
   }
   cancelarPedidoCompra(id: number) {
     return firstValueFrom(this.http.post(`/api/pedidos-compra/${id}/cancelar`, {}));
