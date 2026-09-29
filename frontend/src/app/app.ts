@@ -29,6 +29,8 @@ export class App implements OnInit {
   readonly produtos = signal<Produto[]>([]);
   readonly categorias = signal<Categoria[]>([]);
   readonly tela = signal<'visao' | 'produtos' | 'categorias' | 'perfis' | 'usuarios'>('visao');
+  readonly menuRecolhido = signal(false);
+  readonly menuMobileAberto = signal(false);
   readonly movimentos = signal<Movimento[]>([]);
   readonly busca = signal('');
   readonly somenteAtivos = signal(true);
@@ -93,6 +95,7 @@ export class App implements OnInit {
   }
   navegar(tela: 'visao' | 'produtos' | 'categorias' | 'perfis' | 'usuarios'): void {
     this.tela.set(tela); this.erro.set(''); this.sucesso.set('');
+    this.menuMobileAberto.set(false);
     if (tela === 'perfis') void this.carregarPerfis();
     if (tela === 'usuarios') void Promise.all([this.carregarUsuarios(), this.carregarPerfis()]);
   }
@@ -166,7 +169,7 @@ export class App implements OnInit {
     } catch (error) { this.erro.set(this.mensagemErro(error)); }
     finally { this.salvando.set(false); }
   }
-  sair(): void { this.auth.sair(); this.produtos.set([]); this.categorias.set([]); this.tela.set('visao'); this.modal.set(null); this.erro.set(''); this.sucesso.set(''); }
+  sair(): void { this.auth.sair(); this.produtos.set([]); this.categorias.set([]); this.tela.set('visao'); this.menuMobileAberto.set(false); this.modal.set(null); this.erro.set(''); this.sucesso.set(''); }
   novoUsuarioForm(): void {
     this.erro.set(''); this.novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
     this.modal.set('usuario');
