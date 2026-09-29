@@ -16,6 +16,7 @@ export class PurchaseOrdersComponent implements OnInit {
   readonly erro = signal('');
   readonly sucesso = signal('');
   readonly recebimentos = signal<Record<string, number>>({});
+  readonly custos = signal<Record<string, number | null>>({});
   readonly historicoPedidoId = signal<number | null>(null);
   readonly historico = signal<RecebimentoPedidoCompra[]>([]);
   readonly carregandoHistorico = signal(false);
@@ -58,21 +59,36 @@ export class PurchaseOrdersComponent implements OnInit {
     this.recebimentos.update(atual => ({ ...atual, [`${pedidoId}-${produtoId}`]: quantidade }));
     this.erro.set('');
   }
+  custo(pedidoId: number, produtoId: number): number | null {
+    return this.custos()[`${pedidoId}-${produtoId}`] ?? null;
+  }
+  definirCusto(pedidoId: number, produtoId: number, valor: number | null): void {
+    this.custos.update(atual => ({ ...atual, [`${pedidoId}-${produtoId}`]: valor }));
+    this.erro.set('');
+  }
+  moeda(valor: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+  }
   async receber(p: PedidoCompra): Promise<void> {
     const itens = p.itens.filter(item => this.quantidade(p.id, item.produtoId) > 0)
-      .map(item => ({ produtoId: item.produtoId, quantidade: this.quantidade(p.id, item.produtoId) }));
+      .map(item => ({ produtoId: item.produtoId, quantidade: this.quantidade(p.id, item.produtoId), custoUnitario: this.custo(p.id, item.produtoId)! }));
     if (!itens.length || p.itens.some(item => {
       const quantidade = this.quantidade(p.id, item.produtoId);
-      return !Number.isSafeInteger(quantidade) || quantidade < 0 || quantidade > item.quantidade - item.quantidadeRecebida;
+      const custo = this.custo(p.id, item.produtoId);
+      return !Number.isSafeInteger(quantidade) || quantidade < 0 || quantidade > item.quantidade - item.quantidadeRecebida ||
+        (quantidade > 0 && (custo === null || !Number.isFinite(custo) || custo <= 0 ||
+          custo > 999999999999.9999 || Math.abs(Math.round(custo * 10000) - custo * 10000) > 0.0000001));
     })) {
-      this.erro.set('Informe ao menos um recebimento com quantidade inteira positiva, sem exceder o saldo pendente.');
+      this.erro.set('Informe quantidades inteiras dentro do saldo pendente e custo unitário de compra positivo (até 4 casas decimais) para os itens recebidos.');
       return;
     }
-    if (!confirm(`Confirmar recebimento de ${itens.reduce((total, item) => total + item.quantidade, 0)} unidade(s) do pedido #${p.id}?`)) return;
+    const total = itens.reduce((valor, item) => valor + item.quantidade * item.custoUnitario, 0);
+    if (!confirm(`Confirmar ${itens.reduce((n, item) => n + item.quantidade, 0)} unidade(s) do pedido #${p.id}, custo de compra ${this.moeda(total)}?`)) return;
     this.processando.set(true); this.erro.set('');
     try {
       await this.api.receberPedidoCompra(p.id, itens);
       this.recebimentos.set({});
+      this.custos.set({});
       this.sucesso.set(`Recebimento do pedido #${p.id} registrado no estoque.`);
       await this.recarregar();
       if (this.historicoPedidoId() === p.id) this.historico.set(await this.api.recebimentosPedidoCompra(p.id));

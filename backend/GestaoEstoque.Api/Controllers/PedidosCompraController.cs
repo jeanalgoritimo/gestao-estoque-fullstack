@@ -14,11 +14,13 @@ namespace GestaoEstoque.Api.Controllers;
 public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
 {
     public record ItemRequest(int ProdutoId, int Quantidade);
+    public record ItemRecebimentoRequest(int ProdutoId, int Quantidade, decimal? CustoUnitario);
     public record CriarRequest(int FornecedorId, List<ItemRequest> Itens);
-    public record ReceberRequest(List<ItemRequest> Itens);
+    public record ReceberRequest(List<ItemRecebimentoRequest> Itens);
     public record CancelarRequest(string Motivo);
     public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida);
-    public record LinhaRecebimentoResponse(long MovimentoId, int ProdutoId, string Produto, int Quantidade);
+    public record LinhaRecebimentoResponse(long MovimentoId, int ProdutoId, string Produto, int Quantidade,
+        decimal? CustoUnitario, decimal? ValorCompra);
     public record RecebimentoResponse(Guid Id, DateTime DataUtc, string UsuarioNome,
         List<LinhaRecebimentoResponse> Itens);
     public record PedidoResponse(long Id, int FornecedorId, string Fornecedor, SituacaoPedidoCompra Situacao,
@@ -60,7 +62,8 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
             .Select(g => new RecebimentoResponse(g.Key, g.Max(x => x.Movimento.DataUtc),
                 g.First().Movimento.UsuarioNome,
                 g.Select(x => new LinhaRecebimentoResponse(x.Movimento.Id, x.Movimento.ProdutoId,
-                    x.Produto, x.Movimento.Quantidade)).ToList()))
+                    x.Produto, x.Movimento.Quantidade, x.Movimento.CustoUnitario,
+                    x.Movimento.CustoUnitario * x.Movimento.Quantidade)).ToList()))
             .OrderByDescending(r => r.DataUtc).ToList());
     }
 
@@ -115,11 +118,13 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
         if (pedido.Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
             return Conflict(new { erro = "Pedido já encerrado." });
         if (request.Itens is not { Count: > 0 and <= 100 } ||
-            request.Itens.Any(i => i.ProdutoId <= 0 || i.Quantidade <= 0) ||
+            request.Itens.Any(i => i.ProdutoId <= 0 || i.Quantidade <= 0 ||
+                i.CustoUnitario is null or <= 0 or > 999999999999.9999m ||
+                decimal.Round(i.CustoUnitario.Value, 4) != i.CustoUnitario.Value) ||
             request.Itens.Select(i => i.ProdutoId).Distinct().Count() != request.Itens.Count ||
             request.Itens.Any(i => !pedido.Itens.Any(item => item.ProdutoId == i.ProdutoId &&
                 i.Quantidade <= item.Quantidade - item.QuantidadeRecebida)))
-            return BadRequest(new { erro = "Informe quantidades positivas sem exceder o saldo pendente de cada item." });
+            return BadRequest(new { erro = "Informe quantidades positivas dentro do saldo pendente e custo unitário de compra válido (até 4 casas decimais)." });
         var ids = request.Itens.Select(i => i.ProdutoId).ToList();
         var produtos = await db.Produtos.Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, ct);
         if (produtos.Count != ids.Count || request.Itens.Any(i => !produtos[i.ProdutoId].Ativo))
@@ -134,7 +139,7 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
                 produto.RegistrarEntrada(item.Quantidade);
                 var movimento = new MovimentoEstoque(produto.Id, TipoMovimento.Entrada,
                     item.Quantidade, null, DateTime.UtcNow, $"PC-{pedido.Id}-R-{recebimentoId:N}",
-                    "Recebimento de pedido de compra", usuarioId, nome, null, produto.Estoque);
+                    "Recebimento de pedido de compra", usuarioId, nome, item.CustoUnitario, produto.Estoque);
                 movimento.VincularRecebimento(pedido.Id, recebimentoId);
                 db.MovimentosEstoque.Add(movimento);
             }

@@ -101,5 +101,5 @@ export interface RecebimentoPedidoCompra {
   id: string;
   dataUtc: string;
   usuarioNome: string;
-  itens: { movimentoId: number; produtoId: number; produto: string; quantidade: number }[];
+  itens: { movimentoId: number; produtoId: number; produto: string; quantidade: number; custoUnitario: number | null; valorCompra: number | null }[];
 }
