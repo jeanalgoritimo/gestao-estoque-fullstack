@@ -9,6 +9,9 @@ public class Produto
     public int CategoriaId { get; private set; }
     public CategoriaProduto? CategoriaProduto { get; private set; }
 
+    public int? FornecedorId { get; private set; }
+    public Fornecedor? Fornecedor { get; private set; }
+
     public decimal Preco { get; private set; }
 
     public int Estoque { get; private set; }
@@ -53,6 +56,12 @@ public class Produto
                 nameof(categoriaId));
 
         CategoriaId = categoriaId;
+    }
+
+    public void AlterarFornecedor(int? fornecedorId)
+    {
+        if (fornecedorId <= 0) throw new ArgumentException("Fornecedor inválido.");
+        FornecedorId = fornecedorId;
     }
 
     public void AlterarPreco(decimal preco)

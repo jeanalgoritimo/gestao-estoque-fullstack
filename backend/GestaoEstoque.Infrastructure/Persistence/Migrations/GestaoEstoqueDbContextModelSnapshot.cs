@@ -33,6 +33,21 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.ToTable("CategoriasProduto", (string)null);
                 });
 
+            modelBuilder.Entity("GestaoEstoque.Domain.Entities.Fornecedor", b =>
+                {
+                    b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<bool>("Ativo").HasColumnType("bit");
+                    b.Property<string>("Nome").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.Property<string>("NomeNormalizado").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.Property<string>("Contato").HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<string>("Email").HasMaxLength(254).HasColumnType("nvarchar(254)");
+                    b.Property<string>("Telefone").HasMaxLength(30).HasColumnType("nvarchar(30)");
+                    b.HasKey("Id");
+                    b.HasIndex("NomeNormalizado").IsUnique();
+                    b.ToTable("Fornecedores", (string)null);
+                });
+
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.InventarioFisico", b =>
                 {
                     b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
@@ -91,6 +106,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("CategoriaId").HasColumnType("int");
+                    b.Property<int?>("FornecedorId").HasColumnType("int");
 
                     b.Property<int>("Estoque")
                         .HasColumnType("int");
@@ -115,6 +131,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
                     b.HasIndex("CategoriaId");
+                    b.HasIndex("FornecedorId");
 
                     b.ToTable("Produtos", (string)null);
                 });
@@ -184,7 +201,10 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CategoriaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.Fornecedor", "Fornecedor")
+                        .WithMany().HasForeignKey("FornecedorId").OnDelete(DeleteBehavior.Restrict);
                     b.Navigation("CategoriaProduto");
+                    b.Navigation("Fornecedor");
                 });
 
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.Usuario", b =>

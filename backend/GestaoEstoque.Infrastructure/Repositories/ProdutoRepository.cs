@@ -20,6 +20,7 @@ public class ProdutoRepository : IProdutoRepository
         return await _context.Produtos
             .AsNoTracking()
             .Include(produto => produto.CategoriaProduto)
+            .Include(produto => produto.Fornecedor)
             .OrderBy(produto => produto.Nome)
             .ToListAsync(cancellationToken);
     }
@@ -30,6 +31,7 @@ public class ProdutoRepository : IProdutoRepository
     {
         return await _context.Produtos
             .Include(produto => produto.CategoriaProduto)
+            .Include(produto => produto.Fornecedor)
             .FirstOrDefaultAsync(
                 produto => produto.Id == id,
                 cancellationToken);
