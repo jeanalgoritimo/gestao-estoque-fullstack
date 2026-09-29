@@ -8,6 +8,9 @@
         <div class="purchase-item"><strong>{{ item.produto }}</strong><small>Pedido: {{ item.quantidade }} · Recebido: {{ item.quantidadeRecebida }} · Pendente: {{ item.quantidade - item.quantidadeRecebida }}</small>
           @if ((p.situacao === 1 || p.situacao === 4) && podeReceber() && item.quantidade > item.quantidadeRecebida) {
             <label>Receber agora <input class="replenishment-qty" type="number" min="0" step="1" [max]="item.quantidade - item.quantidadeRecebida" [name]="'receber-' + p.id + '-' + item.produtoId" [ngModel]="quantidade(p.id, item.produtoId)" (ngModelChange)="definirQuantidade(p.id, item.produtoId, $event)" /></label>
+            @if (quantidade(p.id, item.produtoId) > 0) {
+              <label>Custo unitário de compra (R$) <input class="replenishment-qty" type="number" min="0.0001" step="0.0001" [name]="'custo-' + p.id + '-' + item.produtoId" [ngModel]="custo(p.id, item.produtoId)" (ngModelChange)="definirCusto(p.id, item.produtoId, $event)" /></label>
+            }
           }
         </div>
       }</td>
@@ -21,10 +24,12 @@
           @if (carregandoHistorico()) { <p>Carregando entregas...</p> }
           @for (rec of historico(); track rec.id) {
             <div class="purchase-receipt"><div><strong>{{ data(rec.dataUtc) }}</strong> · {{ rec.usuarioNome }}<br /><small>Recebimento {{ rec.id }}</small></div>
-              @for (item of rec.itens; track item.movimentoId) { <div>{{ item.produto }}: {{ item.quantidade }} un. · Movimento #{{ item.movimentoId }}</div> }
+              @for (item of rec.itens; track item.movimentoId) { <div>{{ item.produto }}: {{ item.quantidade }} un. · Movimento #{{ item.movimentoId }}
+                @if (item.custoUnitario !== null) { · Custo unitário {{ moeda(item.custoUnitario) }} · Total {{ moeda(item.valorCompra!) }} }
+                @else { · Custo de compra não registrado }</div> }
             </div>
           } @empty { @if (!carregandoHistorico()) { <p>Não há entregas individualizadas para este pedido.</p> } }
         </td></tr>
       }
     } @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando pedidos...' : 'Nenhum pedido de compra.' }}</td></tr> }
-  </tbody></table></div><div class="panel-foot">Cada entrega nova possui uma referência própria e movimentações vinculadas ao pedido. Entregas anteriores a esta atualização continuam identificadas pela referência antiga no histórico do produto.</div></section>
+  </tbody></table></div><div class="panel-foot">Custo de compra é informado por entrega, separado do preço de venda do produto. Valores não representam avaliação contábil do estoque. Cada entrega possui uma referência própria e movimentações vinculadas ao pedido. Entregas anteriores a esta atualização continuam identificadas pela referência antiga no histórico do produto.</div></section>
