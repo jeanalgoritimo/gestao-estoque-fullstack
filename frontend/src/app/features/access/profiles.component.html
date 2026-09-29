@@ -1,0 +1,41 @@
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Perfis cadastrados</h2>
+      <p>Somente administradores podem criar e alterar perfis.</p>
+    </div>
+  </div>
+  <div class="category-list">
+    @for (perfil of perfis(); track perfil.id) {
+      <div class="category-row">
+        <div>
+          <strong>{{ perfil.nome }}</strong
+          ><small
+            >{{ perfil.sistema ? 'Padrão do sistema' : perfil.ativo ? 'Ativo' : 'Inativo' }} ·
+            Cadastrar produtos: {{ perfil.cadastrarProdutos ? 'sim' : 'não' }} · Editar produtos:
+            {{ perfil.gerenciarProdutos ? 'sim' : 'não' }} · Cadastrar categorias:
+            {{ perfil.cadastrarCategorias ? 'sim' : 'não' }} · Editar categorias:
+            {{ perfil.gerenciarCategorias ? 'sim' : 'não' }} · Movimentações:
+            {{ perfil.movimentarEstoque ? 'sim' : 'não' }}</small
+          >
+        </div>
+        @if (!perfil.sistema) {
+          <div>
+            <button
+              class="secondary"
+              type="button"
+              (click)="editar.emit(perfil)"
+              [disabled]="!perfil.ativo"
+            >
+              Editar</button
+            ><button class="secondary" type="button" (click)="alternarAtivo.emit(perfil)">
+              {{ perfil.ativo ? 'Desativar' : 'Ativar' }}
+            </button>
+          </div>
+        }
+      </div>
+    } @empty {
+      <p class="empty">Nenhum perfil encontrado.</p>
+    }
+  </div>
+</section>

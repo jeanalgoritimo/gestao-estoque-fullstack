@@ -1,0 +1,26 @@
+<section class="cards" aria-label="Indicadores de estoque">
+  <article class="card">
+    <div class="card-icon blue">▤</div>
+    <p>Produtos ativos</p>
+    <strong>{{ ativos() }}</strong
+    ><span>Cadastrados no sistema</span>
+  </article>
+  <article class="card">
+    <div class="card-icon violet">▦</div>
+    <p>Unidades em estoque</p>
+    <strong>{{ unidades() }}</strong
+    ><span>Em todos os produtos ativos</span>
+  </article>
+  <article class="card">
+    <div class="card-icon amber">!</div>
+    <p>Estoque baixo</p>
+    <strong>{{ baixos() }}</strong
+    ><span>Itens no mínimo ou abaixo</span>
+  </article>
+  <article class="card">
+    <div class="card-icon green">$</div>
+    <p>Valor em estoque</p>
+    <strong class="money">{{ moeda(valorEstoque()) }}</strong
+    ><span>Preço cadastrado × quantidade</span>
+  </article>
+</section>
