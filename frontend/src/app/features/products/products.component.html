@@ -1,0 +1,114 @@
+<section class="panel" id="produtos">
+  <div class="panel-heading">
+    <div>
+      <h2>Produtos</h2>
+      <p>Gerencie seu catálogo e registre entradas e saídas.</p>
+    </div>
+    <button class="secondary" type="button" (click)="atualizar.emit()" [disabled]="carregando()">
+      ↻ Atualizar
+    </button>
+  </div>
+  <div class="toolbar">
+    <label class="search"
+      ><span aria-hidden="true">⌕</span
+      ><input
+        type="search"
+        placeholder="Buscar por nome, categoria ou código"
+        [ngModel]="busca()"
+        (ngModelChange)="buscaChange.emit($event)"
+        aria-label="Buscar produtos" /></label
+    ><label class="toggle"
+      ><input
+        type="checkbox"
+        [ngModel]="somenteAtivos()"
+        (ngModelChange)="somenteAtivosChange.emit($event)"
+      />
+      Somente ativos</label
+    >
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>PRODUTO</th>
+          <th>CATEGORIA</th>
+          <th>PREÇO</th>
+          <th>ESTOQUE</th>
+          <th>SITUAÇÃO</th>
+          <th class="actions">AÇÕES</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (produto of produtosFiltrados(); track produto.id) {
+          <tr>
+            <td>
+              <div class="product-name">{{ produto.nome }}</div>
+              <small>#{{ produto.id }}</small>
+            </td>
+            <td>{{ produto.categoria }}</td>
+            <td>{{ moeda(produto.preco) }}</td>
+            <td>
+              <strong>{{ produto.estoque }}</strong>
+              <small>/ mín. {{ produto.estoqueMinimo }}</small>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [class.warning]="produto.ativo && produto.estoqueBaixo"
+                [class.inactive]="!produto.ativo"
+                >{{
+                  !produto.ativo ? 'Inativo' : produto.estoqueBaixo ? 'Estoque baixo' : 'Em dia'
+                }}</span
+              >
+            </td>
+            <td class="actions">
+              @if (podeMovimentar()) {
+                <button
+                  type="button"
+                  title="Registrar entrada"
+                  (click)="movimentar.emit({ produto, tipo: 1 })"
+                  [disabled]="!produto.ativo"
+                >
+                  ＋ Entrada</button
+                ><button
+                  type="button"
+                  title="Registrar saída"
+                  (click)="movimentar.emit({ produto, tipo: 2 })"
+                  [disabled]="!produto.ativo"
+                >
+                  − Saída
+                </button>
+              }
+              <button type="button" (click)="historico.emit(produto)">Histórico</button>
+              @if (podeGerenciar()) {
+                <button type="button" (click)="editar.emit(produto)" [disabled]="!produto.ativo">
+                  Editar</button
+                ><button
+                  type="button"
+                  class="danger-text"
+                  (click)="desativar.emit(produto)"
+                  [disabled]="!produto.ativo"
+                >
+                  Desativar
+                </button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">
+              {{
+                carregando()
+                  ? 'Carregando produtos...'
+                  : 'Nenhum produto encontrado. Cadastre o primeiro para começar.'
+              }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="panel-foot">
+    Exibindo {{ produtosFiltrados().length }} de {{ totalProdutos() }} produtos
+  </div>
+</section>

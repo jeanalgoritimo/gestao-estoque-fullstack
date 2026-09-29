@@ -1,0 +1,35 @@
+<main class="login-page">
+  <section class="login-card">
+    <div class="login-logo">G</div>
+    <p class="eyebrow">GESTÃO DE ESTOQUE</p>
+    <h1>Entre na sua conta</h1>
+    <p class="subtitle">Controle seus produtos e movimentações em um só lugar.</p>
+    @if (erro()) {
+      <div class="notice error" role="alert">{{ erro() }}</div>
+    }
+    @if (sucesso()) {
+      <div class="notice success" role="status">{{ sucesso() }}</div>
+    }
+    <form (ngSubmit)="entrar.emit({ email: email.trim(), senha })">
+      <label
+        >E-mail<input
+          type="email"
+          name="loginEmail"
+          [(ngModel)]="email"
+          autocomplete="username"
+          required
+          placeholder="seu@email.com" /></label
+      ><label
+        >Senha<input
+          type="password"
+          name="loginSenha"
+          [(ngModel)]="senha"
+          autocomplete="current-password"
+          required
+          placeholder="Sua senha" /></label
+      ><button class="primary" type="submit" [disabled]="salvando()">
+        {{ salvando() ? 'Entrando...' : 'Entrar' }}
+      </button>
+    </form>
+  </section>
+</main>

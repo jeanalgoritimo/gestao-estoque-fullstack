@@ -1,0 +1,35 @@
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Categorias cadastradas</h2>
+      <p>Selecione uma categoria ativa ao cadastrar um produto.</p>
+    </div>
+    <button class="secondary" type="button" (click)="atualizar.emit()">↻ Atualizar</button>
+  </div>
+  <div class="category-list">
+    @for (categoria of categorias(); track categoria.id) {
+      <div class="category-row">
+        <div>
+          <strong>{{ categoria.nome }}</strong
+          ><small>#{{ categoria.id }} · {{ categoria.ativo ? 'Ativa' : 'Inativa' }}</small>
+        </div>
+        @if (podeGerenciar()) {
+          <div>
+            <button
+              class="secondary"
+              type="button"
+              (click)="editar.emit(categoria)"
+              [disabled]="!categoria.ativo"
+            >
+              Editar</button
+            ><button class="secondary" type="button" (click)="alternarAtiva.emit(categoria)">
+              {{ categoria.ativo ? 'Desativar' : 'Ativar' }}
+            </button>
+          </div>
+        }
+      </div>
+    } @empty {
+      <p class="empty">Nenhuma categoria cadastrada.</p>
+    }
+  </div>
+</section>
