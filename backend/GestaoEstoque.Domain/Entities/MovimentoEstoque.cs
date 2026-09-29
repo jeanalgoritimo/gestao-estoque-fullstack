@@ -10,6 +10,13 @@ public class MovimentoEstoque
     public int Quantidade { get; private set; }
     public DateTime DataUtc { get; private set; }
     public string? Observacao { get; private set; }
+    public DateTime DataEfetivaUtc { get; private set; }
+    public string DocumentoOrigem { get; private set; } = string.Empty;
+    public string Motivo { get; private set; } = string.Empty;
+    public int? UsuarioId { get; private set; }
+    public string UsuarioNome { get; private set; } = string.Empty;
+    public decimal? CustoUnitario { get; private set; }
+    public int? SaldoApos { get; private set; }
 
     protected MovimentoEstoque() { }
 
@@ -24,5 +31,32 @@ public class MovimentoEstoque
         Quantidade = quantidade;
         Observacao = observacao?.Trim();
         DataUtc = DateTime.UtcNow;
+        DataEfetivaUtc = DataUtc;
+    }
+
+    public MovimentoEstoque(int produtoId, TipoMovimento tipo, int quantidade, string? observacao,
+        DateTime dataEfetivaUtc, string documentoOrigem, string motivo, int usuarioId,
+        string usuarioNome, decimal? custoUnitario, int saldoApos)
+        : this(produtoId, tipo, quantidade, observacao)
+    {
+        if (dataEfetivaUtc.Kind != DateTimeKind.Utc || dataEfetivaUtc > DataUtc.AddMinutes(1))
+            throw new ArgumentException("A data efetiva deve estar em UTC e não pode ser futura.", nameof(dataEfetivaUtc));
+        if (string.IsNullOrWhiteSpace(motivo) || motivo.Trim().Length > 150)
+            throw new ArgumentException("Informe um motivo de até 150 caracteres.", nameof(motivo));
+        if (documentoOrigem?.Trim().Length > 100)
+            throw new ArgumentException("Documento limitado a 100 caracteres.", nameof(documentoOrigem));
+        if (usuarioId <= 0 || string.IsNullOrWhiteSpace(usuarioNome) || usuarioNome.Length > 120)
+            throw new ArgumentException("Usuário responsável inválido.", nameof(usuarioId));
+        if (custoUnitario is < 0 or > 999999999999.9999m)
+            throw new ArgumentOutOfRangeException(nameof(custoUnitario));
+        if (saldoApos < 0)
+            throw new ArgumentOutOfRangeException(nameof(saldoApos));
+        DataEfetivaUtc = dataEfetivaUtc;
+        DocumentoOrigem = documentoOrigem?.Trim() ?? string.Empty;
+        Motivo = motivo.Trim();
+        UsuarioId = usuarioId;
+        UsuarioNome = usuarioNome.Trim();
+        CustoUnitario = custoUnitario;
+        SaldoApos = saldoApos;
     }
 }

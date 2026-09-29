@@ -38,12 +38,20 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("bigint");
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
                     b.Property<DateTime>("DataUtc").HasColumnType("datetime2");
+                    b.Property<DateTime>("DataEfetivaUtc").HasColumnType("datetime2");
+                    b.Property<string>("DocumentoOrigem").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                    b.Property<string>("Motivo").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.Property<string>("UsuarioNome").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<int?>("UsuarioId").HasColumnType("int");
+                    b.Property<decimal?>("CustoUnitario").HasPrecision(18, 4).HasColumnType("decimal(18,4)");
+                    b.Property<int?>("SaldoApos").HasColumnType("int");
                     b.Property<string>("Observacao").HasMaxLength(300).HasColumnType("nvarchar(300)");
                     b.Property<int>("ProdutoId").HasColumnType("int");
                     b.Property<int>("Quantidade").HasColumnType("int");
                     b.Property<int>("Tipo").HasColumnType("int");
                     b.HasKey("Id");
                     b.HasIndex("ProdutoId", "DataUtc");
+                    b.HasIndex("UsuarioId");
                     b.ToTable("MovimentosEstoque", (string)null);
                 });
 
@@ -129,6 +137,10 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ProdutoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                    b.HasOne("GestaoEstoque.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("GestaoEstoque.Domain.Entities.Produto", b =>

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using GestaoEstoque.Infrastructure.Persistence;
 using GestaoEstoque.Api.Security;
+using System.Security.Claims;
 
 namespace GestaoEstoque.Api.Controllers;
 
@@ -14,7 +15,8 @@ namespace GestaoEstoque.Api.Controllers;
 public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbContext db) : ControllerBase
 {
     public record ProdutoRequest(string Nome, int CategoriaId, decimal Preco, int EstoqueMinimo);
-    public record MovimentoRequest(TipoMovimento Tipo, int Quantidade, string? Observacao);
+    public record MovimentoRequest(TipoMovimento Tipo, int Quantidade, string? Observacao,
+        DateTime? DataEfetivaUtc, string? DocumentoOrigem, string? Motivo, decimal? CustoUnitario);
     public record ProdutoResponse(int Id, string Nome, int CategoriaId, string Categoria, decimal Preco,
         int Estoque, int EstoqueMinimo, bool Ativo, bool EstoqueBaixo);
 
@@ -89,7 +91,10 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     public async Task<IActionResult> Movimentos(int id, CancellationToken ct)
     {
         if (await repository.ObterPorIdAsync(id, ct) is null) return NotFound();
-        return Ok(await repository.ListarMovimentosAsync(id, ct));
+        var movimentos = await repository.ListarMovimentosAsync(id, ct);
+        return Ok(movimentos.Select(m => new { m.Id, m.ProdutoId, m.Tipo, m.Quantidade, m.DataUtc,
+            m.DataEfetivaUtc, m.DocumentoOrigem, m.Motivo, m.UsuarioNome, m.CustoUnitario,
+            m.SaldoApos, m.Observacao }));
     }
 
     [HttpPost("{id:int}/movimentos")]
@@ -101,9 +106,13 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
         if (!produto.Ativo) return Conflict(new { erro = "Produto inativo." });
         try
         {
-            var movimento = new MovimentoEstoque(id, request.Tipo, request.Quantidade, request.Observacao);
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId)) return Unauthorized();
             if (request.Tipo == TipoMovimento.Entrada) produto.RegistrarEntrada(request.Quantidade);
-            else produto.RegistrarSaida(request.Quantidade);
+            else if (request.Tipo == TipoMovimento.Saida) produto.RegistrarSaida(request.Quantidade);
+            else return BadRequest(new { erro = "Tipo de movimento inválido." });
+            var movimento = new MovimentoEstoque(id, request.Tipo, request.Quantidade, request.Observacao,
+                request.DataEfetivaUtc ?? DateTime.UtcNow, request.DocumentoOrigem ?? "",
+                request.Motivo ?? "", usuarioId, User.Identity?.Name ?? "", request.CustoUnitario, produto.Estoque);
             repository.AdicionarMovimento(movimento);
             // Um único SaveChanges grava o saldo e o histórico na mesma transação.
             await repository.SalvarAsync(ct);

@@ -67,3 +67,8 @@ O administrador acessa a tela **Usuários** e clica em **Novo usuário** para ca
 Após atualizar o código, execute `dotnet ef database update` antes de iniciar a API. A migração vincula os usuários existentes aos perfis básicos, sem apagar as contas.
 
 As senhas são armazenadas com hash pelo `PasswordHasher` do ASP.NET Core. O token JWT dura duas horas e fica apenas na memória do navegador; atualizar a página exige novo login. Desativar um usuário ou alterar a senha revoga seus tokens anteriores. O login tem limite de tentativas por IP. Em produção, configure HTTPS, armazenamento seguro da chave e backup do banco antes de atender clientes.
+# Rastreabilidade das movimentações
+
+Cada nova entrada ou saída exige um motivo e registra data efetiva, data de registro, usuário autenticado, saldo após a operação, documento de origem e custo unitário informado (os dois últimos opcionais). O histórico do produto apresenta esses dados em ordem de registro e não oferece edição ou exclusão de movimentações. Para corrigir um lançamento, registre uma operação compensatória com motivo e referência ao documento original.
+
+Após atualizar o código, execute `dotnet ef database update` na pasta `backend` usando a configuração local de conexão. A migração preserva os movimentos antigos e usa a observação anterior como motivo quando existir; responsável, custo, documento e saldo por lançamento anteriores permanecem desconhecidos. O custo informado não calcula custo médio, CMV ou conformidade SPED.

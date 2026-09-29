@@ -8,7 +8,7 @@ import { AuthService } from './auth.service';
 type TipoMovimento = 1 | 2;
 interface Produto { id: number; nome: string; categoriaId: number; categoria: string; preco: number; estoque: number; estoqueMinimo: number; ativo: boolean; estoqueBaixo: boolean; }
 interface Categoria { id: number; nome: string; ativo: boolean; }
-interface Movimento { id: number; produtoId: number; tipo: TipoMovimento; quantidade: number; dataUtc: string; observacao: string | null; }
+interface Movimento { id: number; produtoId: number; tipo: TipoMovimento; quantidade: number; dataUtc: string; dataEfetivaUtc: string; documentoOrigem: string; motivo: string; usuarioNome: string; custoUnitario: number | null; saldoApos: number | null; observacao: string | null; }
 interface ProdutoForm { nome: string; categoriaId: number | null; preco: number | null; estoqueMinimo: number | null; }
 interface Usuario { id: number; nome: string; email: string; perfilId: number; perfil: string; ativo: boolean; }
 interface Perfil { id: number; nome: string; sistema: boolean; ativo: boolean;
@@ -58,6 +58,10 @@ export class App implements OnInit {
   tipoMovimento: TipoMovimento = 1;
   quantidade: number | null = null;
   observacao = '';
+  documentoOrigem = '';
+  motivo = '';
+  dataEfetiva = '';
+  custoUnitario: number | null = null;
   loginEmail = '';
   loginSenha = '';
   novoUsuario = { nome: '', email: '', senha: '', perfilId: 2 };
@@ -230,17 +234,22 @@ export class App implements OnInit {
   }
   abrirMovimento(produto: Produto, tipo: TipoMovimento): void {
     this.selecionado.set(produto); this.tipoMovimento = tipo;
-    this.quantidade = null; this.observacao = ''; this.erro.set(''); this.modal.set('movimento');
+    this.quantidade = null; this.observacao = ''; this.documentoOrigem = ''; this.motivo = '';
+    this.custoUnitario = null; this.dataEfetiva = ''; this.erro.set(''); this.modal.set('movimento');
   }
   async salvarMovimento(): Promise<void> {
     const produto = this.selecionado();
-    if (!produto || this.quantidade === null || !Number.isInteger(this.quantidade) || this.quantidade <= 0) {
-      this.erro.set('Informe uma quantidade inteira maior que zero.'); return;
+    if (!produto || this.quantidade === null || !Number.isInteger(this.quantidade) || this.quantidade <= 0 ||
+        !this.motivo.trim() || (this.custoUnitario !== null && (!Number.isFinite(this.custoUnitario) || this.custoUnitario < 0))) {
+      this.erro.set('Informe quantidade inteira positiva, motivo e custo unitário válido.'); return;
     }
     this.salvando.set(true); this.erro.set('');
     try {
       await firstValueFrom(this.http.post(`/api/produtos/${produto.id}/movimentos`, {
-        tipo: this.tipoMovimento, quantidade: this.quantidade, observacao: this.observacao || null
+        tipo: this.tipoMovimento, quantidade: this.quantidade, observacao: this.observacao || null,
+        documentoOrigem: this.documentoOrigem, motivo: this.motivo,
+        dataEfetivaUtc: this.dataEfetiva ? new Date(this.dataEfetiva).toISOString() : null,
+        custoUnitario: this.custoUnitario
       }));
       this.modal.set(null); this.sucesso.set('Movimentação registrada.'); await this.recarregar();
     } catch (error) { this.erro.set(this.mensagemErro(error)); }

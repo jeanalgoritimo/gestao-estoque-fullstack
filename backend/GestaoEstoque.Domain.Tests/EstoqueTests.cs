@@ -34,4 +34,20 @@ public class EstoqueTests
         Assert.Throws<ArgumentOutOfRangeException>(() => produto.RegistrarSaida(quantidade));
         Assert.Equal(0, produto.Estoque);
     }
+
+    [Fact]
+    public void MovimentoGuardaResponsavelSaldoEDadosDeOrigem()
+    {
+        var data = DateTime.UtcNow.AddDays(-1);
+        var movimento = new MovimentoEstoque(1, TipoMovimento.Entrada, 3, "Recebido",
+            data, "PED-123", "Compra", 7, "Operador", 12.50m, 8);
+
+        Assert.Equal(8, movimento.SaldoApos);
+        Assert.Equal(7, movimento.UsuarioId);
+        Assert.Equal("PED-123", movimento.DocumentoOrigem);
+        Assert.Equal(12.50m, movimento.CustoUnitario);
+        Assert.Equal(data, movimento.DataEfetivaUtc);
+        Assert.Throws<ArgumentException>(() => new MovimentoEstoque(1, TipoMovimento.Saida, 1,
+            null, data, "", " ", 7, "Operador", null, 7));
+    }
 }
