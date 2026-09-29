@@ -9,6 +9,7 @@ import { UsersComponent } from './features/access/users.component';
 import { ProfilesComponent } from './features/access/profiles.component';
 import { CategoriesComponent } from './features/categories/categories.component';
 import { ProductsComponent } from './features/products/products.component';
+import { InventoryComponent } from './features/inventory/inventory.component';
 
 import { EstoqueApiService } from './core/api/estoque-api.service';
 
@@ -33,6 +34,7 @@ import {
     ProfilesComponent,
     CategoriesComponent,
     ProductsComponent,
+    InventoryComponent,
   ],
   templateUrl: './app.html',
 })
@@ -43,7 +45,9 @@ export class App {
   readonly perfis = signal<Perfil[]>([]);
   readonly produtos = signal<Produto[]>([]);
   readonly categorias = signal<Categoria[]>([]);
-  readonly tela = signal<'visao' | 'produtos' | 'categorias' | 'perfis' | 'usuarios'>('visao');
+  readonly tela = signal<
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'perfis' | 'usuarios'
+  >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
   readonly movimentos = signal<Movimento[]>([]);
@@ -68,7 +72,7 @@ export class App {
   readonly ativos = computed(() => this.produtos().filter((p) => p.ativo));
   readonly baixos = computed(() => this.ativos().filter((p) => p.estoqueBaixo).length);
   readonly unidades = computed(() => this.ativos().reduce((total, p) => total + p.estoque, 0));
-  readonly valorEstoque = computed(() =>
+  readonly potencialVendas = computed(() =>
     this.ativos().reduce((total, p) => total + p.estoque * p.preco, 0),
   );
   readonly categoriasAtivas = computed(() => this.categorias().filter((c) => c.ativo));
@@ -129,7 +133,7 @@ export class App {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'perfis' | 'usuarios'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'perfis' | 'usuarios'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');

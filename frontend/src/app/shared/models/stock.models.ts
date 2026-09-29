@@ -29,6 +29,20 @@ export interface Movimento {
   saldoApos: number | null;
   observacao: string | null;
 }
+export interface InventarioFisico {
+  id: number;
+  produtoId: number;
+  produto: string;
+  saldoInicial: number;
+  quantidadeContada: number | null;
+  diferenca: number | null;
+  situacao: 1 | 2 | 3;
+  abertoUtc: string;
+  abertoPorNome: string;
+  encerradoUtc: string | null;
+  encerradoPorNome: string | null;
+  motivo: string | null;
+}
 export interface ProdutoForm {
   nome: string;
   categoriaId: number | null;
