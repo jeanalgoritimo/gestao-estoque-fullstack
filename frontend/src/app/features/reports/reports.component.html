@@ -1,0 +1,47 @@
+<section class="panel" id="relatorios">
+  <div class="panel-heading">
+    <div>
+      <h2>Posição atual do estoque</h2>
+      <p>Consulte os produtos ativos. Os valores são potencial de venda pelo preço cadastrado, não avaliação contábil.</p>
+    </div>
+    <div class="report-actions">
+      <button class="secondary" type="button" (click)="atualizar.emit()" [disabled]="carregando()">↻ Atualizar</button>
+      <button class="secondary" type="button" (click)="exportarCsv()" [disabled]="carregando() || !filtrados().length">Exportar CSV</button>
+    </div>
+  </div>
+  <div class="toolbar report-filters">
+    <label class="search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Buscar produto ou código" [ngModel]="busca()" (ngModelChange)="busca.set($event)" aria-label="Buscar no relatório" /></label>
+    <label>Categoria
+      <select [ngModel]="categoria()" (ngModelChange)="categoria.set($event)">
+        <option value="">Todas</option>
+        @for (nome of categorias(); track nome) { <option [value]="nome">{{ nome }}</option> }
+      </select>
+    </label>
+    <label class="toggle"><input type="checkbox" [ngModel]="somenteBaixos()" (ngModelChange)="somenteBaixos.set($event)" /> Somente abaixo do mínimo</label>
+  </div>
+  <div class="report-summary" aria-live="polite">
+    <span><strong>{{ filtrados().length }}</strong> produtos</span>
+    <span><strong>{{ unidades() }}</strong> unidades</span>
+    <span><strong>{{ baixos() }}</strong> abaixo do mínimo</span>
+    <span><strong>{{ moeda(potencial()) }}</strong> potencial de venda</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>PRODUTO</th><th>CATEGORIA</th><th>ESTOQUE</th><th>MÍNIMO</th><th>SITUAÇÃO</th><th>PREÇO DE VENDA</th><th>POTENCIAL DE VENDA</th></tr></thead>
+      <tbody>
+        @for (produto of filtrados(); track produto.id) {
+          <tr>
+            <td><div class="product-name">{{ produto.nome }}</div><small>#{{ produto.id }}</small></td>
+            <td>{{ produto.categoria }}</td>
+            <td>{{ produto.estoque }}</td><td>{{ produto.estoqueMinimo }}</td>
+            <td><span class="badge" [class.warning]="produto.estoqueBaixo">{{ produto.estoqueBaixo ? 'Estoque baixo' : 'Em dia' }}</span></td>
+            <td>{{ moeda(produto.preco) }}</td><td>{{ moeda(produto.estoque * produto.preco) }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="empty">{{ carregando() ? 'Carregando produtos...' : 'Nenhum produto encontrado para os filtros selecionados.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="panel-foot">CSV inclui os {{ filtrados().length }} produtos exibidos, com os filtros atuais.</div>
+</section>

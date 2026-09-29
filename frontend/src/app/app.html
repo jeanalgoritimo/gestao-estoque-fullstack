@@ -50,6 +50,14 @@
           (click)="navegar('inventarios')"
         >
           ▣ <span>Inventário</span>
+        </button><button
+          type="button"
+          aria-label="Relatórios"
+          title="Relatórios"
+          [class.nav-active]="tela() === 'relatorios'"
+          (click)="navegar('relatorios')"
+        >
+          ▤ <span>Relatórios</span>
         </button>
         @if (auth.usuario()?.perfil === 'Administrador') {
           <button
@@ -113,8 +121,10 @@
                     ? 'Produtos'
                     : tela() === 'categorias'
                       ? 'Categorias'
-                      : tela() === 'inventarios'
-                        ? 'Inventário'
+                    : tela() === 'inventarios'
+                      ? 'Inventário'
+                      : tela() === 'relatorios'
+                        ? 'Relatórios'
                         : tela() === 'usuarios'
                           ? 'Usuários'
                           : 'Perfis'
@@ -137,6 +147,8 @@
                     ? 'Categorias'
                     : tela() === 'inventarios'
                       ? 'Inventário físico'
+                      : tela() === 'relatorios'
+                        ? 'Relatórios'
                       : tela() === 'usuarios'
                         ? 'Usuários'
                         : 'Perfis de acesso'
@@ -152,6 +164,8 @@
                     ? 'Organize as categorias usadas no cadastro de produtos.'
                     : tela() === 'inventarios'
                       ? 'Conte os produtos e registre ajustes com rastreabilidade.'
+                      : tela() === 'relatorios'
+                        ? 'Consulte a posição do estoque e exporte os dados filtrados.'
                       : 'Acompanhe seus produtos e mantenha o controle das movimentações.'
             }}
           </p>
@@ -218,6 +232,8 @@
           (alterado)="recarregar()"
           (sessaoExpirada)="sair()"
         />
+      } @else if (tela() === 'relatorios') {
+        <app-reports [produtos]="produtos()" [carregando]="carregando()" (atualizar)="recarregar()" />
       } @else {
         <app-products
           [produtosFiltrados]="filtrados()"
