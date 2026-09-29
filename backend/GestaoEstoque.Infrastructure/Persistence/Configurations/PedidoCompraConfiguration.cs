@@ -13,6 +13,7 @@ public class PedidoCompraConfiguration : IEntityTypeConfiguration<PedidoCompra>
         b.Property(p => p.Situacao).HasConversion<int>();
         b.Property(p => p.CriadoPorNome).HasMaxLength(120).IsRequired();
         b.Property(p => p.EncerradoPorNome).HasMaxLength(120);
+        b.Property(p => p.MotivoCancelamento).HasMaxLength(150);
         b.Property(p => p.Versao).IsRowVersion();
         b.HasOne(p => p.Fornecedor).WithMany().HasForeignKey(p => p.FornecedorId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Usuario>().WithMany().HasForeignKey(p => p.CriadoPorId).OnDelete(DeleteBehavior.Restrict);

@@ -84,7 +84,8 @@ export interface PedidoCompra {
   id: number;
   fornecedorId: number;
   fornecedor: string;
-  situacao: 1 | 2 | 3;
+  situacao: 1 | 2 | 3 | 4 | 5;
+  motivoCancelamento: string | null;
   criadoUtc: string;
   criadoPorNome: string;
   encerradoUtc: string | null;

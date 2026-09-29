@@ -20,7 +20,9 @@ export class PurchaseOrdersComponent implements OnInit {
   status(p: PedidoCompra): string {
     if (p.situacao === 2) return 'Recebido';
     if (p.situacao === 3) return 'Cancelado';
-    return p.itens.some(i => i.quantidadeRecebida > 0) ? 'Parcialmente recebido' : 'Aberto';
+    if (p.situacao === 5) return 'Saldo cancelado após recebimento parcial';
+    if (p.situacao === 4) return 'Parcialmente recebido';
+    return 'Aberto';
   }
   data(valor: string): string { return new Date(valor).toLocaleString('pt-BR'); }
   ngOnInit(): void { void this.recarregar(); }
@@ -62,9 +64,19 @@ export class PurchaseOrdersComponent implements OnInit {
     finally { this.processando.set(false); }
   }
   async cancelar(p: PedidoCompra): Promise<void> {
-    if (!confirm(`Cancelar pedido #${p.id}?`)) return;
+    const motivo = prompt(p.situacao === 4
+      ? `Motivo para cancelar o saldo pendente do pedido #${p.id}:`
+      : `Motivo para cancelar o pedido #${p.id}:`);
+    if (motivo === null) return;
+    if (!motivo.trim() || motivo.trim().length > 150) {
+      this.erro.set('Informe um motivo de até 150 caracteres.');
+      return;
+    }
+    if (!confirm(p.situacao === 4
+      ? `Cancelar apenas o saldo pendente do pedido #${p.id}? As entradas já recebidas serão preservadas.`
+      : `Cancelar pedido #${p.id}?`)) return;
     this.processando.set(true); this.erro.set('');
-    try { await this.api.cancelarPedidoCompra(p.id); this.sucesso.set(`Pedido #${p.id} cancelado.`); await this.recarregar(); }
+    try { await this.api.cancelarPedidoCompra(p.id, motivo.trim()); this.sucesso.set(p.situacao === 4 ? `Saldo pendente do pedido #${p.id} cancelado.` : `Pedido #${p.id} cancelado.`); await this.recarregar(); }
     catch (error) { this.erro.set(this.mensagem(error)); }
     finally { this.processando.set(false); }
   }

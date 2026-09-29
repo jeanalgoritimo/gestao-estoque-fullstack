@@ -1,6 +1,6 @@
 namespace GestaoEstoque.Domain.Entities;
 
-public enum SituacaoPedidoCompra { Aberto = 1, Recebido = 2, Cancelado = 3 }
+public enum SituacaoPedidoCompra { Aberto = 1, Recebido = 2, Cancelado = 3, ParcialmenteRecebido = 4, ParcialmenteCancelado = 5 }
 
 public class PedidoCompra
 {
@@ -14,6 +14,7 @@ public class PedidoCompra
     public DateTime? EncerradoUtc { get; private set; }
     public int? EncerradoPorId { get; private set; }
     public string? EncerradoPorNome { get; private set; }
+    public string? MotivoCancelamento { get; private set; }
     public byte[] Versao { get; private set; } = [];
     public List<ItemPedidoCompra> Itens { get; private set; } = [];
 
@@ -35,17 +36,31 @@ public class PedidoCompra
     }
     public void RegistrarRecebimento(int produtoId, int quantidade, int usuarioId, string nome)
     {
-        if (Situacao != SituacaoPedidoCompra.Aberto) throw new InvalidOperationException("Pedido já encerrado.");
+        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
+            throw new InvalidOperationException("Pedido já encerrado.");
         var item = Itens.SingleOrDefault(i => i.ProdutoId == produtoId)
             ?? throw new ArgumentException("Produto não pertence ao pedido.");
         item.Receber(quantidade);
         if (Itens.All(i => i.QuantidadeRecebida == i.Quantidade))
             Encerrar(SituacaoPedidoCompra.Recebido, usuarioId, nome);
+        else Situacao = SituacaoPedidoCompra.ParcialmenteRecebido;
+    }
+    public void CancelarSaldo(int usuarioId, string nome, string motivo)
+    {
+        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
+            throw new InvalidOperationException("Pedido já encerrado.");
+        if (string.IsNullOrWhiteSpace(motivo) || motivo.Trim().Length > 150)
+            throw new ArgumentException("Informe o motivo do cancelamento (até 150 caracteres).");
+        var houveRecebimento = Itens.Any(i => i.QuantidadeRecebida > 0);
+        Encerrar(houveRecebimento ? SituacaoPedidoCompra.ParcialmenteCancelado : SituacaoPedidoCompra.Cancelado,
+            usuarioId, nome);
+        MotivoCancelamento = motivo.Trim();
     }
     public void Encerrar(SituacaoPedidoCompra situacao, int usuarioId, string nome)
     {
-        if (Situacao != SituacaoPedidoCompra.Aberto) throw new InvalidOperationException("Pedido já encerrado.");
-        if (situacao is not (SituacaoPedidoCompra.Recebido or SituacaoPedidoCompra.Cancelado) ||
+        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
+            throw new InvalidOperationException("Pedido já encerrado.");
+        if (situacao is not (SituacaoPedidoCompra.Recebido or SituacaoPedidoCompra.Cancelado or SituacaoPedidoCompra.ParcialmenteCancelado) ||
             usuarioId <= 0 || string.IsNullOrWhiteSpace(nome) || nome.Length > 120)
             throw new ArgumentException("Situação ou usuário inválido.");
         Situacao = situacao;
