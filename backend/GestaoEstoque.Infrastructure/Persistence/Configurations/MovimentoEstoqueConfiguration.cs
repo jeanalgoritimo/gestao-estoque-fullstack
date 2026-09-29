@@ -18,6 +18,8 @@ public class MovimentoEstoqueConfiguration : IEntityTypeConfiguration<MovimentoE
         builder.Property(m => m.CustoUnitario).HasPrecision(18, 4);
         builder.HasOne<Usuario>().WithMany().HasForeignKey(m => m.UsuarioId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Produto>().WithMany().HasForeignKey(m => m.ProdutoId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<PedidoCompra>().WithMany().HasForeignKey(m => m.PedidoCompraId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(m => new { m.PedidoCompraId, m.RecebimentoId });
         builder.HasIndex(m => new { m.ProdutoId, m.DataUtc });
     }
 }

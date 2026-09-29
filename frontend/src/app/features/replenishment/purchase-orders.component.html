@@ -12,7 +12,19 @@
         </div>
       }</td>
       <td>{{ p.criadoPorNome }}</td><td>{{ status(p) }} @if (p.motivoCancelamento) { <small>Motivo: {{ p.motivoCancelamento }}</small> }</td><td>
+        <button type="button" (click)="abrirHistorico(p.id)">{{ historicoPedidoId() === p.id ? 'Ocultar entregas' : 'Ver entregas' }}</button>
         @if ((p.situacao === 1 || p.situacao === 4) && podeReceber()) { <button type="button" (click)="receber(p)" [disabled]="processando()">Registrar recebimento</button> }
         @if ((p.situacao === 1 || p.situacao === 4) && administrador()) { <button type="button" (click)="cancelar(p)" [disabled]="processando()">{{ p.situacao === 4 ? 'Cancelar saldo pendente' : 'Cancelar' }}</button> }
-      </td></tr> } @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando pedidos...' : 'Nenhum pedido de compra.' }}</td></tr> }
-  </tbody></table></div><div class="panel-foot">O recebimento grava entradas com documento de origem PC-número do pedido.</div></section>
+      </td></tr>
+      @if (historicoPedidoId() === p.id) {
+        <tr><td colspan="6"><strong>Entregas do pedido #{{ p.id }}</strong>
+          @if (carregandoHistorico()) { <p>Carregando entregas...</p> }
+          @for (rec of historico(); track rec.id) {
+            <div class="purchase-receipt"><div><strong>{{ data(rec.dataUtc) }}</strong> · {{ rec.usuarioNome }}<br /><small>Recebimento {{ rec.id }}</small></div>
+              @for (item of rec.itens; track item.movimentoId) { <div>{{ item.produto }}: {{ item.quantidade }} un. · Movimento #{{ item.movimentoId }}</div> }
+            </div>
+          } @empty { @if (!carregandoHistorico()) { <p>Não há entregas individualizadas para este pedido.</p> } }
+        </td></tr>
+      }
+    } @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando pedidos...' : 'Nenhum pedido de compra.' }}</td></tr> }
+  </tbody></table></div><div class="panel-foot">Cada entrega nova possui uma referência própria e movimentações vinculadas ao pedido. Entregas anteriores a esta atualização continuam identificadas pela referência antiga no histórico do produto.</div></section>

@@ -18,6 +18,9 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
     public record ReceberRequest(List<ItemRequest> Itens);
     public record CancelarRequest(string Motivo);
     public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida);
+    public record LinhaRecebimentoResponse(long MovimentoId, int ProdutoId, string Produto, int Quantidade);
+    public record RecebimentoResponse(Guid Id, DateTime DataUtc, string UsuarioNome,
+        List<LinhaRecebimentoResponse> Itens);
     public record PedidoResponse(long Id, int FornecedorId, string Fornecedor, SituacaoPedidoCompra Situacao,
         DateTime CriadoUtc, string CriadoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento,
         List<ItemResponse> Itens);
@@ -42,6 +45,23 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
     {
         var pedido = await Consulta().AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
         return pedido is null ? NotFound() : Ok(Map(pedido));
+    }
+
+    [HttpGet("{id:long}/recebimentos")]
+    public async Task<IActionResult> ListarRecebimentos(long id, CancellationToken ct)
+    {
+        if (!await db.PedidosCompra.AsNoTracking().AnyAsync(p => p.Id == id, ct)) return NotFound();
+        var linhas = await (from m in db.MovimentosEstoque.AsNoTracking()
+            join p in db.Produtos.AsNoTracking() on m.ProdutoId equals p.Id
+            where m.PedidoCompraId == id && m.RecebimentoId != null
+            orderby m.DataUtc descending, m.Id descending
+            select new { Movimento = m, Produto = p.Nome }).ToListAsync(ct);
+        return Ok(linhas.GroupBy(x => x.Movimento.RecebimentoId!.Value)
+            .Select(g => new RecebimentoResponse(g.Key, g.Max(x => x.Movimento.DataUtc),
+                g.First().Movimento.UsuarioNome,
+                g.Select(x => new LinhaRecebimentoResponse(x.Movimento.Id, x.Movimento.ProdutoId,
+                    x.Produto, x.Movimento.Quantidade)).ToList()))
+            .OrderByDescending(r => r.DataUtc).ToList());
     }
 
     [HttpPost]
@@ -106,20 +126,23 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
             return Conflict(new { erro = "Produto inativo ou não encontrado. O pedido não pode ser recebido." });
         try
         {
+            var recebimentoId = Guid.NewGuid();
             foreach (var item in request.Itens)
             {
                 pedido.RegistrarRecebimento(item.ProdutoId, item.Quantidade, usuarioId, nome);
                 var produto = produtos[item.ProdutoId];
                 produto.RegistrarEntrada(item.Quantidade);
-                db.MovimentosEstoque.Add(new MovimentoEstoque(produto.Id, TipoMovimento.Entrada,
-                    item.Quantidade, null, DateTime.UtcNow, $"PC-{pedido.Id}", "Recebimento de pedido de compra",
-                    usuarioId, nome, null, produto.Estoque));
+                var movimento = new MovimentoEstoque(produto.Id, TipoMovimento.Entrada,
+                    item.Quantidade, null, DateTime.UtcNow, $"PC-{pedido.Id}-R-{recebimentoId:N}",
+                    "Recebimento de pedido de compra", usuarioId, nome, null, produto.Estoque);
+                movimento.VincularRecebimento(pedido.Id, recebimentoId);
+                db.MovimentosEstoque.Add(movimento);
             }
             // Atualiza o rowversion do cabeçalho também nos recebimentos parciais.
             db.Entry(pedido).Property(p => p.Situacao).IsModified = true;
             // EF Core grava saldos, quantidades recebidas e movimentos em uma única transação.
             await db.SaveChangesAsync(ct);
-            return Ok(new { pedido.Id, pedido.Situacao });
+            return Ok(new { pedido.Id, pedido.Situacao, RecebimentoId = recebimentoId });
         }
         catch (OverflowException) { return Conflict(new { erro = "Saldo excede o limite permitido." }); }
         catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }

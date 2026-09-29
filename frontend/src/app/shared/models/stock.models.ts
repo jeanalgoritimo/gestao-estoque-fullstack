@@ -96,3 +96,10 @@ export interface NovoPedidoCompra {
   fornecedorId: number;
   itens: { produtoId: number; quantidade: number }[];
 }
+
+export interface RecebimentoPedidoCompra {
+  id: string;
+  dataUtc: string;
+  usuarioNome: string;
+  itens: { movimentoId: number; produtoId: number; produto: string; quantidade: number }[];
+}
