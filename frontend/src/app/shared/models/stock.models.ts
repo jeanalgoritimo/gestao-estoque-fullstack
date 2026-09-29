@@ -79,3 +79,19 @@ export interface Perfil {
   gerenciarCategorias: boolean;
   movimentarEstoque: boolean;
 }
+
+export interface PedidoCompra {
+  id: number;
+  fornecedorId: number;
+  fornecedor: string;
+  situacao: 1 | 2 | 3;
+  criadoUtc: string;
+  criadoPorNome: string;
+  encerradoUtc: string | null;
+  encerradoPorNome: string | null;
+  itens: { produtoId: number; produto: string; quantidade: number }[];
+}
+export interface NovoPedidoCompra {
+  fornecedorId: number;
+  itens: { produtoId: number; quantidade: number }[];
+}

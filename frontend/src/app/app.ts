@@ -13,6 +13,7 @@ import { InventoryComponent } from './features/inventory/inventory.component';
 import { SuppliersComponent } from './features/suppliers/suppliers.component';
 import { ReportsComponent } from './features/reports/reports.component';
 import { ReplenishmentComponent } from './features/replenishment/replenishment.component';
+import { PurchaseOrdersComponent } from './features/replenishment/purchase-orders.component';
 
 import { EstoqueApiService } from './core/api/estoque-api.service';
 
@@ -42,6 +43,7 @@ import {
     SuppliersComponent,
     ReportsComponent,
     ReplenishmentComponent,
+    PurchaseOrdersComponent,
   ],
   templateUrl: './app.html',
 })
@@ -54,7 +56,7 @@ export class App {
   readonly categorias = signal<Categoria[]>([]);
   readonly fornecedores = signal<Fornecedor[]>([]);
   readonly tela = signal<
-    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'relatorios' | 'perfis' | 'usuarios'
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'relatorios' | 'perfis' | 'usuarios'
   >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
@@ -143,13 +145,21 @@ export class App {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'relatorios' | 'perfis' | 'usuarios'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'relatorios' | 'perfis' | 'usuarios'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');
     this.menuMobileAberto.set(false);
     if (tela === 'perfis') void this.carregarPerfis();
     if (tela === 'usuarios') void Promise.all([this.carregarUsuarios(), this.carregarPerfis()]);
+  }
+  async criarPedidoCompra(input: { fornecedorId: number; itens: { produtoId: number; quantidade: number }[] }): Promise<void> {
+    this.erro.set('');
+    try {
+      const pedido = await this.api.criarPedidoCompra(input);
+      this.navegar('pedidos');
+      this.sucesso.set(`Pedido de compra #${pedido.id} criado.`);
+    } catch (error) { this.erro.set(this.mensagemErro(error)); }
   }
   private async carregarPerfis(): Promise<void> {
     try {

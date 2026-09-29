@@ -6,6 +6,8 @@ import {
   Fornecedor,
   InventarioFisico,
   Movimento,
+  PedidoCompra,
+  NovoPedidoCompra,
   Perfil,
   Produto,
   ProdutoForm,
@@ -98,6 +100,18 @@ export class EstoqueApiService {
     return firstValueFrom(this.http.put(`/api/usuarios/${id}/perfil`, perfilId));
   }
 
+  pedidosCompra() {
+    return firstValueFrom(this.http.get<PedidoCompra[]>('/api/pedidos-compra'));
+  }
+  criarPedidoCompra(input: NovoPedidoCompra) {
+    return firstValueFrom(this.http.post<{ id: number }>('/api/pedidos-compra', input));
+  }
+  receberPedidoCompra(id: number) {
+    return firstValueFrom(this.http.post(`/api/pedidos-compra/${id}/receber`, {}));
+  }
+  cancelarPedidoCompra(id: number) {
+    return firstValueFrom(this.http.post(`/api/pedidos-compra/${id}/cancelar`, {}));
+  }
   inventarios() {
     return firstValueFrom(this.http.get<InventarioFisico[]>('/api/inventarios'));
   }
