@@ -885,3 +885,4 @@ td small {
 .report-summary span { padding: 8px 12px; border-radius: 8px; background: #f4f7fa; }
 .supplier-form { padding: 20px; border-bottom: 1px solid #e7ecf1; }
 .supplier-form .report-actions { margin-top: 12px; }
+.replenishment-qty { width: 100px; padding: 8px; border: 1px solid #d9e1e9; border-radius: 8px; }

@@ -60,6 +60,7 @@
           ▤ <span>Relatórios</span>
         </button>
         <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
+        <button type="button" aria-label="Reposição" title="Reposição" [class.nav-active]="tela() === 'reposicao'" (click)="navegar('reposicao')">▣ <span>Reposição</span></button>
         @if (auth.usuario()?.perfil === 'Administrador') {
           <button
             type="button"
@@ -126,6 +127,8 @@
                       ? 'Inventário'
                       : tela() === 'fornecedores'
                         ? 'Fornecedores'
+                      : tela() === 'reposicao'
+                        ? 'Reposição'
                       : tela() === 'relatorios'
                         ? 'Relatórios'
                         : tela() === 'usuarios'
@@ -152,6 +155,8 @@
                       ? 'Inventário físico'
                       : tela() === 'fornecedores'
                         ? 'Fornecedores'
+                      : tela() === 'reposicao'
+                        ? 'Reposição'
                       : tela() === 'relatorios'
                         ? 'Relatórios'
                       : tela() === 'usuarios'
@@ -171,6 +176,8 @@
                       ? 'Conte os produtos e registre ajustes com rastreabilidade.'
                       : tela() === 'fornecedores'
                         ? 'Cadastre fornecedores e associe-os aos produtos.'
+                      : tela() === 'reposicao'
+                        ? 'Planeje a reposição dos produtos abaixo do estoque mínimo.'
                       : tela() === 'relatorios'
                         ? 'Consulte a posição do estoque e exporte os dados filtrados.'
                       : 'Acompanhe seus produtos e mantenha o controle das movimentações.'
@@ -241,6 +248,8 @@
         />
       } @else if (tela() === 'fornecedores') {
         <app-suppliers [fornecedores]="fornecedores()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (atualizar)="recarregar()" />
+      } @else if (tela() === 'reposicao') {
+        <app-replenishment [produtos]="produtos()" [fornecedores]="fornecedores()" [carregando]="carregando()" (atualizar)="recarregar()" />
       } @else if (tela() === 'relatorios') {
         <app-reports [produtos]="produtos()" [carregando]="carregando()" (atualizar)="recarregar()" />
       } @else {
