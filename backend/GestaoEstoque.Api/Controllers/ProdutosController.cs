@@ -18,10 +18,10 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     public record MovimentoRequest(TipoMovimento Tipo, int Quantidade, string? Observacao,
         DateTime? DataEfetivaUtc, string? DocumentoOrigem, string? Motivo, decimal? CustoUnitario);
     public record ProdutoResponse(int Id, string Nome, int CategoriaId, string Categoria, decimal Preco,
-        int Estoque, int EstoqueMinimo, bool Ativo, bool EstoqueBaixo, int? FornecedorId, string? Fornecedor);
+        int Estoque, int EstoqueMinimo, bool Ativo, bool EstoqueBaixo, int? FornecedorId, string? Fornecedor, int EstoqueReservado, int EstoqueDisponivel);
 
     private static ProdutoResponse Map(Produto p, string? nomeCategoria = null) => new(p.Id, p.Nome, p.CategoriaId, nomeCategoria ?? p.CategoriaProduto?.Nome ?? "",
-        p.Preco, p.Estoque, p.EstoqueMinimo, p.Ativo, p.EstaComEstoqueBaixo(), p.FornecedorId, p.Fornecedor?.Nome);
+        p.Preco, p.Estoque, p.EstoqueMinimo, p.Ativo, p.EstaComEstoqueBaixo(), p.FornecedorId, p.Fornecedor?.Nome, p.EstoqueReservado, p.EstoqueDisponivel);
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ProdutoResponse>>> Listar(CancellationToken ct)
@@ -89,7 +89,8 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     {
         var produto = await repository.ObterPorIdAsync(id, ct);
         if (produto is null) return NotFound();
-        produto.Desativar();
+        try { produto.Desativar(); }
+        catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }
         try { await repository.SalvarAsync(ct); return NoContent(); }
         catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Produto alterado por outra operação." }); }
     }

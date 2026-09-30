@@ -18,6 +18,8 @@ public class MovimentoEstoque
     public decimal? CustoUnitario { get; private set; }
     public int? SaldoApos { get; private set; }
     public long? PedidoCompraId { get; private set; }
+    public long? RequisicaoMaterialId { get; private set; }
+    public Guid? EntregaId { get; private set; }
     public Guid? RecebimentoId { get; private set; }
 
     protected MovimentoEstoque() { }
@@ -62,6 +64,12 @@ public class MovimentoEstoque
         SaldoApos = saldoApos;
     }
 
+    public void VincularEntrega(long requisicaoId, Guid entregaId)
+    {
+        if (Tipo != TipoMovimento.Saida || requisicaoId <= 0 || entregaId == Guid.Empty || RequisicaoMaterialId is not null)
+            throw new InvalidOperationException("Vínculo de entrega inválido.");
+        RequisicaoMaterialId = requisicaoId; EntregaId = entregaId;
+    }
     public void VincularRecebimento(long pedidoCompraId, Guid recebimentoId)
     {
         if (Tipo != TipoMovimento.Entrada || pedidoCompraId <= 0 || recebimentoId == Guid.Empty ||

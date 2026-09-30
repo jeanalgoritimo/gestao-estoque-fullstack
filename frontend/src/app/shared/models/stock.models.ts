@@ -8,6 +8,8 @@ export interface Produto {
   fornecedor: string | null;
   preco: number;
   estoque: number;
+  estoqueReservado: number;
+  estoqueDisponivel: number;
   estoqueMinimo: number;
   ativo: boolean;
   estoqueBaixo: boolean;

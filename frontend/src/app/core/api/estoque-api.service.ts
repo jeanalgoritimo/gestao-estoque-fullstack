@@ -1,3 +1,4 @@
+import { RequisicaoMaterial, EntregaMaterial } from '../../shared/models/requisition.models';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -30,6 +31,23 @@ export interface MovimentoInput {
 export class EstoqueApiService {
   private readonly http = inject(HttpClient);
 
+  requisicoes() {
+    return firstValueFrom(this.http.get<RequisicaoMaterial[]>('/api/requisicoes'));
+  }
+  criarRequisicao(input: { finalidade: string; itens: { produtoId: number; quantidade: number }[] }) {
+    return firstValueFrom(this.http.post<{ id: number }>('/api/requisicoes', input));
+  }
+  enviarRequisicao(id: number) { return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/enviar`, {})); }
+  aprovarRequisicao(id: number) { return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/aprovar`, {})); }
+  cancelarRequisicao(id: number, motivo: string) {
+    return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/cancelar`, { motivo }));
+  }
+  entregarRequisicao(id: number, itens: { produtoId: number; quantidade: number }[]) {
+    return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/entregar`, { itens }));
+  }
+  entregasRequisicao(id: number) {
+    return firstValueFrom(this.http.get<EntregaMaterial[]>(`/api/requisicoes/${id}/entregas`));
+  }
   produtos() {
     return firstValueFrom(this.http.get<Produto[]>('/api/produtos'));
   }

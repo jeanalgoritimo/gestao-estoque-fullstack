@@ -38,8 +38,8 @@ export class ReportsComponent {
       return `"${texto.replace(/"/g, '""')}"`;
     };
     const linhas = [
-      ['Código', 'Produto', 'Categoria', 'Estoque', 'Mínimo', 'Estoque baixo', 'Preço de venda (R$)', 'Potencial de venda (R$)'],
-      ...this.filtrados().map(p => [p.id, p.nome, p.categoria, p.estoque, p.estoqueMinimo,
+      ['Código', 'Produto', 'Categoria', 'Estoque físico', 'Reservado', 'Disponível', 'Mínimo', 'Estoque baixo', 'Preço de venda (R$)', 'Potencial de venda (R$)'],
+      ...this.filtrados().map(p => [p.id, p.nome, p.categoria, p.estoque, p.estoqueReservado, p.estoqueDisponivel, p.estoqueMinimo,
         p.estoqueBaixo ? 'Sim' : 'Não', p.preco.toFixed(2).replace('.', ','), (p.estoque * p.preco).toFixed(2).replace('.', ',')]),
     ];
     const csv = '\ufeff' + linhas.map(linha => linha.map(celula).join(';')).join('\r\n');

@@ -62,6 +62,7 @@
         <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
         <button type="button" aria-label="Reposição" title="Reposição" [class.nav-active]="tela() === 'reposicao'" (click)="navegar('reposicao')">▣ <span>Reposição</span></button>
         <button type="button" aria-label="Pedidos de compra" title="Pedidos de compra" [class.nav-active]="tela() === 'pedidos'" (click)="navegar('pedidos')">▣ <span>Pedidos de compra</span></button>
+        <button type="button" aria-label="Requisições" title="Requisições" [class.nav-active]="tela() === 'requisicoes'" (click)="navegar('requisicoes')">▣ <span>Requisições</span></button>
         @if (auth.usuario()?.perfil === 'Administrador') {
           <button
             type="button"
@@ -132,6 +133,8 @@
                         ? 'Reposição'
                       : tela() === 'pedidos'
                         ? 'Pedidos de compra'
+                      : tela() === 'requisicoes'
+                        ? 'Requisições de materiais'
                       : tela() === 'relatorios'
                         ? 'Relatórios'
                         : tela() === 'usuarios'
@@ -162,6 +165,8 @@
                         ? 'Reposição'
                       : tela() === 'pedidos'
                         ? 'Pedidos de compra'
+                      : tela() === 'requisicoes'
+                        ? 'Requisições de materiais'
                       : tela() === 'relatorios'
                         ? 'Relatórios'
                       : tela() === 'usuarios'
@@ -185,6 +190,8 @@
                         ? 'Planeje a reposição dos produtos abaixo do estoque mínimo.'
                       : tela() === 'pedidos'
                         ? 'Acompanhe pedidos e registre o recebimento no estoque.'
+                      : tela() === 'requisicoes'
+                        ? 'Solicite materiais, reserve o saldo e acompanhe as entregas.'
                       : tela() === 'relatorios'
                         ? 'Consulte a posição do estoque e exporte os dados filtrados.'
                       : 'Acompanhe seus produtos e mantenha o controle das movimentações.'
@@ -259,6 +266,8 @@
         <app-replenishment [produtos]="produtos()" [fornecedores]="fornecedores()" [carregando]="carregando()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (atualizar)="recarregar()" (criarPedido)="criarPedidoCompra($event)" />
       } @else if (tela() === 'pedidos') {
         <app-purchase-orders [administrador]="auth.usuario()?.perfil === 'Administrador'" [podeReceber]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
+      } @else if (tela() === 'requisicoes') {
+        <app-requisitions [produtos]="produtos()" [administrador]="auth.usuario()?.perfil === 'Administrador'" [usuarioId]="auth.usuario()!.id" [podeEntregar]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
       } @else if (tela() === 'relatorios') {
         <app-reports [produtos]="produtos()" [carregando]="carregando()" (atualizar)="recarregar()" />
       } @else {

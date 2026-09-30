@@ -33,7 +33,9 @@
           <th>PRODUTO</th>
           <th>CATEGORIA</th>
           <th>PREÇO</th>
-          <th>ESTOQUE</th>
+          <th>ESTOQUE FÍSICO</th>
+          <th>RESERVADO</th>
+          <th>DISPONÍVEL</th>
           <th>SITUAÇÃO</th>
           <th class="actions">AÇÕES</th>
         </tr>
@@ -51,6 +53,8 @@
               <strong>{{ produto.estoque }}</strong>
               <small>/ mín. {{ produto.estoqueMinimo }}</small>
             </td>
+            <td>{{ produto.estoqueReservado }}</td>
+            <td><strong>{{ produto.estoqueDisponivel }}</strong></td>
             <td>
               <span
                 class="badge"
@@ -96,7 +100,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="6" class="empty">
+            <td colspan="8" class="empty">
               {{
                 carregando()
                   ? 'Carregando produtos...'
