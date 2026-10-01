@@ -15,6 +15,7 @@ public class RequisicaoMaterialConfiguration : IEntityTypeConfiguration<Requisic
         b.Property(r => r.EncerradoPorNome).HasMaxLength(120);
         b.Property(r => r.MotivoCancelamento).HasMaxLength(300);
         b.Property(r => r.Versao).IsRowVersion();
+        b.HasOne(r => r.CentroCusto).WithMany().HasForeignKey(r => r.CentroCustoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Usuario>().WithMany().HasForeignKey(r => r.SolicitanteId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Usuario>().WithMany().HasForeignKey(r => r.AprovadoPorId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Usuario>().WithMany().HasForeignKey(r => r.EncerradoPorId).OnDelete(DeleteBehavior.Restrict);

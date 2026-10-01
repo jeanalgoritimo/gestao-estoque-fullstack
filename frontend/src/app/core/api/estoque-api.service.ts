@@ -1,3 +1,4 @@
+import { CentroCusto, ConsumoCentroCusto } from '../../shared/models/cost-center.models';
 import { RequisicaoMaterial, EntregaMaterial } from '../../shared/models/requisition.models';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
@@ -31,13 +32,22 @@ export interface MovimentoInput {
 export class EstoqueApiService {
   private readonly http = inject(HttpClient);
 
+  centrosCusto() { return firstValueFrom(this.http.get<CentroCusto[]>('/api/centros-custo')); }
+  criarCentroCusto(nome: string) { return firstValueFrom(this.http.post<CentroCusto>('/api/centros-custo', { nome })); }
+  editarCentroCusto(id: number, nome: string) { return firstValueFrom(this.http.put<CentroCusto>(`/api/centros-custo/${id}`, { nome })); }
+  definirCentroCustoAtivo(id: number, ativo: boolean) { return firstValueFrom(this.http.patch<CentroCusto>(`/api/centros-custo/${id}/ativo`, ativo)); }
+  consumoCentros(inicio: string, fim: string, centroCustoId: number | null, semCentro: boolean) {
+    const params: Record<string, string> = { inicio, fim, semCentro: String(semCentro) };
+    if (centroCustoId !== null) params['centroCustoId'] = String(centroCustoId);
+    return firstValueFrom(this.http.get<ConsumoCentroCusto[]>('/api/relatorios/consumo', { params }));
+  }
   requisicoes() {
     return firstValueFrom(this.http.get<RequisicaoMaterial[]>('/api/requisicoes'));
   }
-  criarRequisicao(input: { finalidade: string; itens: { produtoId: number; quantidade: number }[] }) {
+  criarRequisicao(input: { centroCustoId: number; finalidade: string; itens: { produtoId: number; quantidade: number }[] }) {
     return firstValueFrom(this.http.post<{ id: number }>('/api/requisicoes', input));
   }
-  editarRequisicao(id: number, input: { finalidade: string; itens: { produtoId: number; quantidade: number }[]; versao: string }) {
+  editarRequisicao(id: number, input: { centroCustoId: number; finalidade: string; itens: { produtoId: number; quantidade: number }[]; versao: string }) {
     return firstValueFrom(this.http.put<void>(`/api/requisicoes/${id}`, input));
   }
   enviarRequisicao(id: number) { return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/enviar`, {})); }

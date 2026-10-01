@@ -1,3 +1,6 @@
+import { CostCentersComponent } from './features/cost-centers/cost-centers.component';
+import { ConsumptionComponent } from './features/cost-centers/consumption.component';
+import { CentroCusto } from './shared/models/cost-center.models';
 import { RequisitionsComponent } from './features/requisitions/requisitions.component';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -46,6 +49,8 @@ import {
     ReplenishmentComponent,
     PurchaseOrdersComponent,
     RequisitionsComponent,
+    CostCentersComponent,
+    ConsumptionComponent,
   ],
   templateUrl: './app.html',
 })
@@ -56,9 +61,10 @@ export class App {
   readonly perfis = signal<Perfil[]>([]);
   readonly produtos = signal<Produto[]>([]);
   readonly categorias = signal<Categoria[]>([]);
+  readonly centrosCusto = signal<CentroCusto[]>([]);
   readonly fornecedores = signal<Fornecedor[]>([]);
   readonly tela = signal<
-    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'relatorios' | 'perfis' | 'usuarios'
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios'
   >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
@@ -133,21 +139,23 @@ export class App {
     this.carregando.set(true);
     this.erro.set('');
     try {
-      const [produtos, categorias, fornecedores] = await Promise.all([
+      const [produtos, categorias, fornecedores, centros] = await Promise.all([
         this.api.produtos(),
         this.api.categorias(),
         this.api.fornecedores(),
+        this.api.centrosCusto(),
       ]);
       this.produtos.set(produtos);
       this.categorias.set(categorias);
       this.fornecedores.set(fornecedores);
+      this.centrosCusto.set(centros);
     } catch (error) {
       this.erro.set(this.mensagemErro(error));
     } finally {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'relatorios' | 'perfis' | 'usuarios'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');

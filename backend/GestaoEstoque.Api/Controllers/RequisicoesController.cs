@@ -14,20 +14,20 @@ namespace GestaoEstoque.Api.Controllers;
 public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
 {
     public record ItemRequest(int ProdutoId, int Quantidade);
-    public record CriarRequest(string Finalidade, List<ItemRequest> Itens);
-    public record EditarRequest(string Finalidade, List<ItemRequest> Itens, string Versao);
+    public record CriarRequest(string Finalidade, List<ItemRequest> Itens, int CentroCustoId);
+    public record EditarRequest(string Finalidade, List<ItemRequest> Itens, string Versao, int CentroCustoId);
     public record EntregarRequest(List<ItemRequest> Itens);
     public record CancelarRequest(string Motivo);
     public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeEntregue);
     public record RequisicaoResponse(long Id, string Finalidade, int SolicitanteId, string SolicitanteNome,
         DateTime CriadoUtc, SituacaoRequisicao Situacao, DateTime? AprovadoUtc, string? AprovadoPorNome,
-        DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento, List<ItemResponse> Itens, string Versao);
+        DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento, List<ItemResponse> Itens, string Versao, int? CentroCustoId, string CentroCusto);
     private static RequisicaoResponse Map(RequisicaoMaterial r) => new(r.Id, r.Finalidade, r.SolicitanteId,
         r.SolicitanteNome, r.CriadoUtc, r.Situacao, r.AprovadoUtc, r.AprovadoPorNome, r.EncerradoUtc,
         r.EncerradoPorNome, r.MotivoCancelamento,
-        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue)).ToList(), Convert.ToBase64String(r.Versao));
+        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue)).ToList(), Convert.ToBase64String(r.Versao), r.CentroCustoId, r.CentroCusto?.Nome ?? "Sem centro de custo");
     private IQueryable<RequisicaoMaterial> Consulta() => db.RequisicoesMaterial.AsSplitQuery()
-        .Include(r => r.Itens).ThenInclude(i => i.Produto);
+        .Include(r => r.CentroCusto).Include(r => r.Itens).ThenInclude(i => i.Produto);
     private bool Usuario(out int id, out string nome)
     {
         nome = User.Identity?.Name ?? "";
@@ -51,12 +51,14 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
     {
         if (!Usuario(out var usuarioId, out var nome)) return Unauthorized();
         if (!ItensValidos(request.Itens)) return BadRequest(new { erro = "Informe de 1 a 100 produtos distintos com quantidades positivas." });
+        if (!await db.CentrosCusto.AnyAsync(c => c.Id == request.CentroCustoId && c.Ativo, ct))
+            return BadRequest(new { erro = "Selecione um centro de custo ativo." });
         var ids = request.Itens.Select(i => i.ProdutoId).ToList();
         if (await db.Produtos.CountAsync(p => ids.Contains(p.Id) && p.Ativo, ct) != ids.Count)
             return BadRequest(new { erro = "Selecione somente produtos ativos." });
         try
         {
-            var r = new RequisicaoMaterial(request.Finalidade, usuarioId, nome);
+            var r = new RequisicaoMaterial(request.Finalidade, usuarioId, nome, request.CentroCustoId);
             foreach (var item in request.Itens) r.AdicionarItem(item.ProdutoId, item.Quantidade);
             db.RequisicoesMaterial.Add(r); await db.SaveChangesAsync(ct);
             return CreatedAtAction(nameof(Obter), new { id = r.Id }, new { r.Id });
@@ -80,12 +82,15 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
             return Conflict(new { erro = "O rascunho foi alterado. Feche a edição, atualize a lista e abra novamente." });
         if (!ItensValidos(request.Itens))
             return BadRequest(new { erro = "Informe de 1 a 100 produtos distintos com quantidades positivas." });
+        if (!await db.CentrosCusto.AnyAsync(c => c.Id == request.CentroCustoId && c.Ativo, ct))
+            return BadRequest(new { erro = "Selecione um centro de custo ativo." });
         var ids = request.Itens.Select(i => i.ProdutoId).ToList();
         if (await db.Produtos.CountAsync(p => ids.Contains(p.Id) && p.Ativo, ct) != ids.Count)
             return BadRequest(new { erro = "Selecione somente produtos ativos. Remova itens de produtos inativos." });
         return await Salvar(() =>
         {
             r.AtualizarRascunho(request.Finalidade, request.Itens.Select(i => (i.ProdutoId, i.Quantidade)).ToList());
+            r.AlterarCentroCusto(request.CentroCustoId);
             // Inclui o cabeçalho na checagem de rowversion mesmo ao alterar somente itens.
             db.Entry(r).Property(r => r.Finalidade).IsModified = true;
         }, ct);
