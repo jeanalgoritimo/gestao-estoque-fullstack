@@ -18,15 +18,16 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
     public record CriarRequest(string Finalidade, List<ItemRequest> Itens, int CentroCustoId);
     public record EditarRequest(string Finalidade, List<ItemRequest> Itens, string Versao, int CentroCustoId);
     public record EntregarRequest(List<ItemRequest> Itens);
+    public record DevolverRequest(List<ItemRequest> Itens, string Motivo);
     public record CancelarRequest(string Motivo);
-    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeEntregue);
+    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeEntregue, int QuantidadeDevolvida);
     public record RequisicaoResponse(long Id, string Finalidade, int SolicitanteId, string SolicitanteNome,
         DateTime CriadoUtc, SituacaoRequisicao Situacao, DateTime? AprovadoUtc, string? AprovadoPorNome,
         DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento, List<ItemResponse> Itens, string Versao, int? CentroCustoId, string CentroCusto);
     private static RequisicaoResponse Map(RequisicaoMaterial r) => new(r.Id, r.Finalidade, r.SolicitanteId,
         r.SolicitanteNome, r.CriadoUtc, r.Situacao, r.AprovadoUtc, r.AprovadoPorNome, r.EncerradoUtc,
         r.EncerradoPorNome, r.MotivoCancelamento,
-        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue)).ToList(), Convert.ToBase64String(r.Versao), r.CentroCustoId, r.CentroCusto?.Nome ?? "Sem centro de custo");
+        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue, i.QuantidadeDevolvida)).ToList(), Convert.ToBase64String(r.Versao), r.CentroCustoId, r.CentroCusto?.Nome ?? "Sem centro de custo");
     private IQueryable<RequisicaoMaterial> Consulta() => db.RequisicoesMaterial.AsSplitQuery()
         .Include(r => r.CentroCusto).Include(r => r.Itens).ThenInclude(i => i.Produto);
     private bool Usuario(out int id, out string nome)
@@ -180,9 +181,48 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
         if (!await db.RequisicoesMaterial.AnyAsync(r => r.Id == id, ct)) return NotFound();
         return Ok(await (from m in db.MovimentosEstoque.AsNoTracking()
             join p in db.Produtos on m.ProdutoId equals p.Id
-            where m.RequisicaoMaterialId == id
+            where m.RequisicaoMaterialId == id && m.Tipo == TipoMovimento.Saida && m.EntregaId != null
             orderby m.DataUtc descending, m.Id descending
             select new { m.Id, m.EntregaId, m.ProdutoId, Produto = p.Nome, m.Quantidade, m.DataUtc, m.UsuarioNome, m.SaldoApos })
+            .ToListAsync(ct));
+    }
+    [HttpPost("{id:long}/devolver")]
+    [Authorize(Policy = Permissoes.MovimentarEstoque)]
+    public async Task<IActionResult> Devolver(long id, DevolverRequest request, CancellationToken ct)
+    {
+        if (!Usuario(out var usuarioId, out var nome)) return Unauthorized();
+        if (!ItensValidos(request.Itens) || string.IsNullOrWhiteSpace(request.Motivo) || request.Motivo.Trim().Length > 150)
+            return BadRequest(new { erro = "Informe itens distintos com quantidades positivas e motivo de até 150 caracteres." });
+        var r = await Consulta().FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (r is null) return NotFound();
+        return await Salvar(() =>
+        {
+            var devolucaoId = Guid.NewGuid();
+            foreach (var item in request.Itens)
+            {
+                var linha = r.Itens.SingleOrDefault(i => i.ProdutoId == item.ProdutoId)
+                    ?? throw new ArgumentException("Produto não pertence à requisição.");
+                if (!linha.Produto.Ativo) throw new InvalidOperationException("Produto inativo. Não é possível registrar a devolução.");
+                r.RegistrarDevolucao(item.ProdutoId, item.Quantidade);
+                linha.Produto.RegistrarEntrada(item.Quantidade);
+                var movimento = new MovimentoEstoque(item.ProdutoId, TipoMovimento.Entrada, item.Quantidade,
+                    null, DateTime.UtcNow, $"REQ-{r.Id}-D-{devolucaoId:N}", request.Motivo,
+                    usuarioId, nome, null, linha.Produto.Estoque);
+                movimento.VincularDevolucao(r.Id, devolucaoId); db.MovimentosEstoque.Add(movimento);
+            }
+            // Inclui cabeçalho no rowversion mesmo sem mudar a situação.
+            db.Entry(r).Property(r => r.Situacao).IsModified = true;
+        }, ct);
+    }
+    [HttpGet("{id:long}/devolucoes")]
+    public async Task<IActionResult> Devolucoes(long id, CancellationToken ct)
+    {
+        if (!await db.RequisicoesMaterial.AnyAsync(r => r.Id == id, ct)) return NotFound();
+        return Ok(await (from m in db.MovimentosEstoque.AsNoTracking()
+            join p in db.Produtos on m.ProdutoId equals p.Id
+            where m.RequisicaoMaterialId == id && m.Tipo == TipoMovimento.Entrada && m.DevolucaoId != null
+            orderby m.DataUtc descending, m.Id descending
+            select new { m.Id, m.DevolucaoId, m.ProdutoId, Produto = p.Nome, m.Quantidade, m.DataUtc, m.UsuarioNome, m.Motivo, m.SaldoApos })
             .ToListAsync(ct));
     }
     private async Task<IActionResult> Salvar(Action alterar, CancellationToken ct)

@@ -28,8 +28,8 @@ export class ConsumptionComponent implements OnInit {
   }
   exportar(): void {
     const celula = (v: string | number) => { let s = String(v); if (/^\s*[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
-    const rows = [['Centro de custo', 'Código produto', 'Produto', 'Solicitado (data de criação)', 'Entregue (data da saída)'],
-      ...this.linhas().map(l => [l.centroCusto, l.produtoId, l.produto, l.solicitado, l.entregue])];
+    const rows = [['Centro de custo', 'Código produto', 'Produto', 'Solicitado (data de criação)', 'Entregue (data da saída)', 'Devolvido (data da entrada)', 'Consumo líquido no período'],
+      ...this.linhas().map(l => [l.centroCusto, l.produtoId, l.produto, l.solicitado, l.entregue, l.devolvido, l.consumoLiquido])];
     const url = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(celula).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = 'consumo-centros-custo.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }

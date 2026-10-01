@@ -96,6 +96,15 @@ public class RequisicaoMaterial
         if (Situacao == SituacaoRequisicao.Atendida)
         { EncerradoUtc = DateTime.UtcNow; EncerradoPorId = usuarioId; EncerradoPorNome = nome.Trim(); }
     }
+    public void RegistrarDevolucao(int produtoId, int quantidade)
+    {
+        if (Situacao is not (SituacaoRequisicao.ParcialmenteAtendida or SituacaoRequisicao.Atendida or SituacaoRequisicao.Cancelada))
+            throw new InvalidOperationException("Somente materiais já entregues podem ser devolvidos.");
+        var item = Itens.SingleOrDefault(i => i.ProdutoId == produtoId)
+            ?? throw new ArgumentException("Produto não pertence à requisição.");
+        item.Devolver(quantidade);
+        // Devolução preserva a entrega original e não reabre o atendimento ou a reserva.
+    }
     public void Cancelar(int usuarioId, string nome, string motivo)
     {
         if (Situacao is SituacaoRequisicao.Atendida or SituacaoRequisicao.Cancelada)
@@ -116,6 +125,7 @@ public class ItemRequisicaoMaterial
     public Produto Produto { get; private set; } = null!;
     public int Quantidade { get; private set; }
     public int QuantidadeEntregue { get; private set; }
+    public int QuantidadeDevolvida { get; private set; }
     protected ItemRequisicaoMaterial() { }
     public ItemRequisicaoMaterial(int produtoId, int quantidade)
     {
@@ -127,6 +137,12 @@ public class ItemRequisicaoMaterial
         if (quantidade <= 0 || QuantidadeEntregue != 0)
             throw new ArgumentException("Quantidade de rascunho inválida.");
         Quantidade = quantidade;
+    }
+    internal void Devolver(int quantidade)
+    {
+        if (quantidade <= 0 || quantidade > QuantidadeEntregue - QuantidadeDevolvida)
+            throw new ArgumentException("Quantidade de devolução excede o saldo entregue ainda não devolvido.");
+        QuantidadeDevolvida += quantidade;
     }
     internal void Entregar(int quantidade)
     {

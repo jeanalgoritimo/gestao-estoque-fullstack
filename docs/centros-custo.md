@@ -12,7 +12,9 @@ Requisições anteriores à migration recebem vínculo nulo e aparecem como **Se
 
 - **Solicitado**: quantidades dos itens de requisições criadas no período, incluindo rascunhos e canceladas. Rascunhos editados exibem suas quantidades atuais.
 - **Entregue**: quantidades das saídas vinculadas a requisições e registradas no período. Inclui entregas de requisições criadas antes do período e de requisições que depois tiveram o restante cancelado.
-- As colunas têm critérios de data distintos; sua diferença não é saldo pendente. Consumo efetivo corresponde a Entregue.
+- **Devolvido**: entradas de devolução vinculadas a requisições e registradas no período.
+- **Consumo líquido**: Entregue menos Devolvido no período. Pode ser negativo quando uma devolução corresponde a uma entrega anterior ao período. Não comprova o uso físico do material.
+- Solicitado e as movimentações têm critérios de data distintos; sua diferença não é saldo pendente.
 - Saídas avulsas não vinculadas a requisições não entram neste relatório.
 
 ## Atualização após integrar o PR

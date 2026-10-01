@@ -1,5 +1,5 @@
 import { CentroCusto, ConsumoCentroCusto } from '../../shared/models/cost-center.models';
-import { RequisicaoMaterial, EntregaMaterial, FiltroRequisicoes, PaginaRequisicoes } from '../../shared/models/requisition.models';
+import { RequisicaoMaterial, EntregaMaterial, DevolucaoMaterial, FiltroRequisicoes, PaginaRequisicoes } from '../../shared/models/requisition.models';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -64,6 +64,12 @@ export class EstoqueApiService {
   }
   entregarRequisicao(id: number, itens: { produtoId: number; quantidade: number }[]) {
     return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/entregar`, { itens }));
+  }
+  devolverRequisicao(id: number, itens: { produtoId: number; quantidade: number }[], motivo: string) {
+    return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/devolver`, { itens, motivo }));
+  }
+  devolucoesRequisicao(id: number) {
+    return firstValueFrom(this.http.get<DevolucaoMaterial[]>(`/api/requisicoes/${id}/devolucoes`));
   }
   entregasRequisicao(id: number) {
     return firstValueFrom(this.http.get<EntregaMaterial[]>(`/api/requisicoes/${id}/entregas`));
