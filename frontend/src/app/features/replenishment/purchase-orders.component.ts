@@ -20,8 +20,11 @@ export class PurchaseOrdersComponent implements OnInit {
   readonly historicoPedidoId = signal<number | null>(null);
   readonly historico = signal<RecebimentoPedidoCompra[]>([]);
   readonly carregandoHistorico = signal(false);
+  editando: PedidoCompra | null = null;
+  itensEdicao: { produtoId: number; produto: string; quantidade: number }[] = [];
 
   status(p: PedidoCompra): string {
+    if (p.situacao === 6) return 'Rascunho';
     if (p.situacao === 2) return 'Recebido';
     if (p.situacao === 3) return 'Cancelado';
     if (p.situacao === 5) return 'Saldo cancelado após recebimento parcial';
@@ -31,7 +34,7 @@ export class PurchaseOrdersComponent implements OnInit {
   data(valor: string): string { return new Date(valor).toLocaleString('pt-BR'); }
   ngOnInit(): void { void this.recarregar(); }
   async recarregar(): Promise<void> {
-    this.carregando.set(true); this.erro.set('');
+    this.editando = null; this.carregando.set(true); this.erro.set('');
     try { this.pedidos.set(await this.api.pedidosCompra()); }
     catch (error) { this.erro.set(this.mensagem(error)); }
     finally { this.carregando.set(false); }
@@ -93,6 +96,33 @@ export class PurchaseOrdersComponent implements OnInit {
       await this.recarregar();
       if (this.historicoPedidoId() === p.id) this.historico.set(await this.api.recebimentosPedidoCompra(p.id));
       this.alterado.emit();
+    } catch (error) { this.erro.set(this.mensagem(error)); }
+    finally { this.processando.set(false); }
+  }
+  editar(p: PedidoCompra): void {
+    this.editando = p; this.itensEdicao = p.itens.map(i => ({ produtoId: i.produtoId, produto: i.produto, quantidade: i.quantidade }));
+    this.erro.set(''); this.sucesso.set('');
+  }
+  removerItem(id: number): void { this.itensEdicao = this.itensEdicao.filter(i => i.produtoId !== id); }
+  async salvarRascunho(): Promise<void> {
+    const p = this.editando;
+    if (!p || this.processando()) return;
+    if (!this.itensEdicao.length || this.itensEdicao.some(i => !Number.isInteger(i.quantidade) || i.quantidade < 1 || i.quantidade > 2147483647)) {
+      this.erro.set('Mantenha pelo menos um item com quantidade inteira positiva.'); return;
+    }
+    this.processando.set(true); this.erro.set(''); this.sucesso.set('');
+    try {
+      await this.api.editarRascunhoCompra(p.id, this.itensEdicao.map(i => ({ produtoId: i.produtoId, quantidade: i.quantidade })), p.versao);
+      this.editando = null; this.sucesso.set('Rascunho atualizado. Revise antes de confirmar.'); await this.recarregar();
+    } catch (error) { this.erro.set(this.mensagem(error)); }
+    finally { this.processando.set(false); }
+  }
+  async confirmar(p: PedidoCompra): Promise<void> {
+    if (this.processando()) return;
+    this.processando.set(true); this.erro.set(''); this.sucesso.set('');
+    try {
+      await this.api.confirmarRascunhoCompra(p.id, p.versao);
+      this.sucesso.set(`Pedido #${p.id} aberto. Pode registrar recebimentos.`); await this.recarregar();
     } catch (error) { this.erro.set(this.mensagem(error)); }
     finally { this.processando.set(false); }
   }

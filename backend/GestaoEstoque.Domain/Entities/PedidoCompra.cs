@@ -1,6 +1,6 @@
 namespace GestaoEstoque.Domain.Entities;
 
-public enum SituacaoPedidoCompra { Aberto = 1, Recebido = 2, Cancelado = 3, ParcialmenteRecebido = 4, ParcialmenteCancelado = 5 }
+public enum SituacaoPedidoCompra { Aberto = 1, Recebido = 2, Cancelado = 3, ParcialmenteRecebido = 4, ParcialmenteCancelado = 5, Rascunho = 6 }
 
 public class PedidoCompra
 {
@@ -19,20 +19,41 @@ public class PedidoCompra
     public List<ItemPedidoCompra> Itens { get; private set; } = [];
 
     protected PedidoCompra() { }
-    public PedidoCompra(int fornecedorId, int usuarioId, string nome)
+    public PedidoCompra(int fornecedorId, int usuarioId, string nome, bool rascunho = false)
     {
         if (fornecedorId <= 0 || usuarioId <= 0 || string.IsNullOrWhiteSpace(nome) || nome.Length > 120)
             throw new ArgumentException("Fornecedor ou usuário inválido.");
+        Situacao = rascunho ? SituacaoPedidoCompra.Rascunho : SituacaoPedidoCompra.Aberto;
         FornecedorId = fornecedorId;
         CriadoPorId = usuarioId;
         CriadoPorNome = nome.Trim();
     }
     public void AdicionarItem(int produtoId, int quantidade)
     {
-        if (Situacao != SituacaoPedidoCompra.Aberto) throw new InvalidOperationException("Pedido encerrado.");
+        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.Rascunho)) throw new InvalidOperationException("Pedido encerrado.");
         if (produtoId <= 0 || quantidade <= 0) throw new ArgumentException("Produto ou quantidade inválida.");
         if (Itens.Any(i => i.ProdutoId == produtoId)) throw new ArgumentException("Produto repetido no pedido.");
         Itens.Add(new ItemPedidoCompra(produtoId, quantidade));
+    }
+    public void AtualizarRascunho(IReadOnlyCollection<(int ProdutoId, int Quantidade)> itens)
+    {
+        if (Situacao != SituacaoPedidoCompra.Rascunho) throw new InvalidOperationException("Somente rascunhos podem ser editados.");
+        if (itens is null || itens.Count is < 1 or > 100 || itens.Any(i => i.ProdutoId <= 0 || i.Quantidade <= 0) ||
+            itens.Select(i => i.ProdutoId).Distinct().Count() != itens.Count)
+            throw new ArgumentException("Informe de 1 a 100 produtos distintos com quantidades positivas.");
+        Itens.RemoveAll(i => !itens.Any(n => n.ProdutoId == i.ProdutoId));
+        foreach (var novo in itens)
+        {
+            var atual = Itens.SingleOrDefault(i => i.ProdutoId == novo.ProdutoId);
+            if (atual is null) Itens.Add(new ItemPedidoCompra(novo.ProdutoId, novo.Quantidade));
+            else atual.AlterarQuantidade(novo.Quantidade);
+        }
+    }
+    public void ConfirmarRascunho()
+    {
+        if (Situacao != SituacaoPedidoCompra.Rascunho || Itens.Count == 0)
+            throw new InvalidOperationException("Somente rascunhos com itens podem ser confirmados.");
+        Situacao = SituacaoPedidoCompra.Aberto;
     }
     public void RegistrarRecebimento(int produtoId, int quantidade, int usuarioId, string nome)
     {
@@ -47,7 +68,7 @@ public class PedidoCompra
     }
     public void CancelarSaldo(int usuarioId, string nome, string motivo)
     {
-        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
+        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido or SituacaoPedidoCompra.Rascunho))
             throw new InvalidOperationException("Pedido já encerrado.");
         if (string.IsNullOrWhiteSpace(motivo) || motivo.Trim().Length > 150)
             throw new ArgumentException("Informe o motivo do cancelamento (até 150 caracteres).");
@@ -58,9 +79,10 @@ public class PedidoCompra
     }
     public void Encerrar(SituacaoPedidoCompra situacao, int usuarioId, string nome)
     {
-        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
+        if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido or SituacaoPedidoCompra.Rascunho))
             throw new InvalidOperationException("Pedido já encerrado.");
-        if (situacao is not (SituacaoPedidoCompra.Recebido or SituacaoPedidoCompra.Cancelado or SituacaoPedidoCompra.ParcialmenteCancelado) ||
+        if ((Situacao == SituacaoPedidoCompra.Rascunho && situacao != SituacaoPedidoCompra.Cancelado) ||
+            situacao is not (SituacaoPedidoCompra.Recebido or SituacaoPedidoCompra.Cancelado or SituacaoPedidoCompra.ParcialmenteCancelado) ||
             usuarioId <= 0 || string.IsNullOrWhiteSpace(nome) || nome.Length > 120)
             throw new ArgumentException("Situação ou usuário inválido.");
         Situacao = situacao;
@@ -83,6 +105,11 @@ public class ItemPedidoCompra
     {
         if (produtoId <= 0 || quantidade <= 0) throw new ArgumentException("Item inválido.");
         ProdutoId = produtoId;
+        Quantidade = quantidade;
+    }
+    internal void AlterarQuantidade(int quantidade)
+    {
+        if (quantidade <= 0 || QuantidadeRecebida != 0) throw new ArgumentException("Quantidade inválida para rascunho.");
         Quantidade = quantidade;
     }
     public void Receber(int quantidade)

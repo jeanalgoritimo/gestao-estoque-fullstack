@@ -271,7 +271,7 @@
       } @else if (tela() === 'fornecedores') {
         <app-suppliers [fornecedores]="fornecedores()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (atualizar)="recarregar()" />
       } @else if (tela() === 'reposicao') {
-        <app-replenishment [produtos]="produtos()" [fornecedores]="fornecedores()" [carregando]="carregando()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (atualizar)="recarregar()" (criarPedido)="criarPedidoCompra($event)" />
+        <app-replenishment [fornecedores]="fornecedores()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (criado)="navegar('pedidos'); sucesso.set('Rascunho #' + $event + ' criado. Revise e confirme a abertura.')" />
       } @else if (tela() === 'pedidos') {
         <app-purchase-orders [administrador]="auth.usuario()?.perfil === 'Administrador'" [podeReceber]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
       } @else if (tela() === 'centros') {

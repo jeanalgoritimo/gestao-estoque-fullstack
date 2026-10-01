@@ -11,6 +11,7 @@ import {
   PedidoCompra,
   RecebimentoPedidoCompra,
   NovoPedidoCompra,
+  SugestaoReposicao,
   Perfil,
   Produto,
   ProdutoForm,
@@ -150,6 +151,15 @@ export class EstoqueApiService {
   }
   recebimentosPedidoCompra(id: number) {
     return firstValueFrom(this.http.get<RecebimentoPedidoCompra[]>(`/api/pedidos-compra/${id}/recebimentos`));
+  }
+  sugestoesReposicao() {
+    return firstValueFrom(this.http.get<SugestaoReposicao[]>('/api/reposicao'));
+  }
+  editarRascunhoCompra(id: number, itens: { produtoId: number; quantidade: number }[], versao: string) {
+    return firstValueFrom(this.http.put(`/api/pedidos-compra/${id}/rascunho`, { itens, versao }));
+  }
+  confirmarRascunhoCompra(id: number, versao: string) {
+    return firstValueFrom(this.http.post(`/api/pedidos-compra/${id}/confirmar`, { versao }));
   }
   criarPedidoCompra(input: NovoPedidoCompra) {
     return firstValueFrom(this.http.post<{ id: number }>('/api/pedidos-compra', input));

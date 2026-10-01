@@ -163,14 +163,6 @@ export class App {
     if (tela === 'perfis') void this.carregarPerfis();
     if (tela === 'usuarios') void Promise.all([this.carregarUsuarios(), this.carregarPerfis()]);
   }
-  async criarPedidoCompra(input: { fornecedorId: number; itens: { produtoId: number; quantidade: number }[] }): Promise<void> {
-    this.erro.set('');
-    try {
-      const pedido = await this.api.criarPedidoCompra(input);
-      this.navegar('pedidos');
-      this.sucesso.set(`Pedido de compra #${pedido.id} criado.`);
-    } catch (error) { this.erro.set(this.mensagemErro(error)); }
-  }
   private async carregarPerfis(): Promise<void> {
     try {
       this.perfis.set(await this.api.perfis());
