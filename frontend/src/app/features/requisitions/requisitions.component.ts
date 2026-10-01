@@ -3,12 +3,16 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EstoqueApiService } from '../../core/api/estoque-api.service';
+import { CentroCusto } from '../../shared/models/cost-center.models';
 import { Produto } from '../../shared/models/stock.models';
 import { RequisicaoMaterial, EntregaMaterial } from '../../shared/models/requisition.models';
 
 @Component({ selector: 'app-requisitions', imports: [CommonModule, FormsModule], templateUrl: './requisitions.component.html' })
 export class RequisitionsComponent implements OnInit {
   private readonly api = inject(EstoqueApiService);
+  readonly centrosCusto = input<CentroCusto[]>([]);
+  centroCustoId: number | null = null;
+  filtroCentro = 'todos';
   readonly produtos = input<Produto[]>([]);
   readonly administrador = input(false);
   readonly podeEntregar = input(false);
@@ -41,7 +45,8 @@ export class RequisitionsComponent implements OnInit {
   }
   filtradas(): RequisicaoMaterial[] {
     const termo = this.busca.trim().toLocaleLowerCase('pt-BR');
-    return this.requisicoes().filter(r => (!this.filtro || r.situacao === this.filtro) &&
+    return this.requisicoes().filter(r => (this.filtroCentro === 'todos' ||
+      (this.filtroCentro === 'sem' ? r.centroCustoId === null : r.centroCustoId === Number(this.filtroCentro))) && (!this.filtro || r.situacao === this.filtro) &&
       (!termo || `${r.id} ${r.finalidade} ${r.solicitanteNome}`.toLocaleLowerCase('pt-BR').includes(termo)));
   }
   podeEnviar(r: RequisicaoMaterial): boolean {
@@ -63,6 +68,7 @@ export class RequisitionsComponent implements OnInit {
   remover(id: number): void { this.itens = this.itens.filter(i => i.produtoId !== id); }
   editar(r: RequisicaoMaterial): void {
     if (!this.podeEnviar(r) || this.processando()) return;
+    this.centroCustoId = r.centroCustoId;
     this.editandoId = r.id; this.versaoEdicao = r.versao; this.finalidade = r.finalidade;
     this.itens = r.itens.map(i => ({ produtoId: i.produtoId, quantidade: i.quantidade }));
     this.produtoId = null; this.quantidade = null; this.erro.set(''); this.sucesso.set(''); this.nova.set(true);
@@ -72,6 +78,7 @@ export class RequisitionsComponent implements OnInit {
     this.nova.set(false); this.editandoId = null; this.versaoEdicao = '';
   }
   abrirNova(): void {
+    this.centroCustoId = null;
     this.editandoId = null; this.versaoEdicao = '';
     this.finalidade = ''; this.itens = []; this.produtoId = null; this.quantidade = null;
     this.erro.set(''); this.sucesso.set(''); this.nova.set(true);
@@ -99,14 +106,14 @@ export class RequisitionsComponent implements OnInit {
     finally { this.processando.set(false); }
   }
   async criar(): Promise<void> {
-    if (!this.finalidade.trim() || !this.itens.length || this.itens.some(i =>
+    if (!this.centroCustoId || !this.centrosCusto().some(c => c.id === this.centroCustoId && c.ativo) || !this.finalidade.trim() || !this.itens.length || this.itens.some(i =>
       !Number.isInteger(i.quantidade) || i.quantidade <= 0 || i.quantidade > 2147483647)) {
-      this.erro.set('Informe finalidade, itens e quantidades inteiras positivas.'); return;
+      this.erro.set('Selecione um centro de custo ativo, informe finalidade, itens e quantidades inteiras positivas.'); return;
     }
     const id = this.editandoId;
     await this.executar(async () => {
-      if (id !== null) await this.api.editarRequisicao(id, { finalidade: this.finalidade, itens: this.itens, versao: this.versaoEdicao });
-      else await this.api.criarRequisicao({ finalidade: this.finalidade, itens: this.itens });
+      if (id !== null) await this.api.editarRequisicao(id, { centroCustoId: this.centroCustoId!, finalidade: this.finalidade, itens: this.itens, versao: this.versaoEdicao });
+      else await this.api.criarRequisicao({ centroCustoId: this.centroCustoId!, finalidade: this.finalidade, itens: this.itens });
       this.nova.set(false); this.editandoId = null; this.versaoEdicao = '';
     }, id !== null ? 'Rascunho atualizado.' : 'Rascunho criado. Envie a requisição para aprovação.');
   }

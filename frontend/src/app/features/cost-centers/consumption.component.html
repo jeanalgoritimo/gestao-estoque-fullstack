@@ -1,0 +1,15 @@
+<section class="panel"><div class="panel-heading"><div><h2>Consumo por centro de custo</h2><p>Quantidades por centro e produto, com período de até 366 dias.</p></div>
+  <button class="secondary" type="button" (click)="exportar()" [disabled]="carregando() || !linhas().length">Exportar CSV</button></div>
+  @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
+  <form class="toolbar" (ngSubmit)="consultar()"><label>Início<input name="inicio" type="date" [(ngModel)]="inicio" required [disabled]="carregando()" /></label>
+    <label>Fim<input name="fim" type="date" [(ngModel)]="fim" required [disabled]="carregando()" /></label>
+    <label>Centro de custo<select name="centro" [(ngModel)]="centro" [disabled]="carregando()"><option value="todos">Todos</option><option value="sem">Sem centro de custo</option>
+      @for (c of centros(); track c.id) { <option [value]="c.id">{{ c.nome }}{{ c.ativo ? '' : ' (inativo)' }}</option> }</select></label>
+    <button class="primary" type="submit" [disabled]="carregando()">{{ carregando() ? 'Consultando...' : 'Consultar' }}</button></form>
+  <p>Solicitado considera todas as requisições criadas no período, inclusive rascunhos e canceladas. Entregue considera as saídas realizadas no período, mesmo de requisições antigas ou depois canceladas. As duas colunas não representam o saldo pendente. Datas no horário de Brasília.</p>
+  @if (aplicado) { <p>Filtro aplicado: {{ aplicado }}</p> }
+  <div class="table-wrap"><table><thead><tr><th>Centro de custo</th><th>Produto</th><th>Solicitado</th><th>Entregue</th></tr></thead><tbody>
+    @for (l of linhas(); track (l.centroCustoId ?? 0) + '-' + l.produtoId) { <tr><td>{{ l.centroCusto }}</td><td>{{ l.produto }} · #{{ l.produtoId }}</td><td>{{ l.solicitado }}</td><td>{{ l.entregue }}</td></tr> }
+    @empty { <tr><td colspan="4" class="empty">{{ carregando() ? 'Carregando...' : 'Nenhum registro no período.' }}</td></tr> }
+  </tbody></table></div>
+</section>

@@ -62,6 +62,8 @@
         <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
         <button type="button" aria-label="Reposição" title="Reposição" [class.nav-active]="tela() === 'reposicao'" (click)="navegar('reposicao')">▣ <span>Reposição</span></button>
         <button type="button" aria-label="Pedidos de compra" title="Pedidos de compra" [class.nav-active]="tela() === 'pedidos'" (click)="navegar('pedidos')">▣ <span>Pedidos de compra</span></button>
+        <button type="button" aria-label="Centros de custo" title="Centros de custo" [class.nav-active]="tela() === 'centros'" (click)="navegar('centros')">▣ <span>Centros de custo</span></button>
+        <button type="button" aria-label="Consumo por centro" title="Consumo por centro" [class.nav-active]="tela() === 'consumo'" (click)="navegar('consumo')">▤ <span>Consumo por centro</span></button>
         <button type="button" aria-label="Requisições" title="Requisições" [class.nav-active]="tela() === 'requisicoes'" (click)="navegar('requisicoes')">▣ <span>Requisições</span></button>
         @if (auth.usuario()?.perfil === 'Administrador') {
           <button
@@ -133,6 +135,8 @@
                         ? 'Reposição'
                       : tela() === 'pedidos'
                         ? 'Pedidos de compra'
+                      : tela() === 'centros' ? 'Centros de custo'
+                      : tela() === 'consumo' ? 'Consumo por centro de custo'
                       : tela() === 'requisicoes'
                         ? 'Requisições de materiais'
                       : tela() === 'relatorios'
@@ -165,6 +169,8 @@
                         ? 'Reposição'
                       : tela() === 'pedidos'
                         ? 'Pedidos de compra'
+                      : tela() === 'centros' ? 'Centros de custo'
+                      : tela() === 'consumo' ? 'Consumo por centro de custo'
                       : tela() === 'requisicoes'
                         ? 'Requisições de materiais'
                       : tela() === 'relatorios'
@@ -190,6 +196,8 @@
                         ? 'Planeje a reposição dos produtos abaixo do estoque mínimo.'
                       : tela() === 'pedidos'
                         ? 'Acompanhe pedidos e registre o recebimento no estoque.'
+                      : tela() === 'centros' ? 'Centros de custo'
+                      : tela() === 'consumo' ? 'Consumo por centro de custo'
                       : tela() === 'requisicoes'
                         ? 'Solicite materiais, reserve o saldo e acompanhe as entregas.'
                       : tela() === 'relatorios'
@@ -266,8 +274,12 @@
         <app-replenishment [produtos]="produtos()" [fornecedores]="fornecedores()" [carregando]="carregando()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (atualizar)="recarregar()" (criarPedido)="criarPedidoCompra($event)" />
       } @else if (tela() === 'pedidos') {
         <app-purchase-orders [administrador]="auth.usuario()?.perfil === 'Administrador'" [podeReceber]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
+      } @else if (tela() === 'centros') {
+        <app-cost-centers [centros]="centrosCusto()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
+      } @else if (tela() === 'consumo') {
+        <app-consumption [centros]="centrosCusto()" />
       } @else if (tela() === 'requisicoes') {
-        <app-requisitions [produtos]="produtos()" [administrador]="auth.usuario()?.perfil === 'Administrador'" [usuarioId]="auth.usuario()!.id" [podeEntregar]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
+        <app-requisitions [centrosCusto]="centrosCusto()" [produtos]="produtos()" [administrador]="auth.usuario()?.perfil === 'Administrador'" [usuarioId]="auth.usuario()!.id" [podeEntregar]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
       } @else if (tela() === 'relatorios') {
         <app-reports [produtos]="produtos()" [carregando]="carregando()" (atualizar)="recarregar()" />
       } @else {

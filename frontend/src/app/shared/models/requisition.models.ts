@@ -1,4 +1,5 @@
 export interface RequisicaoMaterial {
+  centroCustoId: number | null; centroCusto: string;
   versao: string;
   id: number; finalidade: string; solicitanteId: number; solicitanteNome: string;
   criadoUtc: string; situacao: 1 | 2 | 3 | 4 | 5 | 6;

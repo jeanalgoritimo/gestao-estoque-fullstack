@@ -1,0 +1,13 @@
+<section class="panel"><div class="panel-heading"><div><h2>Centros de custo</h2><p>Cadastre áreas como Manutenção, Administrativo e Produção.</p></div>
+  @if (administrador()) { <button type="button" class="primary" (click)="abrir()" [disabled]="processando()">＋ Novo centro de custo</button> }</div>
+  @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
+  @if (aberto && administrador()) { <form class="fields" (ngSubmit)="salvar()"><h3>{{ id === null ? 'Novo centro' : 'Editar centro' }}</h3>
+    <label>Nome<input name="nomeCentro" [(ngModel)]="nome" maxlength="100" required [disabled]="processando()" /></label>
+    <div class="dialog-actions"><button type="button" (click)="aberto = false" [disabled]="processando()">Fechar</button><button type="submit" class="primary" [disabled]="processando()">Salvar</button></div></form> }
+  <div class="toolbar"><label>Pesquisar<input type="search" [(ngModel)]="busca" placeholder="Nome do centro de custo" /></label><button class="secondary" type="button" (click)="alterado.emit()" [disabled]="processando()">Atualizar</button></div>
+  <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Situação</th><th>Ações</th></tr></thead><tbody>
+    @for (c of filtrados(); track c.id) { <tr><td>{{ c.nome }}</td><td>{{ c.ativo ? 'Ativo' : 'Inativo' }}</td><td>
+      @if (administrador()) { <button type="button" (click)="abrir(c)" [disabled]="processando()">Editar</button><button type="button" (click)="alternar(c)" [disabled]="processando()">{{ c.ativo ? 'Desativar' : 'Reativar' }}</button> }
+    </td></tr> } @empty { <tr><td colspan="3" class="empty">Nenhum centro de custo encontrado.</td></tr> }
+  </tbody></table></div><p>Centros inativos permanecem no histórico e nos relatórios. Renomear um centro atualiza seu nome nas consultas anteriores.</p>
+</section>

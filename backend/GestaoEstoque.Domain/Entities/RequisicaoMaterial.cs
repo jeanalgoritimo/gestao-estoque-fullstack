@@ -5,6 +5,8 @@ public enum SituacaoRequisicao { Rascunho = 1, Pendente = 2, Aprovada = 3, Parci
 public class RequisicaoMaterial
 {
     public long Id { get; private set; }
+    public int? CentroCustoId { get; private set; }
+    public CentroCusto? CentroCusto { get; private set; }
     public string Finalidade { get; private set; } = "";
     public int SolicitanteId { get; private set; }
     public string SolicitanteNome { get; private set; } = "";
@@ -20,13 +22,14 @@ public class RequisicaoMaterial
     public byte[] Versao { get; private set; } = [];
     public List<ItemRequisicaoMaterial> Itens { get; private set; } = [];
     protected RequisicaoMaterial() { }
-    public RequisicaoMaterial(string finalidade, int solicitanteId, string nome)
+    public RequisicaoMaterial(string finalidade, int solicitanteId, string nome, int? centroCustoId = null)
     {
         if (string.IsNullOrWhiteSpace(finalidade) || finalidade.Trim().Length > 300)
             throw new ArgumentException("Informe a finalidade com até 300 caracteres.");
         ValidarUsuario(solicitanteId, nome);
         Finalidade = finalidade.Trim(); SolicitanteId = solicitanteId; SolicitanteNome = nome.Trim();
         CriadoUtc = DateTime.UtcNow; Situacao = SituacaoRequisicao.Rascunho;
+        AlterarCentroCusto(centroCustoId);
     }
     private static void ValidarUsuario(int id, string nome)
     {
@@ -39,6 +42,13 @@ public class RequisicaoMaterial
         if (Itens.Count >= 100 || Itens.Any(i => i.ProdutoId == produtoId))
             throw new ArgumentException("Informe até 100 produtos distintos.");
         Itens.Add(new ItemRequisicaoMaterial(produtoId, quantidade));
+    }
+    public void AlterarCentroCusto(int? centroCustoId)
+    {
+        if (Situacao != SituacaoRequisicao.Rascunho)
+            throw new InvalidOperationException("O centro de custo só pode ser alterado no rascunho.");
+        if (centroCustoId <= 0) throw new ArgumentException("Centro de custo inválido.");
+        CentroCustoId = centroCustoId;
     }
     public void AtualizarRascunho(string finalidade, IReadOnlyCollection<(int ProdutoId, int Quantidade)> itens)
     {
