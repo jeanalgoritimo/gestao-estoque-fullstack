@@ -124,7 +124,8 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     [HttpGet("{id:int}/movimentos")]
     public async Task<IActionResult> Movimentos(int id, CancellationToken ct)
     {
-        if (await repository.ObterPorIdAsync(id, ct) is null) return NotFound();
+        var produto = await repository.ObterPorIdAsync(id, ct);
+        if (produto is null) return NotFound();
         var movimentos = await repository.ListarMovimentosAsync(id, ct);
         return Ok(movimentos.Select(m => new { m.Id, m.ProdutoId, m.Tipo, m.Quantidade, m.DataUtc,
             m.DataEfetivaUtc, m.DocumentoOrigem, m.Motivo, m.UsuarioNome, m.CustoUnitario,
