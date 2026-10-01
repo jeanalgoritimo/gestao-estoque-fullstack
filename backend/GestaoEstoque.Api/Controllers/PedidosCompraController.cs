@@ -20,9 +20,9 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
     public record ConfirmarRequest(string Versao);
     public record ReceberRequest(List<ItemRecebimentoRequest> Itens);
     public record CancelarRequest(string Motivo);
-    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida);
+    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida, string Unidade);
     public record LinhaRecebimentoResponse(long MovimentoId, int ProdutoId, string Produto, int Quantidade,
-        decimal? CustoUnitario, decimal? ValorCompra);
+        decimal? CustoUnitario, decimal? ValorCompra, string Unidade);
     public record RecebimentoResponse(Guid Id, DateTime DataUtc, string UsuarioNome,
         List<LinhaRecebimentoResponse> Itens);
     public record PedidoResponse(long Id, int FornecedorId, string Fornecedor, SituacaoPedidoCompra Situacao,
@@ -31,9 +31,9 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
 
     private static PedidoResponse Map(PedidoCompra p) => new(p.Id, p.FornecedorId, p.Fornecedor.Nome,
         p.Situacao, p.CriadoUtc, p.CriadoPorNome, p.EncerradoUtc, p.EncerradoPorNome, p.MotivoCancelamento,
-        p.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeRecebida)).ToList(), Convert.ToBase64String(p.Versao));
+        p.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeRecebida, i.Produto.UnidadeMedida.Sigla)).ToList(), Convert.ToBase64String(p.Versao));
     private IQueryable<PedidoCompra> Consulta() => db.PedidosCompra.AsSplitQuery()
-        .Include(p => p.Fornecedor).Include(p => p.Itens).ThenInclude(i => i.Produto);
+        .Include(p => p.Fornecedor).Include(p => p.Itens).ThenInclude(i => i.Produto).ThenInclude(p => p.UnidadeMedida);
     private bool Usuario(out int id, out string nome)
     {
         nome = User.Identity?.Name ?? "";
@@ -59,13 +59,13 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
             join p in db.Produtos.AsNoTracking() on m.ProdutoId equals p.Id
             where m.PedidoCompraId == id && m.RecebimentoId != null
             orderby m.DataUtc descending, m.Id descending
-            select new { Movimento = m, Produto = p.Nome }).ToListAsync(ct);
+            select new { Movimento = m, Produto = p.Nome, Unidade = p.UnidadeMedida.Sigla }).ToListAsync(ct);
         return Ok(linhas.GroupBy(x => x.Movimento.RecebimentoId!.Value)
             .Select(g => new RecebimentoResponse(g.Key, g.Max(x => x.Movimento.DataUtc),
                 g.First().Movimento.UsuarioNome,
                 g.Select(x => new LinhaRecebimentoResponse(x.Movimento.Id, x.Movimento.ProdutoId,
                     x.Produto, x.Movimento.Quantidade, x.Movimento.CustoUnitario,
-                    x.Movimento.CustoUnitario * x.Movimento.Quantidade)).ToList()))
+                    x.Movimento.CustoUnitario * x.Movimento.Quantidade, x.Unidade)).ToList()))
             .OrderByDescending(r => r.DataUtc).ToList());
     }
 

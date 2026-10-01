@@ -3,7 +3,7 @@ using GestaoEstoque.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace GestaoEstoque.Infrastructure.Reports;
 
-public record QuantidadeCentro(int? CentroCustoId, string Centro, int ProdutoId, string Produto, long Quantidade);
+public record QuantidadeCentro(int? CentroCustoId, string Centro, int ProdutoId, string Produto, long Quantidade, string Unidade);
 public static class ConsumoQueries
 {
     public static IQueryable<QuantidadeCentro> Solicitadas(GestaoEstoqueDbContext db, DateTime inicioUtc, DateTime fimUtc, int? centroCustoId, bool semCentro)
@@ -15,9 +15,9 @@ public static class ConsumoQueries
             join r in requisicoes on i.RequisicaoMaterialId equals r.Id
             where r.CriadoUtc >= inicioUtc && r.CriadoUtc < fimUtc
             group i by new { r.CentroCustoId, Centro = r.CentroCusto == null ? "Sem centro de custo" : r.CentroCusto.Nome,
-                i.ProdutoId, Produto = i.Produto.Nome } into g
-            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, Quantidade = g.Sum(i => (long)i.Quantidade) })
-            .Select(x => new QuantidadeCentro(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade));
+                i.ProdutoId, Produto = i.Produto.Nome, Unidade = i.Produto.UnidadeMedida.Sigla } into g
+            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, g.Key.Unidade, Quantidade = g.Sum(i => (long)i.Quantidade) })
+            .Select(x => new QuantidadeCentro(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade, x.Unidade));
     }
     public static IQueryable<QuantidadeCentro> Entregues(GestaoEstoqueDbContext db, DateTime inicioUtc, DateTime fimUtc, int? centroCustoId, bool semCentro) =>
         Movimentadas(db, inicioUtc, fimUtc, centroCustoId, semCentro, TipoMovimento.Saida);
@@ -33,8 +33,8 @@ public static class ConsumoQueries
             join p in db.Produtos.AsNoTracking() on m.ProdutoId equals p.Id
             where m.Tipo == tipo && (tipo == TipoMovimento.Saida || m.DevolucaoId != null) && m.DataUtc >= inicioUtc && m.DataUtc < fimUtc
             group m by new { r.CentroCustoId, Centro = r.CentroCusto == null ? "Sem centro de custo" : r.CentroCusto.Nome,
-                m.ProdutoId, Produto = p.Nome } into g
-            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, Quantidade = g.Sum(m => (long)m.Quantidade) })
-            .Select(x => new QuantidadeCentro(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade));
+                m.ProdutoId, Produto = p.Nome, Unidade = p.UnidadeMedida.Sigla } into g
+            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, g.Key.Unidade, Quantidade = g.Sum(m => (long)m.Quantidade) })
+            .Select(x => new QuantidadeCentro(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade, x.Unidade));
     }
 }

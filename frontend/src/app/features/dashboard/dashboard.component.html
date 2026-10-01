@@ -7,9 +7,9 @@
   </article>
   <article class="card">
     <div class="card-icon violet">▦</div>
-    <p>Unidades em estoque</p>
-    <strong>{{ unidades() }}</strong
-    ><span>Em todos os produtos ativos</span>
+    <p>Saldo físico por unidade</p>
+    @for (s of saldos(); track s.unidade) { <strong>{{ s.quantidade }} {{ s.unidade }}</strong> } @empty { <strong>0</strong> }
+    <span>Em todos os produtos ativos</span>
   </article>
   <article class="card">
     <div class="card-icon amber">!</div>

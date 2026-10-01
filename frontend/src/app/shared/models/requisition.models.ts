@@ -5,10 +5,10 @@ export interface RequisicaoMaterial {
   criadoUtc: string; situacao: 1 | 2 | 3 | 4 | 5 | 6;
   aprovadoUtc: string | null; aprovadoPorNome: string | null;
   encerradoUtc: string | null; encerradoPorNome: string | null; motivoCancelamento: string | null;
-  itens: { produtoId: number; produto: string; quantidade: number; quantidadeEntregue: number; quantidadeDevolvida: number }[];
+  itens: { produtoId: number; produto: string; unidade: string; quantidade: number; quantidadeEntregue: number; quantidadeDevolvida: number }[];
 }
 export interface EntregaMaterial {
-  id: number; entregaId: string; produtoId: number; produto: string; quantidade: number;
+  id: number; entregaId: string; produtoId: number; produto: string; unidade: string; quantidade: number;
   dataUtc: string; usuarioNome: string; saldoApos: number;
 }
 
@@ -21,6 +21,6 @@ export interface PaginaRequisicoes {
 }
 
 export interface DevolucaoMaterial {
-  id: number; devolucaoId: string; produtoId: number; produto: string; quantidade: number;
+  id: number; devolucaoId: string; produtoId: number; produto: string; unidade: string; quantidade: number;
   dataUtc: string; usuarioNome: string; motivo: string; saldoApos: number;
 }

@@ -77,7 +77,7 @@ export class RequisitionsComponent implements OnInit {
     return r.situacao < 5 && (this.administrador() ||
       (r.solicitanteId === this.usuarioId() && r.situacao <= 2));
   }
-  nomeProduto(id: number): string { return this.produtos().find(p => p.id === id)?.nome ?? `#${id}`; }
+  nomeProduto(id: number): string { const p = this.produtos().find(p => p.id === id); return p ? `${p.nome} (${p.unidade})` : `#${id}`; }
   adicionar(): void {
     if (!this.produtoId || !Number.isInteger(this.quantidade) || this.quantidade! <= 0 || this.quantidade! > 2147483647 ||
       this.itens.length >= 100 || this.itens.some(i => i.produtoId === this.produtoId)) {

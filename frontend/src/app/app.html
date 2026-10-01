@@ -59,6 +59,7 @@
         >
           ▤ <span>Relatórios</span>
         </button>
+        <button type="button" aria-label="Unidades de medida" title="Unidades de medida" [class.nav-active]="tela() === 'unidades'" (click)="navegar('unidades')">▣ <span>Unidades de medida</span></button>
         <button type="button" aria-label="Localizações" title="Localizações" [class.nav-active]="tela() === 'localizacoes'" (click)="navegar('localizacoes')">▣ <span>Localizações</span></button>
         <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
         <button type="button" aria-label="Reposição" title="Reposição" [class.nav-active]="tela() === 'reposicao'" (click)="navegar('reposicao')">▣ <span>Reposição</span></button>
@@ -132,7 +133,9 @@
                       ? 'Inventário'
                       : tela() === 'fornecedores'
                         ? 'Fornecedores'
-                      : tela() === 'localizacoes'
+                      : tela() === 'unidades'
+                        ? 'Unidades de medida'
+                        : tela() === 'localizacoes'
                         ? 'Localizações'
                         : tela() === 'reposicao'
                         ? 'Reposição'
@@ -168,7 +171,9 @@
                       ? 'Inventário físico'
                       : tela() === 'fornecedores'
                         ? 'Fornecedores'
-                      : tela() === 'localizacoes'
+                      : tela() === 'unidades'
+                        ? 'Unidades de medida'
+                        : tela() === 'localizacoes'
                         ? 'Localizações'
                         : tela() === 'reposicao'
                         ? 'Reposição'
@@ -197,7 +202,9 @@
                       ? 'Conte os produtos e registre ajustes com rastreabilidade.'
                       : tela() === 'fornecedores'
                         ? 'Cadastre fornecedores e associe-os aos produtos.'
-                      : tela() === 'localizacoes'
+                      : tela() === 'unidades'
+                        ? 'Cadastre as unidades usadas nas quantidades dos produtos.'
+                        : tela() === 'localizacoes'
                         ? 'Cadastre almoxarifados e posições dos materiais.'
                         : tela() === 'reposicao'
                         ? 'Planeje a reposição dos produtos abaixo do estoque mínimo.'
@@ -242,7 +249,7 @@
       @if (tela() === 'visao') {
         <app-dashboard
           [ativos]="ativos().length"
-          [unidades]="unidades()"
+          [saldos]="saldos()"
           [baixos]="baixos()"
           [potencialVendas]="potencialVendas()"
         />
@@ -268,6 +275,8 @@
           (editar)="editarCategoria($event)"
           (alternarAtiva)="definirCategoriaAtiva($event)"
         />
+      } @else if (tela() === 'unidades') {
+        <app-units [unidades]="unidadesMedida()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
       } @else if (tela() === 'localizacoes') {
         <app-locations [almoxarifados]="almoxarifados()" [posicoes]="posicoes()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
       } @else if (tela() === 'inventarios') {
@@ -365,7 +374,7 @@
             }}
           </h2>
           @if (selecionado() && (modal() === 'movimento' || modal() === 'historico')) {
-            <p>{{ selecionado()?.nome }} · saldo atual: {{ selecionado()?.estoque }}</p>
+            <p>{{ selecionado()?.nome }} · saldo atual: {{ selecionado()?.estoque }} {{ selecionado()?.unidade }}</p>
           }
         </div>
         <button class="close" type="button" (click)="fechar()" aria-label="Fechar">×</button>
@@ -400,6 +409,11 @@
                   @if (fornecedor.ativo || fornecedor.id === form.fornecedorId) { <option [ngValue]="fornecedor.id">{{ fornecedor.nome }}</option> }
                 }
               </select></label>
+            <label>Unidade de medida<select name="unidadeMedidaId" [(ngModel)]="form.unidadeMedidaId" required>
+              @for (u of unidadesMedida(); track u.id) { @if (u.ativo || u.id === form.unidadeMedidaId) {
+                <option [ngValue]="u.id">{{ u.sigla }} · {{ u.nome }}{{ u.ativo ? '' : ' (inativa — vínculo atual)' }}</option>
+              } }
+            </select></label><p>Quantidades inteiras, sem conversão automática. A unidade de produto com saldo ou operações anteriores não pode ser trocada.</p>
             <label>Localização<select name="posicaoEstoqueId" [(ngModel)]="form.posicaoEstoqueId">
               <option [ngValue]="null">Sem localização</option>
               @for (p of posicoes(); track p.id) { @if ((p.ativo && p.almoxarifadoAtivo) || p.id === form.posicaoEstoqueId) {
@@ -408,7 +422,7 @@
             </select></label>
             <div class="field-row">
               <label
-                >Preço (R$)
+                >Preço por {{ unidadePorId(form.unidadeMedidaId) }} (R$)
                 <input
                   name="preco"
                   type="number"
@@ -514,7 +528,7 @@
                 <option [ngValue]="2">Saída</option>
               </select></label
             ><label
-              >Quantidade
+              >Quantidade ({{ selecionado()?.unidade }})
               <input
                 name="quantidade"
                 type="number"
@@ -541,7 +555,7 @@
                 required
                 placeholder="Ex.: Compra, venda ou ajuste" /></label
             ><label
-              >Custo unitário informado (R$, opcional)
+              >Custo por {{ selecionado()?.unidade }} (R$, opcional)
               <input
                 name="custoUnitario"
                 type="number"
@@ -641,8 +655,8 @@
               <span class="badge" [class.warning]="m.tipo === 2">{{
                 m.tipo === 1 ? 'Entrada' : 'Saída'
               }}</span
-              ><strong>{{ m.tipo === 1 ? '+' : '−' }}{{ m.quantidade }}</strong
-              ><span>Saldo: {{ m.saldoApos ?? 'anterior à rastreabilidade' }}</span
+              ><strong>{{ m.tipo === 1 ? '+' : '−' }}{{ m.quantidade }} {{ m.unidade }}</strong
+              ><span>Saldo: {{ m.saldoApos ?? 'anterior à rastreabilidade' }} {{ m.unidade }}</span
               ><small
                 >Efetiva: {{ m.dataEfetivaUtc | date: 'dd/MM/yyyy HH:mm' }} · Registrada:
                 {{ m.dataUtc | date: 'dd/MM/yyyy HH:mm' }}</small
@@ -650,7 +664,7 @@
                 >Motivo: {{ m.motivo }} · Documento:
                 {{ m.documentoOrigem || 'não informado' }}</small
               ><small
-                >Responsável: {{ m.usuarioNome || 'registro anterior' }} · Custo unitário informado:
+                >Responsável: {{ m.usuarioNome || 'registro anterior' }} · Custo por {{ m.unidade }}:
                 {{ m.custoUnitario === null ? 'não informado' : moeda(m.custoUnitario) }}</small
               ><small>{{ m.observacao || 'Sem observação' }}</small>
             </div>

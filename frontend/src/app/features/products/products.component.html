@@ -48,10 +48,10 @@
           <tr>
             <td>
               <div class="product-name">{{ produto.nome }}</div>
-              <small>#{{ produto.id }}</small>
+              <small>#{{ produto.id }} · {{ produto.unidade }} ({{ produto.unidadeNome }})</small>
             </td>
             <td>{{ produto.categoria }}</td><td>{{ produto.localizacao }}</td>
-            <td>{{ moeda(produto.preco) }}</td>
+            <td>{{ moeda(produto.preco) }} / {{ produto.unidade }}</td>
             <td>
               <strong>{{ produto.estoque }}</strong>
               <small>/ mín. {{ produto.estoqueMinimo }}</small>

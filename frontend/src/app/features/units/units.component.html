@@ -1,0 +1,23 @@
+<section class="panel">
+  <div class="panel-heading"><div><h2>Unidades de medida</h2><p>Exemplos: UN (unidade), CX (caixa), PCT (pacote), M (metro) e L (litro). Nesta etapa, use apenas quantidades inteiras.</p></div>
+    @if (administrador()) { <button type="button" class="primary" (click)="editar()" [disabled]="processando()">Nova unidade</button> }
+  </div>
+  @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
+  @if (sucesso()) { <div class="notice success" role="status">{{ sucesso() }}</div> }
+  @if (aberta && administrador()) {
+    <form class="fields" (ngSubmit)="salvar()"><h3>{{ id === null ? 'Nova unidade' : 'Editar unidade' }}</h3>
+      <label>Sigla<input name="sigla" [(ngModel)]="sigla" maxlength="10" required [disabled]="processando()" /></label>
+      <label>Nome<input name="nome" [(ngModel)]="nome" maxlength="80" required [disabled]="processando()" /></label>
+      <p>A sigla de unidade vinculada a produto não pode mudar. O nome pode ser corrigido.</p>
+      <div class="dialog-actions"><button type="button" (click)="aberta = false" [disabled]="processando()">Fechar</button><button type="submit" class="primary" [disabled]="processando()">Salvar</button></div>
+    </form>
+  }
+  <div class="category-list">@for (u of unidades(); track u.id) {
+    <div class="category-row"><div><strong>{{ u.sigla }} · {{ u.nome }}</strong><small>{{ u.ativo ? 'Ativa' : 'Inativa' }}{{ u.sistema ? ' · padrão do sistema' : '' }}</small></div>
+      @if (administrador()) { <div><button type="button" (click)="editar(u)" [disabled]="processando()">Editar</button>
+        @if (!u.sistema) { <button type="button" (click)="alternar(u)" [disabled]="processando()">{{ u.ativo ? 'Desativar' : 'Reativar' }}</button> }
+      </div> }
+    </div>
+  } @empty { <p>Nenhuma unidade cadastrada.</p> }</div>
+  <p>A unidade acompanha todas as quantidades do produto e o preço/custo por quantidade. Não há conversão automática entre caixa, pacote e unidade. Produtos com saldo ou operações anteriores mantêm a unidade cadastrada.</p>
+</section>

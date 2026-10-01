@@ -6,7 +6,7 @@
     <form class="fields" (ngSubmit)="salvarRascunho()"><h3>Revisar rascunho #{{ p.id }} · {{ p.fornecedor }}</h3>
       <p>Ajuste quantidades ou remova itens. O estoque só muda no recebimento após confirmar a abertura.</p>
       @for (i of itensEdicao; track i.produtoId) {
-        <label>{{ i.produto }}<input type="number" [name]="'rascunho-' + i.produtoId" min="1" max="2147483647" step="1" required [(ngModel)]="i.quantidade" [disabled]="processando()" /></label>
+        <label>{{ i.produto }} ({{ i.unidade }})<input type="number" [name]="'rascunho-' + i.produtoId" min="1" max="2147483647" step="1" required [(ngModel)]="i.quantidade" [disabled]="processando()" /></label>
         <button type="button" (click)="removerItem(i.produtoId)" [disabled]="processando()">Remover item</button>
       }
       <div class="dialog-actions"><button type="button" (click)="editando = null" [disabled]="processando()">Fechar</button>
@@ -16,11 +16,11 @@
   <div class="table-wrap"><table><thead><tr><th>PEDIDO</th><th>FORNECEDOR</th><th>ITENS</th><th>CRIADO POR</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>
     @for (p of pedidos(); track p.id) { <tr><td>#{{ p.id }}<br /><small>{{ data(p.criadoUtc) }}</small></td>
       <td>{{ p.fornecedor }}</td><td>@for (item of p.itens; track item.produtoId) {
-        <div class="purchase-item"><strong>{{ item.produto }}</strong><small>Pedido: {{ item.quantidade }} · Recebido: {{ item.quantidadeRecebida }} · Pendente: {{ item.quantidade - item.quantidadeRecebida }}</small>
+        <div class="purchase-item"><strong>{{ item.produto }} ({{ item.unidade }})</strong><small>Pedido: {{ item.quantidade }} · Recebido: {{ item.quantidadeRecebida }} · Pendente: {{ item.quantidade - item.quantidadeRecebida }}</small>
           @if ((p.situacao === 1 || p.situacao === 4) && podeReceber() && item.quantidade > item.quantidadeRecebida) {
             <label>Receber agora <input class="replenishment-qty" type="number" min="0" step="1" [max]="item.quantidade - item.quantidadeRecebida" [name]="'receber-' + p.id + '-' + item.produtoId" [ngModel]="quantidade(p.id, item.produtoId)" (ngModelChange)="definirQuantidade(p.id, item.produtoId, $event)" /></label>
             @if (quantidade(p.id, item.produtoId) > 0) {
-              <label>Custo unitário de compra (R$) <input class="replenishment-qty" type="number" min="0.0001" step="0.0001" [name]="'custo-' + p.id + '-' + item.produtoId" [ngModel]="custo(p.id, item.produtoId)" (ngModelChange)="definirCusto(p.id, item.produtoId, $event)" /></label>
+              <label>Custo por {{ item.unidade }} (R$) <input class="replenishment-qty" type="number" min="0.0001" step="0.0001" [name]="'custo-' + p.id + '-' + item.produtoId" [ngModel]="custo(p.id, item.produtoId)" (ngModelChange)="definirCusto(p.id, item.produtoId, $event)" /></label>
             }
           }
         </div>
@@ -39,8 +39,8 @@
           @if (carregandoHistorico()) { <p>Carregando entregas...</p> }
           @for (rec of historico(); track rec.id) {
             <div class="purchase-receipt"><div><strong>{{ data(rec.dataUtc) }}</strong> · {{ rec.usuarioNome }}<br /><small>Recebimento {{ rec.id }}</small></div>
-              @for (item of rec.itens; track item.movimentoId) { <div>{{ item.produto }}: {{ item.quantidade }} un. · Movimento #{{ item.movimentoId }}
-                @if (item.custoUnitario !== null) { · Custo unitário {{ moeda(item.custoUnitario) }} · Total {{ moeda(item.valorCompra!) }} }
+              @for (item of rec.itens; track item.movimentoId) { <div>{{ item.produto }}: {{ item.quantidade }} {{ item.unidade }} · Movimento #{{ item.movimentoId }}
+                @if (item.custoUnitario !== null) { · Custo por {{ item.unidade }} {{ moeda(item.custoUnitario) }} · Total {{ moeda(item.valorCompra!) }} }
                 @else { · Custo de compra não registrado }</div> }
             </div>
           } @empty { @if (!carregandoHistorico()) { <p>Não há entregas individualizadas para este pedido.</p> } }

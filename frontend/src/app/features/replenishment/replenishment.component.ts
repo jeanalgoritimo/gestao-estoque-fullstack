@@ -70,8 +70,8 @@ export class ReplenishmentComponent implements OnInit {
       return `"${texto.replace(/"/g, '""')}"`;
     };
     const linhas = [
-      ['Código', 'Produto', 'Categoria', 'Fornecedor', 'Saldo físico', 'Reservado', 'Disponível', 'Mínimo', 'Compra pendente', 'Em rascunhos', 'Sugerida', 'Ajustada'],
-      ...itens.map(p => [p.produtoId, p.nome, p.categoria, p.fornecedorAtivo ? p.fornecedor ?? '' : 'Fornecedor pendente',
+      ['Código', 'Produto', 'Categoria', 'Unidade', 'Fornecedor', 'Saldo físico', 'Reservado', 'Disponível', 'Mínimo', 'Compra pendente', 'Em rascunhos', 'Sugerida', 'Ajustada'],
+      ...itens.map(p => [p.produtoId, p.nome, p.categoria, p.unidade, p.fornecedorAtivo ? p.fornecedor ?? '' : 'Fornecedor pendente',
         p.estoque, p.reservado, p.disponivel, p.minimo, p.comprasPendentes, p.emRascunhos, p.sugerida, this.quantidade(p)]),
     ];
     const url = URL.createObjectURL(new Blob(['\ufeff' + linhas.map(l => l.map(celula).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));

@@ -1,5 +1,6 @@
 export type TipoMovimento = 1 | 2;
 export interface Produto {
+  unidadeMedidaId: number; unidade: string; unidadeNome: string;
   posicaoEstoqueId: number | null;
   localizacao: string;
   id: number;
@@ -30,6 +31,7 @@ export interface Categoria {
   ativo: boolean;
 }
 export interface Movimento {
+  unidade: string;
   id: number;
   produtoId: number;
   tipo: TipoMovimento;
@@ -44,6 +46,7 @@ export interface Movimento {
   observacao: string | null;
 }
 export interface InventarioFisico {
+  unidade: string;
   id: number;
   produtoId: number;
   produto: string;
@@ -58,6 +61,7 @@ export interface InventarioFisico {
   motivo: string | null;
 }
 export interface ProdutoForm {
+  unidadeMedidaId: number;
   posicaoEstoqueId: number | null;
   fornecedorId: number | null;
   nome: string;
@@ -96,7 +100,7 @@ export interface PedidoCompra {
   criadoPorNome: string;
   encerradoUtc: string | null;
   encerradoPorNome: string | null;
-  itens: { produtoId: number; produto: string; quantidade: number; quantidadeRecebida: number }[];
+  itens: { produtoId: number; produto: string; unidade: string; quantidade: number; quantidadeRecebida: number }[];
 }
 export interface NovoPedidoCompra {
   rascunho?: boolean;
@@ -108,10 +112,11 @@ export interface RecebimentoPedidoCompra {
   id: string;
   dataUtc: string;
   usuarioNome: string;
-  itens: { movimentoId: number; produtoId: number; produto: string; quantidade: number; custoUnitario: number | null; valorCompra: number | null }[];
+  itens: { movimentoId: number; produtoId: number; produto: string; unidade: string; quantidade: number; custoUnitario: number | null; valorCompra: number | null }[];
 }
 
 export interface SugestaoReposicao {
+  unidade: string;
   produtoId: number; nome: string; categoria: string;
   fornecedorId: number | null; fornecedor: string | null; fornecedorAtivo: boolean;
   estoque: number; reservado: number; disponivel: number; minimo: number;

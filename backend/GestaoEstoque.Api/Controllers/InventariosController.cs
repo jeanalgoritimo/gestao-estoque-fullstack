@@ -18,11 +18,11 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
     public record ConfirmarRequest(string Motivo, int QuantidadeEsperada);
     public record InventarioResponse(long Id, int ProdutoId, string Produto, int SaldoInicial,
         int? QuantidadeContada, int? Diferenca, SituacaoInventario Situacao, DateTime AbertoUtc,
-        string AbertoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome, string? Motivo);
+        string AbertoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome, string? Motivo, string Unidade);
 
-    private static InventarioResponse Map(InventarioFisico i, string produto) =>
+    private static InventarioResponse Map(InventarioFisico i, string produto, string unidade) =>
         new(i.Id, i.ProdutoId, produto, i.SaldoInicial, i.QuantidadeContada, i.Diferenca,
-            i.Situacao, i.AbertoUtc, i.AbertoPorNome, i.EncerradoUtc, i.EncerradoPorNome, i.Motivo);
+            i.Situacao, i.AbertoUtc, i.AbertoPorNome, i.EncerradoUtc, i.EncerradoPorNome, i.Motivo, unidade);
 
     private bool TryUsuario(out int id, out string nome)
     {
@@ -36,8 +36,8 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
         var inventarios = await (from i in db.InventariosFisicos.AsNoTracking()
             join p in db.Produtos.AsNoTracking() on i.ProdutoId equals p.Id
             orderby i.AbertoUtc descending, i.Id descending
-            select new { Inventario = i, Produto = p.Nome }).Take(100).ToListAsync(ct);
-        return Ok(inventarios.Select(x => Map(x.Inventario, x.Produto)));
+            select new { Inventario = i, Produto = p.Nome, Unidade = p.UnidadeMedida.Sigla }).Take(100).ToListAsync(ct);
+        return Ok(inventarios.Select(x => Map(x.Inventario, x.Produto, x.Unidade)));
     }
 
     [HttpGet("{id:long}")]
@@ -45,8 +45,8 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
     {
         var inventario = await db.InventariosFisicos.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id, ct);
         if (inventario is null) return NotFound();
-        var produto = await db.Produtos.AsNoTracking().FirstAsync(p => p.Id == inventario.ProdutoId, ct);
-        return Ok(Map(inventario, produto.Nome));
+        var produto = await db.Produtos.AsNoTracking().Include(p => p.UnidadeMedida).FirstAsync(p => p.Id == inventario.ProdutoId, ct);
+        return Ok(Map(inventario, produto.Nome, produto.UnidadeMedida.Sigla));
     }
 
     [HttpPost]
@@ -54,7 +54,7 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
     public async Task<IActionResult> Abrir(AbrirRequest request, CancellationToken ct)
     {
         if (!TryUsuario(out var usuarioId, out var nome)) return Unauthorized();
-        var produto = await db.Produtos.AsNoTracking().FirstOrDefaultAsync(p => p.Id == request.ProdutoId, ct);
+        var produto = await db.Produtos.AsNoTracking().Include(p => p.UnidadeMedida).FirstOrDefaultAsync(p => p.Id == request.ProdutoId, ct);
         if (produto is null) return NotFound();
         if (!produto.Ativo) return Conflict(new { erro = "Produto inativo." });
         if (await db.InventariosFisicos.AnyAsync(i => i.ProdutoId == produto.Id && i.Situacao == SituacaoInventario.Aberto, ct))
@@ -64,7 +64,7 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
         try
         {
             await db.SaveChangesAsync(ct);
-            return CreatedAtAction(nameof(Obter), new { id = inventario.Id }, Map(inventario, produto.Nome));
+            return CreatedAtAction(nameof(Obter), new { id = inventario.Id }, Map(inventario, produto.Nome, produto.UnidadeMedida.Sigla));
         }
         catch (DbUpdateException) { return Conflict(new { erro = "Não foi possível abrir a contagem. Recarregue a lista e tente novamente." }); }
     }
@@ -79,7 +79,8 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
         {
             inventario.RegistrarContagem(request.Quantidade);
             await db.SaveChangesAsync(ct);
-            return Ok(Map(inventario, (await db.Produtos.AsNoTracking().FirstAsync(p => p.Id == inventario.ProdutoId, ct)).Nome));
+            var produto = await db.Produtos.AsNoTracking().Include(p => p.UnidadeMedida).FirstAsync(p => p.Id == inventario.ProdutoId, ct);
+            return Ok(Map(inventario, produto.Nome, produto.UnidadeMedida.Sigla));
         }
         catch (ArgumentOutOfRangeException) { return BadRequest(new { erro = "A quantidade contada não pode ser negativa." }); }
         catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }
@@ -95,7 +96,7 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
         if (inventario is null) return NotFound();
         if (inventario.QuantidadeContada != request.QuantidadeEsperada)
             return Conflict(new { erro = "A contagem registrada mudou. Recarregue antes de confirmar." });
-        var produto = await db.Produtos.FindAsync([inventario.ProdutoId], ct);
+        var produto = await db.Produtos.Include(p => p.UnidadeMedida).FirstOrDefaultAsync(p => p.Id == inventario.ProdutoId, ct);
         if (produto is null) return NotFound();
         if (!produto.Ativo || produto.Estoque != inventario.SaldoInicial ||
             !produto.Versao.SequenceEqual(inventario.VersaoProduto))
@@ -115,7 +116,7 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
                     request.Motivo, usuarioId, nome, null, produto.Estoque));
             // SaveChanges faz o ajuste, o movimento e o fechamento na mesma transação.
             await db.SaveChangesAsync(ct);
-            return Ok(Map(inventario, produto.Nome));
+            return Ok(Map(inventario, produto.Nome, produto.UnidadeMedida.Sigla));
         }
         catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
         catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }

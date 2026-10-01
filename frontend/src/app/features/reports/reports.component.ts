@@ -1,3 +1,4 @@
+import { agruparSaldos } from '../../shared/models/stock-totals';
 import { Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Produto } from '../../shared/models/stock.models';
@@ -22,7 +23,7 @@ export class ReportsComponent {
       (!this.categoria() || p.categoria === this.categoria()) &&
       (!this.somenteBaixos() || p.estoqueBaixo));
   });
-  readonly unidades = computed(() => this.filtrados().reduce((total, p) => total + p.estoque, 0));
+  readonly saldos = computed(() => agruparSaldos(this.filtrados()));
   readonly baixos = computed(() => this.filtrados().filter(p => p.estoqueBaixo).length);
   readonly potencial = computed(() => this.filtrados().reduce((total, p) => total + p.estoque * p.preco, 0));
 
@@ -38,8 +39,8 @@ export class ReportsComponent {
       return `"${texto.replace(/"/g, '""')}"`;
     };
     const linhas = [
-      ['Código', 'Produto', 'Categoria', 'Estoque físico', 'Reservado', 'Disponível', 'Mínimo', 'Estoque baixo', 'Preço de venda (R$)', 'Potencial de venda (R$)'],
-      ...this.filtrados().map(p => [p.id, p.nome, p.categoria, p.estoque, p.estoqueReservado, p.estoqueDisponivel, p.estoqueMinimo,
+      ['Código', 'Produto', 'Categoria', 'Unidade', 'Estoque físico', 'Reservado', 'Disponível', 'Mínimo', 'Estoque baixo', 'Preço de venda (R$)', 'Potencial de venda (R$)'],
+      ...this.filtrados().map(p => [p.id, p.nome, p.categoria, p.unidade, p.estoque, p.estoqueReservado, p.estoqueDisponivel, p.estoqueMinimo,
         p.estoqueBaixo ? 'Sim' : 'Não', p.preco.toFixed(2).replace('.', ','), (p.estoque * p.preco).toFixed(2).replace('.', ',')]),
     ];
     const csv = '\ufeff' + linhas.map(linha => linha.map(celula).join(';')).join('\r\n');

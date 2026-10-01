@@ -17,7 +17,7 @@
       <span><strong>{{ semFornecedor() }}</strong> sem fornecedor ativo</span><span><strong>{{ filtrados().length }}</strong> exibidos</span></div>
     @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
     <div class="table-wrap"><table><thead><tr><th>PRODUTO</th><th>FORNECEDOR</th><th>FÍSICO</th><th>RESERVADO</th><th>DISPONÍVEL</th><th>MÍNIMO</th><th>COMPRA PENDENTE</th><th>EM RASCUNHOS</th><th>SUGERIDO</th><th>A REPOR</th></tr></thead><tbody>
-      @for (p of filtrados(); track p.produtoId) { <tr><td><div class="product-name">{{ p.nome }}</div><small>#{{ p.produtoId }} · {{ p.categoria }}</small></td>
+      @for (p of filtrados(); track p.produtoId) { <tr><td><div class="product-name">{{ p.nome }}</div><small>#{{ p.produtoId }} · {{ p.categoria }} · {{ p.unidade }}</small></td>
         <td>@if (p.fornecedorAtivo) { {{ p.fornecedor }} } @else { <span class="badge warning">Fornecedor pendente</span> }</td>
         <td>{{ p.estoque }}</td><td>{{ p.reservado }}</td><td>{{ p.disponivel }}</td><td>{{ p.minimo }}</td><td>{{ p.comprasPendentes }}</td>
         <td>{{ p.emRascunhos }} @if (p.emRascunhos > 0) { <small>Revise os rascunhos existentes antes de gerar outro.</small> }</td><td>{{ p.sugerida }}</td>

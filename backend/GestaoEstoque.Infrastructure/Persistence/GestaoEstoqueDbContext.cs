@@ -11,6 +11,7 @@ public class GestaoEstoqueDbContext : DbContext
     {
     }
 
+    public DbSet<UnidadeMedida> UnidadesMedida => Set<UnidadeMedida>();
     public DbSet<Almoxarifado> Almoxarifados => Set<Almoxarifado>();
     public DbSet<PosicaoEstoque> PosicoesEstoque => Set<PosicaoEstoque>();
     public DbSet<CentroCusto> CentrosCusto => Set<CentroCusto>();
