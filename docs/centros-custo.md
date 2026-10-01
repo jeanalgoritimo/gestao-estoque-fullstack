@@ -8,7 +8,7 @@ Requisições anteriores à migration recebem vínculo nulo e aparecem como **Se
 
 ## Relatório
 
-**Consumo por centro** consulta todos os registros no período informado, até 366 dias; não está sujeito ao limite de 100 da lista de requisições. Permite filtrar por centro ativo/inativo ou Sem centro de custo, e exportar CSV. Datas consideram dias completos no fuso America/Sao_Paulo, com fim inclusivo.
+**Consumo por centro** consulta todos os registros no período informado, até 366 dias; consulta todo o período, independentemente da paginação da lista de requisições. Permite filtrar por centro ativo/inativo ou Sem centro de custo, e exportar CSV. Datas consideram dias completos no fuso America/Sao_Paulo, com fim inclusivo.
 
 - **Solicitado**: quantidades dos itens de requisições criadas no período, incluindo rascunhos e canceladas. Rascunhos editados exibem suas quantidades atuais.
 - **Entregue**: quantidades das saídas vinculadas a requisições e registradas no período. Inclui entregas de requisições criadas antes do período e de requisições que depois tiveram o restante cancelado.

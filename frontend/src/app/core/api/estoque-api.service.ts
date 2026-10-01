@@ -1,5 +1,5 @@
 import { CentroCusto, ConsumoCentroCusto } from '../../shared/models/cost-center.models';
-import { RequisicaoMaterial, EntregaMaterial } from '../../shared/models/requisition.models';
+import { RequisicaoMaterial, EntregaMaterial, FiltroRequisicoes, PaginaRequisicoes } from '../../shared/models/requisition.models';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -41,8 +41,15 @@ export class EstoqueApiService {
     if (centroCustoId !== null) params['centroCustoId'] = String(centroCustoId);
     return firstValueFrom(this.http.get<ConsumoCentroCusto[]>('/api/relatorios/consumo', { params }));
   }
-  requisicoes() {
-    return firstValueFrom(this.http.get<RequisicaoMaterial[]>('/api/requisicoes'));
+  requisicoes(filtro: FiltroRequisicoes, pagina = 1) {
+    const params: Record<string, string> = { pagina: String(pagina), tamanhoPagina: String(filtro.tamanhoPagina), semCentro: String(filtro.semCentro) };
+    if (filtro.busca) params['busca'] = filtro.busca;
+    if (filtro.solicitante) params['solicitante'] = filtro.solicitante;
+    if (filtro.situacao) params['situacao'] = String(filtro.situacao);
+    if (filtro.centroCustoId !== null) params['centroCustoId'] = String(filtro.centroCustoId);
+    if (filtro.inicio) params['inicio'] = filtro.inicio;
+    if (filtro.fim) params['fim'] = filtro.fim;
+    return firstValueFrom(this.http.get<PaginaRequisicoes>('/api/requisicoes', { params }));
   }
   criarRequisicao(input: { centroCustoId: number; finalidade: string; itens: { produtoId: number; quantidade: number }[] }) {
     return firstValueFrom(this.http.post<{ id: number }>('/api/requisicoes', input));

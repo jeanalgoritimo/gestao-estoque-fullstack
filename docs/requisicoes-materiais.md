@@ -24,7 +24,7 @@ Acesse **Requisições → Nova requisição**, informe a finalidade, adicione p
 - Reservas e entregas usam rowversion de produto e requisição. Conflitos devolvem HTTP 409; recarregue antes de repetir. Cada operação é gravada em uma transação.
 - O solicitante ou administrador pode editar finalidade, produtos e quantidades enquanto a requisição estiver em rascunho, usando **Editar rascunho**. Após o envio, a edição é bloqueada na interface e na API. A edição não reserva nem movimenta estoque.
 - Edições usam a versão recebida ao abrir o formulário; uma edição concorrente retorna HTTP 409 e preserva o formulário para consulta. Feche a edição, atualize a lista e abra novamente antes de reaplicar mudanças.
-- A lista mostra as últimas 100 requisições, com pesquisa e filtro de situação.
+- A lista consulta todo o histórico com paginação de 10, 25, 50 ou 100 registros. Use **Pesquisar** para aplicar filtros por número exato (ex.: #123), finalidade/nome, solicitante, situação, centro de custo e período de criação. As datas consideram dias completos no horário de Brasília. Os botões de página mantêm os filtros aplicados, inclusive quando os campos foram alterados mas ainda não pesquisados.
 
 ## Atualização local após integrar o PR
 

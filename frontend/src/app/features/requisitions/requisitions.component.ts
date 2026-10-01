@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { EstoqueApiService } from '../../core/api/estoque-api.service';
 import { CentroCusto } from '../../shared/models/cost-center.models';
 import { Produto } from '../../shared/models/stock.models';
-import { RequisicaoMaterial, EntregaMaterial } from '../../shared/models/requisition.models';
+import { RequisicaoMaterial, EntregaMaterial, FiltroRequisicoes } from '../../shared/models/requisition.models';
 
 @Component({ selector: 'app-requisitions', imports: [CommonModule, FormsModule], templateUrl: './requisitions.component.html' })
 export class RequisitionsComponent implements OnInit {
@@ -39,15 +39,30 @@ export class RequisitionsComponent implements OnInit {
   motivo = '';
   busca = '';
   filtro = 0;
+  solicitante = ''; inicio = ''; fim = ''; tamanhoPagina = 10;
+  readonly pagina = signal(1);
+  readonly total = signal(0);
+  readonly totalPaginas = signal(1);
+  private consultaAtual = 0;
+  private filtrosAplicados: FiltroRequisicoes = { busca: '', solicitante: '', situacao: 0, centroCustoId: null, semCentro: false, inicio: '', fim: '', tamanhoPagina: 10 };
   ngOnInit(): void { void this.recarregar(); }
   status(r: RequisicaoMaterial): string {
     return ['', 'Rascunho', 'Pendente', 'Aprovada', 'Parcialmente atendida', 'Atendida', 'Cancelada'][r.situacao];
   }
-  filtradas(): RequisicaoMaterial[] {
-    const termo = this.busca.trim().toLocaleLowerCase('pt-BR');
-    return this.requisicoes().filter(r => (this.filtroCentro === 'todos' ||
-      (this.filtroCentro === 'sem' ? r.centroCustoId === null : r.centroCustoId === Number(this.filtroCentro))) && (!this.filtro || r.situacao === this.filtro) &&
-      (!termo || `${r.id} ${r.finalidade} ${r.solicitanteNome}`.toLocaleLowerCase('pt-BR').includes(termo)));
+  async aplicarFiltros(): Promise<void> {
+    if (this.inicio && this.fim && this.fim < this.inicio) { this.erro.set('A data final deve ser igual ou posterior à inicial.'); return; }
+    this.filtrosAplicados = { busca: this.busca.trim(), solicitante: this.solicitante.trim(), situacao: this.filtro,
+      centroCustoId: this.filtroCentro === 'todos' || this.filtroCentro === 'sem' ? null : Number(this.filtroCentro),
+      semCentro: this.filtroCentro === 'sem', inicio: this.inicio, fim: this.fim, tamanhoPagina: this.tamanhoPagina };
+    this.pagina.set(1); await this.recarregar();
+  }
+  limparFiltros(): void {
+    this.busca = ''; this.solicitante = ''; this.filtro = 0; this.filtroCentro = 'todos'; this.inicio = ''; this.fim = ''; this.tamanhoPagina = 10;
+    void this.aplicarFiltros();
+  }
+  mudarPagina(pagina: number): void {
+    if (this.carregando() || this.processando() || pagina < 1 || pagina > this.totalPaginas()) return;
+    this.pagina.set(pagina); void this.recarregar();
   }
   podeEnviar(r: RequisicaoMaterial): boolean {
     return r.situacao === 1 && (this.administrador() || r.solicitanteId === this.usuarioId());
@@ -93,10 +108,17 @@ export class RequisitionsComponent implements OnInit {
     return 'Não foi possível concluir a operação.';
   }
   async recarregar(): Promise<void> {
-    this.carregando.set(true);
-    try { this.requisicoes.set(await this.api.requisicoes()); }
-    catch (error) { this.erro.set(this.mensagem(error)); }
-    finally { this.carregando.set(false); }
+    const consulta = ++this.consultaAtual;
+    this.carregando.set(true); this.erro.set('');
+    this.requisicoes.set([]); this.historicoId.set(null); this.cancelandoId = null;
+    try {
+      const resultado = await this.api.requisicoes(this.filtrosAplicados, this.pagina());
+      if (consulta !== this.consultaAtual) return;
+      this.requisicoes.set(resultado.itens); this.pagina.set(resultado.pagina);
+      this.total.set(resultado.total); this.totalPaginas.set(resultado.totalPaginas);
+    }
+    catch (error) { if (consulta === this.consultaAtual) this.erro.set(this.mensagem(error)); }
+    finally { if (consulta === this.consultaAtual) this.carregando.set(false); }
   }
   private async executar(acao: () => Promise<unknown>, mensagem: string): Promise<void> {
     if (this.processando()) return;
