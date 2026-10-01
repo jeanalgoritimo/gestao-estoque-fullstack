@@ -7,7 +7,7 @@
   @if (sucesso()) { <div class="notice success" role="status">{{ sucesso() }}</div> }
   @if (nova()) {
     <form (ngSubmit)="criar()" class="fields">
-      <h3>Nova requisição</h3>
+      <h3>{{ editandoId === null ? 'Nova requisição' : 'Editar rascunho #' + editandoId }}</h3>
       <label>Finalidade<textarea name="finalidade" [(ngModel)]="finalidade" maxlength="300" required [disabled]="processando()"></textarea></label>
       <div class="field-row">
         <label>Produto<select name="produto" [(ngModel)]="produtoId" [disabled]="processando()"><option [ngValue]="null">Selecione</option>
@@ -17,11 +17,13 @@
       </div>
       <button type="button" class="secondary" (click)="adicionar()" [disabled]="processando()">Adicionar item</button>
       @for (item of itens; track item.produtoId) {
-        <div>{{ nomeProduto(item.produtoId) }} · {{ item.quantidade }} unidades
+        <div>{{ nomeProduto(item.produtoId) }}
+          <label>Quantidade<input type="number" [name]="'item-' + item.produtoId" min="1" max="2147483647" step="1" required
+            [(ngModel)]="item.quantidade" [disabled]="processando()" /></label>
           <button type="button" (click)="remover(item.produtoId)" [disabled]="processando()">Remover</button></div>
       }
-      <div class="dialog-actions"><button type="button" class="secondary" (click)="nova.set(false)" [disabled]="processando()">Fechar</button>
-        <button class="primary" type="submit" [disabled]="processando()">Salvar rascunho</button></div>
+      <div class="dialog-actions"><button type="button" class="secondary" (click)="fecharEdicao()" [disabled]="processando()">Fechar</button>
+        <button class="primary" type="submit" [disabled]="processando()">{{ editandoId === null ? 'Salvar rascunho' : 'Salvar alterações' }}</button></div>
     </form>
   }
   <div class="toolbar"><label>Pesquisar<input type="search" [(ngModel)]="busca" placeholder="Número, finalidade ou solicitante" /></label>
@@ -46,7 +48,7 @@
           }</tr> }
       </tbody></table></div>
       <div class="dialog-actions">
-        @if (podeEnviar(r)) { <button type="button" class="primary" (click)="enviar(r)" [disabled]="processando()">Enviar para aprovação</button> }
+        @if (podeEnviar(r)) { <button type="button" class="secondary" (click)="editar(r)" [disabled]="processando()">Editar rascunho</button> <button type="button" class="primary" (click)="enviar(r)" [disabled]="processando()">Enviar para aprovação</button> }
         @if (administrador() && r.situacao === 2) { <button type="button" class="primary" (click)="aprovar(r)" [disabled]="processando()">Aprovar e reservar</button> }
         @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) { <button type="button" class="primary" (click)="entregar(r)" [disabled]="processando()">Registrar entrega</button> }
         @if (podeCancelar(r)) { <button type="button" class="secondary" (click)="cancelandoId = r.id; motivo = ''" [disabled]="processando()">Cancelar requisição</button> }
