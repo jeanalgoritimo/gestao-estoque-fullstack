@@ -33,12 +33,31 @@
         <button class="primary" type="submit" [disabled]="processando()">{{ editandoId === null ? 'Salvar rascunho' : 'Salvar alterações' }}</button></div>
     </form>
   }
-  <div class="toolbar"><label>Pesquisar<input type="search" [(ngModel)]="busca" placeholder="Número, finalidade ou solicitante" /></label>
-    <label>Centro de custo<select [(ngModel)]="filtroCentro"><option value="todos">Todos</option><option value="sem">Sem centro de custo</option>
-      @for (c of centrosCusto(); track c.id) { <option [value]="c.id">{{ c.nome }}{{ c.ativo ? '' : ' (inativo)' }}</option> }
-    </select></label><label>Situação<select [(ngModel)]="filtro"><option [ngValue]="0">Todas</option><option [ngValue]="1">Rascunho</option><option [ngValue]="2">Pendente</option><option [ngValue]="3">Aprovada</option><option [ngValue]="4">Parcialmente atendida</option><option [ngValue]="5">Atendida</option><option [ngValue]="6">Cancelada</option></select></label></div>
-  <p>Últimas 100 requisições. {{ carregando() ? 'Carregando...' : '' }}</p>
-  @for (r of filtradas(); track r.id) {
+  <form (ngSubmit)="aplicarFiltros()">
+    <fieldset [disabled]="carregando() || processando()" style="border:0;padding:0;margin:0">
+      <div class="toolbar">
+        <label>Pesquisar<input name="buscaFiltro" type="search" [(ngModel)]="busca" maxlength="150" placeholder="Número exato, finalidade ou solicitante" /></label>
+        <label>Solicitante<input name="solicitanteFiltro" type="search" [(ngModel)]="solicitante" maxlength="120" placeholder="Nome do solicitante" /></label>
+        <label>Centro de custo<select name="centroFiltro" [(ngModel)]="filtroCentro"><option value="todos">Todos</option><option value="sem">Sem centro de custo</option>
+          @for (c of centrosCusto(); track c.id) { <option [value]="c.id">{{ c.nome }}{{ c.ativo ? '' : ' (inativo)' }}</option> }
+        </select></label>
+        <label>Situação<select name="situacaoFiltro" [(ngModel)]="filtro"><option [ngValue]="0">Todas</option><option [ngValue]="1">Rascunho</option><option [ngValue]="2">Pendente</option><option [ngValue]="3">Aprovada</option><option [ngValue]="4">Parcialmente atendida</option><option [ngValue]="5">Atendida</option><option [ngValue]="6">Cancelada</option></select></label>
+        <label>Criação a partir de<input name="inicioFiltro" type="date" [(ngModel)]="inicio" /></label>
+        <label>Criação até<input name="fimFiltro" type="date" [(ngModel)]="fim" /></label>
+        <label>Por página<select name="tamanhoFiltro" [(ngModel)]="tamanhoPagina"><option [ngValue]="10">10</option><option [ngValue]="25">25</option><option [ngValue]="50">50</option><option [ngValue]="100">100</option></select></label>
+        <button type="submit" class="primary">Pesquisar</button><button type="button" class="secondary" (click)="limparFiltros()">Limpar filtros</button>
+      </div>
+    </fieldset>
+  </form>
+  <p>Busca em todo o histórico. Período pela data de criação, no horário de Brasília. Clique em Pesquisar para aplicar os filtros.</p>
+  <nav class="toolbar" aria-label="Paginação das requisições">
+    <button type="button" (click)="mudarPagina(1)" [disabled]="carregando() || processando() || pagina() <= 1">Primeira</button>
+    <button type="button" (click)="mudarPagina(pagina() - 1)" [disabled]="carregando() || processando() || pagina() <= 1">Anterior</button>
+    <span aria-live="polite">{{ carregando() ? 'Carregando...' : total() + ' requisições · Página ' + pagina() + ' de ' + totalPaginas() }}</span>
+    <button type="button" (click)="mudarPagina(pagina() + 1)" [disabled]="carregando() || processando() || pagina() >= totalPaginas()">Próxima</button>
+    <button type="button" (click)="mudarPagina(totalPaginas())" [disabled]="carregando() || processando() || pagina() >= totalPaginas()">Última</button>
+  </nav>
+  @for (r of requisicoes(); track r.id) {
     <section class="panel">
       <div class="panel-heading"><div><h3>Requisição #{{ r.id }} <span class="badge">{{ status(r) }}</span></h3>
         <p>{{ r.finalidade }}</p><p>Centro de custo: {{ r.centroCusto }}</p><small>Solicitante: {{ r.solicitanteNome }} · {{ r.criadoUtc | date:'dd/MM/yyyy HH:mm' }}</small>

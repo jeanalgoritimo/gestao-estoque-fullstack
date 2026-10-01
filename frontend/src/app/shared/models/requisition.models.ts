@@ -11,3 +11,11 @@ export interface EntregaMaterial {
   id: number; entregaId: string; produtoId: number; produto: string; quantidade: number;
   dataUtc: string; usuarioNome: string; saldoApos: number;
 }
+
+export interface FiltroRequisicoes {
+  busca: string; solicitante: string; situacao: number; centroCustoId: number | null;
+  semCentro: boolean; inicio: string; fim: string; tamanhoPagina: number;
+}
+export interface PaginaRequisicoes {
+  itens: RequisicaoMaterial[]; pagina: number; tamanhoPagina: number; total: number; totalPaginas: number;
+}

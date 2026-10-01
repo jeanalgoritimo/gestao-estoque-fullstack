@@ -1,3 +1,4 @@
+using GestaoEstoque.Infrastructure.Reports;
 using GestaoEstoque.Api.Security;
 using GestaoEstoque.Domain.Entities;
 using GestaoEstoque.Infrastructure.Persistence;
@@ -38,8 +39,20 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
         && itens.Select(i => i.ProdutoId).Distinct().Count() == itens.Count;
 
     [HttpGet]
-    public async Task<IActionResult> Listar(CancellationToken ct) => Ok((await Consulta().AsNoTracking()
-        .OrderByDescending(r => r.Id).Take(100).ToListAsync(ct)).Select(Map));
+    public async Task<IActionResult> Listar([FromQuery] FiltroRequisicoes filtro, CancellationToken ct)
+    {
+        try
+        {
+            var consulta = RequisicoesConsulta.Filtrar(Consulta().AsNoTracking(), filtro);
+            var total = await consulta.CountAsync(ct);
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)filtro.TamanhoPagina));
+            var pagina = Math.Min(filtro.Pagina, totalPaginas);
+            var itens = await consulta.OrderByDescending(r => r.Id)
+                .Skip((pagina - 1) * filtro.TamanhoPagina).Take(filtro.TamanhoPagina).ToListAsync(ct);
+            return Ok(new { Itens = itens.Select(Map), Pagina = pagina, filtro.TamanhoPagina, Total = total, TotalPaginas = totalPaginas });
+        }
+        catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
+    }
     [HttpGet("{id:long}")]
     public async Task<IActionResult> Obter(long id, CancellationToken ct)
     {
