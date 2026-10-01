@@ -18,7 +18,7 @@
       <label>Finalidade<textarea name="finalidade" [(ngModel)]="finalidade" maxlength="300" required [disabled]="processando()"></textarea></label>
       <div class="field-row">
         <label>Produto<select name="produto" [(ngModel)]="produtoId" [disabled]="processando()"><option [ngValue]="null">Selecione</option>
-          @for (p of ativos(); track p.id) { <option [ngValue]="p.id">{{ p.nome }} · disponível: {{ p.estoqueDisponivel }}</option> }
+          @for (p of ativos(); track p.id) { <option [ngValue]="p.id">{{ p.nome }} · disponível: {{ p.estoqueDisponivel }} {{ p.unidade }}</option> }
         </select></label>
         <label>Quantidade<input name="quantidade" type="number" min="1" max="2147483647" step="1" [(ngModel)]="quantidade" [disabled]="processando()" /></label>
       </div>
@@ -67,7 +67,7 @@
       </div></div>
       <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Solicitado</th><th>Entregue</th><th>Devolvido</th><th>Entregue líquido</th><th>Pendente</th>
         @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) { <th>Entregar agora</th> }</tr></thead><tbody>
-        @for (i of r.itens; track i.produtoId) { <tr><td>{{ i.produto }}</td><td>{{ i.quantidade }}</td><td>{{ i.quantidadeEntregue }}</td><td>{{ i.quantidadeDevolvida }}</td><td>{{ i.quantidadeEntregue - i.quantidadeDevolvida }}</td>
+        @for (i of r.itens; track i.produtoId) { <tr><td>{{ i.produto }} ({{ i.unidade }})</td><td>{{ i.quantidade }}</td><td>{{ i.quantidadeEntregue }}</td><td>{{ i.quantidadeDevolvida }}</td><td>{{ i.quantidadeEntregue - i.quantidadeDevolvida }}</td>
           <td>{{ r.situacao === 6 ? 0 : i.quantidade - i.quantidadeEntregue }}</td>
           @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) {
             <td><input type="number" min="0" step="1" [max]="i.quantidade - i.quantidadeEntregue"
@@ -90,7 +90,7 @@
           <p>A devolução registra uma entrada sem reabrir a requisição ou reservar novamente o material.</p>
           <label>Motivo<textarea name="motivoDevolucao" [(ngModel)]="motivoDevolucao" maxlength="150" required [disabled]="processando()"></textarea></label>
           @for (i of r.itens; track i.produtoId) { @if (i.quantidadeEntregue > i.quantidadeDevolvida) {
-            <label>{{ i.produto }} · máximo: {{ i.quantidadeEntregue - i.quantidadeDevolvida }}
+            <label>{{ i.produto }} ({{ i.unidade }}) · máximo: {{ i.quantidadeEntregue - i.quantidadeDevolvida }}
               <input [name]="'devolucao-' + i.produtoId" type="number" min="0" step="1" [max]="i.quantidadeEntregue - i.quantidadeDevolvida" [(ngModel)]="quantidadesDevolucao[i.produtoId]" [disabled]="processando()" />
             </label>
           } }
@@ -101,7 +101,7 @@
       @if (devolucoesId() === r.id) {
         <div class="history"><h3>Devoluções</h3>
           @if (carregandoDevolucoes()) { <p>Carregando devoluções...</p> }
-          @for (d of devolucoes(); track d.id) { <div class="history-row"><strong>{{ d.produto }} · +{{ d.quantidade }} unidades</strong>
+          @for (d of devolucoes(); track d.id) { <div class="history-row"><strong>{{ d.produto }} · +{{ d.quantidade }} {{ d.unidade }}</strong>
             <small>{{ d.dataUtc | date:'dd/MM/yyyy HH:mm' }} · {{ d.usuarioNome }} · Movimento #{{ d.id }} · Saldo após: {{ d.saldoApos }}</small>
             <small>Motivo: {{ d.motivo }} · Devolução: {{ d.devolucaoId }}</small></div> }
           @if (!carregandoDevolucoes() && !devolucoes().length) { <p>Nenhuma devolução registrada.</p> }
@@ -112,7 +112,7 @@
         <div class="dialog-actions"><button type="button" (click)="cancelandoId = null" [disabled]="processando()">Voltar</button><button type="submit" class="primary" [disabled]="processando()">Confirmar cancelamento</button></div></form> }
       @if (historicoId() === r.id) { <div class="history">
         @if (carregandoHistorico()) { <p>Carregando entregas...</p> }
-        @for (e of entregas(); track e.id) { <div class="history-row"><strong>{{ e.produto }} · {{ e.quantidade }} unidades</strong>
+        @for (e of entregas(); track e.id) { <div class="history-row"><strong>{{ e.produto }} · {{ e.quantidade }} {{ e.unidade }}</strong>
           <small>{{ e.dataUtc | date:'dd/MM/yyyy HH:mm' }} · {{ e.usuarioNome }} · Movimento #{{ e.id }} · Saldo após: {{ e.saldoApos }}</small>
           <small>Entrega: {{ e.entregaId }}</small></div> }
         @if (!carregandoHistorico() && !entregas().length) { <p>Nenhuma entrega registrada.</p> }

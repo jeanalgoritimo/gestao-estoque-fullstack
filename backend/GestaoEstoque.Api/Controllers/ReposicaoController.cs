@@ -15,7 +15,7 @@ public class ReposicaoController(GestaoEstoqueDbContext db) : ControllerBase
     public async Task<IActionResult> Consultar(CancellationToken ct)
     {
         var linhas = await ReposicaoQueries.Consultar(db).ToListAsync(ct);
-        return Ok(linhas.Select(l => new { l.ProdutoId, l.Nome, l.Categoria, l.FornecedorId, l.Fornecedor,
+        return Ok(linhas.Select(l => new { l.ProdutoId, l.Nome, l.Unidade, l.Categoria, l.FornecedorId, l.Fornecedor,
             l.FornecedorAtivo, l.Estoque, l.Reservado, l.Disponivel, l.Minimo, l.ComprasPendentes, l.EmRascunhos,
             Sugerida = PlanejamentoReposicao.Sugerir(l.Minimo, l.Disponivel, l.ComprasPendentes) }));
     }

@@ -14,18 +14,18 @@ namespace GestaoEstoque.Api.Controllers;
 [Route("api/produtos")]
 public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record ProdutoRequest(string Nome, int CategoriaId, decimal Preco, int EstoqueMinimo, int? FornecedorId, int? PosicaoEstoqueId = null);
+    public record ProdutoRequest(string Nome, int CategoriaId, decimal Preco, int EstoqueMinimo, int? FornecedorId, int? PosicaoEstoqueId = null, int? UnidadeMedidaId = null);
     public record MovimentoRequest(TipoMovimento Tipo, int Quantidade, string? Observacao,
         DateTime? DataEfetivaUtc, string? DocumentoOrigem, string? Motivo, decimal? CustoUnitario);
     public record ProdutoResponse(int Id, string Nome, int CategoriaId, string Categoria, decimal Preco,
-        int Estoque, int EstoqueMinimo, bool Ativo, bool EstoqueBaixo, int? FornecedorId, string? Fornecedor, int EstoqueReservado, int EstoqueDisponivel, int? PosicaoEstoqueId, string Localizacao);
+        int Estoque, int EstoqueMinimo, bool Ativo, bool EstoqueBaixo, int? FornecedorId, string? Fornecedor, int EstoqueReservado, int EstoqueDisponivel, int? PosicaoEstoqueId, string Localizacao, int UnidadeMedidaId, string Unidade, string UnidadeNome);
 
     private static ProdutoResponse Map(Produto p, string? nomeCategoria = null) => new(p.Id, p.Nome, p.CategoriaId, nomeCategoria ?? p.CategoriaProduto?.Nome ?? "",
         p.Preco, p.Estoque, p.EstoqueMinimo, p.Ativo, p.EstaComEstoqueBaixo(), p.FornecedorId, p.Fornecedor?.Nome, p.EstoqueReservado, p.EstoqueDisponivel, p.PosicaoEstoqueId,
-        p.PosicaoEstoque is { } pos ? $"{pos.Almoxarifado.Nome} · Corredor {pos.Corredor} · Estante {pos.Estante} · Prateleira {pos.Prateleira}" : "Sem localização");
+        p.PosicaoEstoque is { } pos ? $"{pos.Almoxarifado.Nome} · Corredor {pos.Corredor} · Estante {pos.Estante} · Prateleira {pos.Prateleira}" : "Sem localização", p.UnidadeMedidaId, p.UnidadeMedida?.Sigla ?? "UN", p.UnidadeMedida?.Nome ?? "Unidade");
 
     private async Task<ProdutoResponse> CarregarResponse(int id, CancellationToken ct) =>
-        Map(await db.Produtos.AsNoTracking().Include(p => p.CategoriaProduto).Include(p => p.Fornecedor)
+        Map(await db.Produtos.AsNoTracking().Include(p => p.CategoriaProduto).Include(p => p.UnidadeMedida).Include(p => p.Fornecedor)
             .Include(p => p.PosicaoEstoque).ThenInclude(p => p!.Almoxarifado).SingleAsync(p => p.Id == id, ct));
 
     private async Task<bool> PosicaoValida(int? id, int? atual, CancellationToken ct) =>
@@ -49,17 +49,20 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     [Authorize(Policy = Permissoes.CadastrarProdutos)]
     public async Task<ActionResult<ProdutoResponse>> Criar(ProdutoRequest request, CancellationToken ct)
     {
+        var unidadeId = request.UnidadeMedidaId ?? 1;
         var categoria = await db.CategoriasProduto.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == request.CategoriaId && c.Ativo, ct);
         if (categoria is null) return BadRequest(new { erro = "Selecione uma categoria ativa." });
         if (request.FornecedorId is not null && !await db.Fornecedores.AnyAsync(f => f.Id == request.FornecedorId && f.Ativo, ct))
             return BadRequest(new { erro = "Selecione um fornecedor ativo." });
+        if (!await db.UnidadesMedida.AnyAsync(u => u.Id == unidadeId && u.Ativo, ct)) return BadRequest(new { erro = "Selecione uma unidade ativa." });
         if (!await PosicaoValida(request.PosicaoEstoqueId, null, ct)) return BadRequest(new { erro = "Selecione uma posição e almoxarifado ativos." });
         try
         {
             var novoProduto = new Produto(request.Nome, request.CategoriaId, request.Preco, request.EstoqueMinimo);
             novoProduto.AlterarFornecedor(request.FornecedorId);
             novoProduto.AlterarPosicao(request.PosicaoEstoqueId);
+            novoProduto.AlterarUnidade(unidadeId);
             var produto = await repository.AdicionarAsync(
                 novoProduto, ct);
             return CreatedAtAction(nameof(Obter), new { id = produto.Id }, await CarregarResponse(produto.Id, ct));
@@ -71,17 +74,26 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     [Authorize(Policy = Permissoes.GerenciarProdutos)]
     public async Task<ActionResult<ProdutoResponse>> Alterar(int id, ProdutoRequest request, CancellationToken ct)
     {
+        await using var tx = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct);
         var produto = await repository.ObterPorIdAsync(id, ct);
         if (produto is null) return NotFound();
         if (!produto.Ativo) return Conflict(new { erro = "Produto inativo." });
+        var unidadeId = request.UnidadeMedidaId ?? produto.UnidadeMedidaId;
         var categoria = await db.CategoriasProduto.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == request.CategoriaId && c.Ativo, ct);
         if (categoria is null) return BadRequest(new { erro = "Selecione uma categoria ativa." });
         if (request.FornecedorId is not null && !await db.Fornecedores.AnyAsync(f => f.Id == request.FornecedorId && f.Ativo, ct))
             return BadRequest(new { erro = "Selecione um fornecedor ativo." });
+        if (unidadeId != produto.UnidadeMedidaId && !await db.UnidadesMedida.AnyAsync(u => u.Id == unidadeId && u.Ativo, ct)) return BadRequest(new { erro = "Selecione uma unidade ativa." });
         if (!await PosicaoValida(request.PosicaoEstoqueId, produto.PosicaoEstoqueId, ct)) return BadRequest(new { erro = "Selecione uma posição e almoxarifado ativos." });
         try
         {
+            var historico = unidadeId != produto.UnidadeMedidaId && (
+                await db.MovimentosEstoque.AnyAsync(m => m.ProdutoId == id, ct) ||
+                await db.ItensPedidoCompra.AnyAsync(i => i.ProdutoId == id, ct) ||
+                await db.ItensRequisicaoMaterial.AnyAsync(i => i.ProdutoId == id, ct) ||
+                await db.InventariosFisicos.AnyAsync(i => i.ProdutoId == id, ct));
+            produto.AlterarUnidade(unidadeId, historico);
             produto.AlterarPosicao(request.PosicaoEstoqueId);
             produto.AlterarFornecedor(request.FornecedorId);
             produto.AlterarNome(request.Nome);
@@ -89,9 +101,11 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
             produto.AlterarPreco(request.Preco);
             produto.AlterarEstoqueMinimo(request.EstoqueMinimo);
             await repository.SalvarAsync(ct);
+            await tx.CommitAsync(ct);
             return Ok(await CarregarResponse(produto.Id, ct));
         }
         catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }
         catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Produto alterado por outra operação. Recarregue e tente novamente." }); }
     }
 
@@ -110,11 +124,12 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
     [HttpGet("{id:int}/movimentos")]
     public async Task<IActionResult> Movimentos(int id, CancellationToken ct)
     {
-        if (await repository.ObterPorIdAsync(id, ct) is null) return NotFound();
+        var produto = await repository.ObterPorIdAsync(id, ct);
+        if (produto is null) return NotFound();
         var movimentos = await repository.ListarMovimentosAsync(id, ct);
         return Ok(movimentos.Select(m => new { m.Id, m.ProdutoId, m.Tipo, m.Quantidade, m.DataUtc,
             m.DataEfetivaUtc, m.DocumentoOrigem, m.Motivo, m.UsuarioNome, m.CustoUnitario,
-            m.SaldoApos, m.Observacao }));
+            m.SaldoApos, m.Observacao, Unidade = produto.UnidadeMedida.Sigla }));
     }
 
     [HttpPost("{id:int}/movimentos")]

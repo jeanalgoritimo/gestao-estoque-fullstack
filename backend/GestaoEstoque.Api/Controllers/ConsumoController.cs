@@ -10,7 +10,7 @@ namespace GestaoEstoque.Api.Controllers;
 [Route("api/relatorios/consumo")]
 public class ConsumoController(GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record Linha(int? CentroCustoId, string CentroCusto, int ProdutoId, string Produto, long Solicitado, long Entregue, long Devolvido)
+    public record Linha(int? CentroCustoId, string CentroCusto, int ProdutoId, string Produto, long Solicitado, long Entregue, long Devolvido, string Unidade)
     { public long ConsumoLiquido => Entregue - Devolvido; }
     [HttpGet]
     public async Task<IActionResult> Consultar([FromQuery] DateOnly inicio, [FromQuery] DateOnly fim,
@@ -25,12 +25,12 @@ public class ConsumoController(GestaoEstoqueDbContext db) : ControllerBase
         var solicitadas = await ConsumoQueries.Solicitadas(db, inicioUtc, fimUtc, centroCustoId, semCentro).ToListAsync(ct);
         var entregues = await ConsumoQueries.Entregues(db, inicioUtc, fimUtc, centroCustoId, semCentro).ToListAsync(ct);
         var devolvidas = await ConsumoQueries.Devolvidas(db, inicioUtc, fimUtc, centroCustoId, semCentro).ToListAsync(ct);
-        var linhas = solicitadas.Select(x => new Linha(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade, 0, 0))
-            .Concat(entregues.Select(x => new Linha(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, 0, x.Quantidade, 0)))
-            .Concat(devolvidas.Select(x => new Linha(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, 0, 0, x.Quantidade)))
+        var linhas = solicitadas.Select(x => new Linha(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade, 0, 0, x.Unidade))
+            .Concat(entregues.Select(x => new Linha(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, 0, x.Quantidade, 0, x.Unidade)))
+            .Concat(devolvidas.Select(x => new Linha(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, 0, 0, x.Quantidade, x.Unidade)))
             .GroupBy(x => new { x.CentroCustoId, x.ProdutoId })
             .Select(g => new Linha(g.Key.CentroCustoId, g.First().CentroCusto, g.Key.ProdutoId, g.First().Produto,
-                g.Sum(x => x.Solicitado), g.Sum(x => x.Entregue), g.Sum(x => x.Devolvido)))
+                g.Sum(x => x.Solicitado), g.Sum(x => x.Entregue), g.Sum(x => x.Devolvido), g.First().Unidade))
             .OrderBy(x => x.CentroCusto).ThenBy(x => x.Produto).ToList();
         return Ok(linhas);
     }

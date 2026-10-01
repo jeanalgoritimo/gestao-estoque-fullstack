@@ -1,3 +1,6 @@
+import { agruparSaldos } from './shared/models/stock-totals';
+import { UnidadeMedida } from './shared/models/unit.models';
+import { UnitsComponent } from './features/units/units.component';
 import { Almoxarifado, PosicaoEstoque } from './shared/models/location.models';
 import { LocationsComponent } from './features/locations/locations.component';
 import { CostCentersComponent } from './features/cost-centers/cost-centers.component';
@@ -54,6 +57,7 @@ import {
     CostCentersComponent,
     ConsumptionComponent,
     LocationsComponent,
+    UnitsComponent,
   ],
   templateUrl: './app.html',
 })
@@ -64,13 +68,15 @@ export class App {
   readonly perfis = signal<Perfil[]>([]);
   readonly produtos = signal<Produto[]>([]);
   readonly categorias = signal<Categoria[]>([]);
+  readonly unidadesMedida = signal<UnidadeMedida[]>([]);
+  unidadePorId(id: number): string { return this.unidadesMedida().find(u => u.id === id)?.sigla ?? 'UN'; }
   readonly almoxarifados = signal<Almoxarifado[]>([]);
   readonly posicoes = signal<PosicaoEstoque[]>([]);
   readonly filtroPosicao = signal('todos');
   readonly centrosCusto = signal<CentroCusto[]>([]);
   readonly fornecedores = signal<Fornecedor[]>([]);
   readonly tela = signal<
-    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes'
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes' | 'unidades'
   >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
@@ -96,7 +102,7 @@ export class App {
   });
   readonly ativos = computed(() => this.produtos().filter((p) => p.ativo));
   readonly baixos = computed(() => this.ativos().filter((p) => p.estoqueBaixo).length);
-  readonly unidades = computed(() => this.ativos().reduce((total, p) => total + p.estoque, 0));
+  readonly saldos = computed(() => agruparSaldos(this.ativos()));
   readonly potencialVendas = computed(() =>
     this.ativos().reduce((total, p) => total + p.estoque * p.preco, 0),
   );
@@ -126,7 +132,7 @@ export class App {
   novaSenha = '';
 
   private formVazio(): ProdutoForm {
-    return { posicaoEstoqueId: null, nome: '', categoriaId: null, fornecedorId: null, preco: null, estoqueMinimo: 5 };
+    return { unidadeMedidaId: 1, posicaoEstoqueId: null, nome: '', categoriaId: null, fornecedorId: null, preco: null, estoqueMinimo: 5 };
   }
   private mensagemErro(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
@@ -146,26 +152,27 @@ export class App {
     this.carregando.set(true);
     this.erro.set('');
     try {
-      const [produtos, categorias, fornecedores, centros, almoxarifados, posicoes] = await Promise.all([
+      const [produtos, categorias, fornecedores, centros, almoxarifados, posicoes, unidades] = await Promise.all([
         this.api.produtos(),
         this.api.categorias(),
         this.api.fornecedores(),
         this.api.centrosCusto(),
         this.api.almoxarifados(),
         this.api.posicoes(),
+        this.api.unidadesMedida(),
       ]);
       this.produtos.set(produtos);
       this.categorias.set(categorias);
       this.fornecedores.set(fornecedores);
       this.centrosCusto.set(centros);
-      this.almoxarifados.set(almoxarifados); this.posicoes.set(posicoes);
+      this.almoxarifados.set(almoxarifados); this.posicoes.set(posicoes); this.unidadesMedida.set(unidades);
     } catch (error) {
       this.erro.set(this.mensagemErro(error));
     } finally {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes' | 'unidades'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');
@@ -381,6 +388,7 @@ export class App {
   editar(produto: Produto): void {
     this.selecionado.set(produto);
     this.form = {
+      unidadeMedidaId: produto.unidadeMedidaId,
       posicaoEstoqueId: produto.posicaoEstoqueId,
       nome: produto.nome,
       categoriaId: produto.categoriaId,

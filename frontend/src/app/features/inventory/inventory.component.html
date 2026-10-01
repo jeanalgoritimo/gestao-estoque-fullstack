@@ -29,7 +29,7 @@
           <option [ngValue]="null" disabled>Selecione</option>
           @for (p of produtosLocalizados(); track p.id) {
             @if (p.ativo && !ocupados().has(p.id)) {
-              <option [ngValue]="p.id">{{ p.nome }} · {{ p.localizacao }} · saldo {{ p.estoque }}</option>
+              <option [ngValue]="p.id">{{ p.nome }} · {{ p.localizacao }} · saldo {{ p.estoque }} {{ p.unidade }}</option>
             }
           }
         </select></label
@@ -61,7 +61,7 @@
   </div>
   @if (selecionado(); as atual) {
     <div class="inventory-detail">
-      <h3>Conferir {{ atual.produto }}</h3><p>Localização atual: {{ localizacao(atual.produtoId) }}</p>
+      <h3>Conferir {{ atual.produto }} ({{ atual.unidade }})</h3><p>Localização atual: {{ localizacao(atual.produtoId) }}</p>
       <p>
         Saldo na abertura: <strong>{{ atual.saldoInicial }}</strong>
       </p>

@@ -12,6 +12,16 @@ public class Produto
     public int? FornecedorId { get; private set; }
     public Fornecedor? Fornecedor { get; private set; }
 
+    public int UnidadeMedidaId { get; private set; } = 1;
+    public UnidadeMedida UnidadeMedida { get; private set; } = null!;
+    public void AlterarUnidade(int id, bool possuiHistorico = false)
+    {
+        if (id <= 0) throw new ArgumentException("Unidade inválida.");
+        if (id != UnidadeMedidaId && (Estoque != 0 || EstoqueReservado != 0 || possuiHistorico))
+            throw new InvalidOperationException("Não é possível trocar a unidade de produto com saldo, reservas ou registros de operações.");
+        UnidadeMedidaId = id;
+    }
+
     public int? PosicaoEstoqueId { get; private set; }
     public PosicaoEstoque? PosicaoEstoque { get; private set; }
 

@@ -1,3 +1,4 @@
+import { UnidadeMedida } from '../../shared/models/unit.models';
 import { Almoxarifado, PosicaoEstoque, PosicaoInput } from '../../shared/models/location.models';
 import { CentroCusto, ConsumoCentroCusto } from '../../shared/models/cost-center.models';
 import { RequisicaoMaterial, EntregaMaterial, DevolucaoMaterial, FiltroRequisicoes, PaginaRequisicoes } from '../../shared/models/requisition.models';
@@ -153,6 +154,11 @@ export class EstoqueApiService {
   recebimentosPedidoCompra(id: number) {
     return firstValueFrom(this.http.get<RecebimentoPedidoCompra[]>(`/api/pedidos-compra/${id}/recebimentos`));
   }
+  unidadesMedida() { return firstValueFrom(this.http.get<UnidadeMedida[]>('/api/unidades-medida')); }
+  salvarUnidade(id: number | null, sigla: string, nome: string) {
+    return id === null ? firstValueFrom(this.http.post('/api/unidades-medida', { sigla, nome })) : firstValueFrom(this.http.put(`/api/unidades-medida/${id}`, { sigla, nome }));
+  }
+  ativarUnidade(id: number, ativo: boolean) { return firstValueFrom(this.http.patch(`/api/unidades-medida/${id}/ativo`, ativo)); }
   almoxarifados() { return firstValueFrom(this.http.get<Almoxarifado[]>('/api/localizacoes/almoxarifados')); }
   posicoes() { return firstValueFrom(this.http.get<PosicaoEstoque[]>('/api/localizacoes/posicoes')); }
   salvarAlmoxarifado(id: number | null, nome: string) {

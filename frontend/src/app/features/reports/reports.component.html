@@ -21,24 +21,24 @@
   </div>
   <div class="report-summary" aria-live="polite">
     <span><strong>{{ filtrados().length }}</strong> produtos</span>
-    <span><strong>{{ unidades() }}</strong> unidades</span>
+    @for (s of saldos(); track s.unidade) { <span><strong>{{ s.quantidade }}</strong> {{ s.unidade }}</span> }
     <span><strong>{{ baixos() }}</strong> abaixo do mínimo</span>
     <span><strong>{{ moeda(potencial()) }}</strong> potencial de venda</span>
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>PRODUTO</th><th>CATEGORIA</th><th>ESTOQUE FÍSICO</th><th>RESERVADO</th><th>DISPONÍVEL</th><th>MÍNIMO</th><th>SITUAÇÃO</th><th>PREÇO DE VENDA</th><th>POTENCIAL DE VENDA</th></tr></thead>
+      <thead><tr><th>PRODUTO</th><th>CATEGORIA</th><th>UNIDADE</th><th>ESTOQUE FÍSICO</th><th>RESERVADO</th><th>DISPONÍVEL</th><th>MÍNIMO</th><th>SITUAÇÃO</th><th>PREÇO DE VENDA</th><th>POTENCIAL DE VENDA</th></tr></thead>
       <tbody>
         @for (produto of filtrados(); track produto.id) {
           <tr>
             <td><div class="product-name">{{ produto.nome }}</div><small>#{{ produto.id }}</small></td>
-            <td>{{ produto.categoria }}</td>
+            <td>{{ produto.categoria }}</td><td>{{ produto.unidade }}</td>
             <td>{{ produto.estoque }}</td><td>{{ produto.estoqueReservado }}</td><td>{{ produto.estoqueDisponivel }}</td><td>{{ produto.estoqueMinimo }}</td>
             <td><span class="badge" [class.warning]="produto.estoqueBaixo">{{ produto.estoqueBaixo ? 'Estoque baixo' : 'Em dia' }}</span></td>
-            <td>{{ moeda(produto.preco) }}</td><td>{{ moeda(produto.estoque * produto.preco) }}</td>
+            <td>{{ moeda(produto.preco) }} / {{ produto.unidade }}</td><td>{{ moeda(produto.estoque * produto.preco) }}</td>
           </tr>
         } @empty {
-          <tr><td colspan="9" class="empty">{{ carregando() ? 'Carregando produtos...' : 'Nenhum produto encontrado para os filtros selecionados.' }}</td></tr>
+          <tr><td colspan="10" class="empty">{{ carregando() ? 'Carregando produtos...' : 'Nenhum produto encontrado para os filtros selecionados.' }}</td></tr>
         }
       </tbody>
     </table>

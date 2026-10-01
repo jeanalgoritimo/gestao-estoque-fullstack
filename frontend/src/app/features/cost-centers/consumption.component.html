@@ -8,8 +8,8 @@
     <button class="primary" type="submit" [disabled]="carregando()">{{ carregando() ? 'Consultando...' : 'Consultar' }}</button></form>
   <p>Solicitado considera todas as requisições criadas no período, inclusive rascunhos e canceladas. Entregue considera as saídas realizadas no período, mesmo de requisições antigas ou depois canceladas. Devolvido considera entradas de devolução realizadas no período. Consumo líquido = entregue − devolvido; pode ser negativo quando retornam materiais entregues em outro período. Essas colunas não representam o saldo pendente nem comprovam o uso físico do material. Datas no horário de Brasília.</p>
   @if (aplicado) { <p>Filtro aplicado: {{ aplicado }}</p> }
-  <div class="table-wrap"><table><thead><tr><th>Centro de custo</th><th>Produto</th><th>Solicitado</th><th>Entregue</th><th>Devolvido</th><th>Consumo líquido</th></tr></thead><tbody>
-    @for (l of linhas(); track (l.centroCustoId ?? 0) + '-' + l.produtoId) { <tr><td>{{ l.centroCusto }}</td><td>{{ l.produto }} · #{{ l.produtoId }}</td><td>{{ l.solicitado }}</td><td>{{ l.entregue }}</td><td>{{ l.devolvido }}</td><td>{{ l.consumoLiquido }}</td></tr> }
-    @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando...' : 'Nenhum registro no período.' }}</td></tr> }
+  <div class="table-wrap"><table><thead><tr><th>Centro de custo</th><th>Produto</th><th>Unidade</th><th>Solicitado</th><th>Entregue</th><th>Devolvido</th><th>Consumo líquido</th></tr></thead><tbody>
+    @for (l of linhas(); track (l.centroCustoId ?? 0) + '-' + l.produtoId) { <tr><td>{{ l.centroCusto }}</td><td>{{ l.produto }} · #{{ l.produtoId }}</td><td>{{ l.unidade }}</td><td>{{ l.solicitado }}</td><td>{{ l.entregue }}</td><td>{{ l.devolvido }}</td><td>{{ l.consumoLiquido }}</td></tr> }
+    @empty { <tr><td colspan="7" class="empty">{{ carregando() ? 'Carregando...' : 'Nenhum registro no período.' }}</td></tr> }
   </tbody></table></div>
 </section>

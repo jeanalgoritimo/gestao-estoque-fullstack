@@ -21,7 +21,7 @@ export class PurchaseOrdersComponent implements OnInit {
   readonly historico = signal<RecebimentoPedidoCompra[]>([]);
   readonly carregandoHistorico = signal(false);
   editando: PedidoCompra | null = null;
-  itensEdicao: { produtoId: number; produto: string; quantidade: number }[] = [];
+  itensEdicao: { produtoId: number; produto: string; unidade: string; quantidade: number }[] = [];
 
   status(p: PedidoCompra): string {
     if (p.situacao === 6) return 'Rascunho';
@@ -86,7 +86,7 @@ export class PurchaseOrdersComponent implements OnInit {
       return;
     }
     const total = itens.reduce((valor, item) => valor + item.quantidade * item.custoUnitario, 0);
-    if (!confirm(`Confirmar ${itens.reduce((n, item) => n + item.quantidade, 0)} unidade(s) do pedido #${p.id}, custo de compra ${this.moeda(total)}?`)) return;
+    if (!confirm(`Confirmar o recebimento dos itens selecionados do pedido #${p.id}, custo de compra ${this.moeda(total)}?`)) return;
     this.processando.set(true); this.erro.set('');
     try {
       await this.api.receberPedidoCompra(p.id, itens);
@@ -100,7 +100,7 @@ export class PurchaseOrdersComponent implements OnInit {
     finally { this.processando.set(false); }
   }
   editar(p: PedidoCompra): void {
-    this.editando = p; this.itensEdicao = p.itens.map(i => ({ produtoId: i.produtoId, produto: i.produto, quantidade: i.quantidade }));
+    this.editando = p; this.itensEdicao = p.itens.map(i => ({ produtoId: i.produtoId, produto: i.produto, unidade: i.unidade, quantidade: i.quantidade }));
     this.erro.set(''); this.sucesso.set('');
   }
   removerItem(id: number): void { this.itensEdicao = this.itensEdicao.filter(i => i.produtoId !== id); }

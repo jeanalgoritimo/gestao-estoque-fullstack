@@ -20,16 +20,16 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
     public record EntregarRequest(List<ItemRequest> Itens);
     public record DevolverRequest(List<ItemRequest> Itens, string Motivo);
     public record CancelarRequest(string Motivo);
-    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeEntregue, int QuantidadeDevolvida);
+    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeEntregue, int QuantidadeDevolvida, string Unidade);
     public record RequisicaoResponse(long Id, string Finalidade, int SolicitanteId, string SolicitanteNome,
         DateTime CriadoUtc, SituacaoRequisicao Situacao, DateTime? AprovadoUtc, string? AprovadoPorNome,
         DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento, List<ItemResponse> Itens, string Versao, int? CentroCustoId, string CentroCusto);
     private static RequisicaoResponse Map(RequisicaoMaterial r) => new(r.Id, r.Finalidade, r.SolicitanteId,
         r.SolicitanteNome, r.CriadoUtc, r.Situacao, r.AprovadoUtc, r.AprovadoPorNome, r.EncerradoUtc,
         r.EncerradoPorNome, r.MotivoCancelamento,
-        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue, i.QuantidadeDevolvida)).ToList(), Convert.ToBase64String(r.Versao), r.CentroCustoId, r.CentroCusto?.Nome ?? "Sem centro de custo");
+        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue, i.QuantidadeDevolvida, i.Produto.UnidadeMedida.Sigla)).ToList(), Convert.ToBase64String(r.Versao), r.CentroCustoId, r.CentroCusto?.Nome ?? "Sem centro de custo");
     private IQueryable<RequisicaoMaterial> Consulta() => db.RequisicoesMaterial.AsSplitQuery()
-        .Include(r => r.CentroCusto).Include(r => r.Itens).ThenInclude(i => i.Produto);
+        .Include(r => r.CentroCusto).Include(r => r.Itens).ThenInclude(i => i.Produto).ThenInclude(p => p.UnidadeMedida);
     private bool Usuario(out int id, out string nome)
     {
         nome = User.Identity?.Name ?? "";
@@ -183,7 +183,7 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
             join p in db.Produtos on m.ProdutoId equals p.Id
             where m.RequisicaoMaterialId == id && m.Tipo == TipoMovimento.Saida && m.EntregaId != null
             orderby m.DataUtc descending, m.Id descending
-            select new { m.Id, m.EntregaId, m.ProdutoId, Produto = p.Nome, m.Quantidade, m.DataUtc, m.UsuarioNome, m.SaldoApos })
+            select new { m.Id, m.EntregaId, m.ProdutoId, Produto = p.Nome, Unidade = p.UnidadeMedida.Sigla, m.Quantidade, m.DataUtc, m.UsuarioNome, m.SaldoApos })
             .ToListAsync(ct));
     }
     [HttpPost("{id:long}/devolver")]
@@ -222,7 +222,7 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
             join p in db.Produtos on m.ProdutoId equals p.Id
             where m.RequisicaoMaterialId == id && m.Tipo == TipoMovimento.Entrada && m.DevolucaoId != null
             orderby m.DataUtc descending, m.Id descending
-            select new { m.Id, m.DevolucaoId, m.ProdutoId, Produto = p.Nome, m.Quantidade, m.DataUtc, m.UsuarioNome, m.Motivo, m.SaldoApos })
+            select new { m.Id, m.DevolucaoId, m.ProdutoId, Produto = p.Nome, Unidade = p.UnidadeMedida.Sigla, m.Quantidade, m.DataUtc, m.UsuarioNome, m.Motivo, m.SaldoApos })
             .ToListAsync(ct));
     }
     private async Task<IActionResult> Salvar(Action alterar, CancellationToken ct)

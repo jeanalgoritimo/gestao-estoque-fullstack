@@ -20,6 +20,7 @@ public class ProdutoRepository : IProdutoRepository
         return await _context.Produtos
             .AsNoTracking()
             .Include(produto => produto.CategoriaProduto)
+            .Include(produto => produto.UnidadeMedida)
             .Include(produto => produto.Fornecedor)
             .Include(produto => produto.PosicaoEstoque).ThenInclude(p => p!.Almoxarifado)
             .OrderBy(produto => produto.Nome)
@@ -32,6 +33,7 @@ public class ProdutoRepository : IProdutoRepository
     {
         return await _context.Produtos
             .Include(produto => produto.CategoriaProduto)
+            .Include(produto => produto.UnidadeMedida)
             .Include(produto => produto.Fornecedor)
             .Include(produto => produto.PosicaoEstoque).ThenInclude(p => p!.Almoxarifado)
             .FirstOrDefaultAsync(
