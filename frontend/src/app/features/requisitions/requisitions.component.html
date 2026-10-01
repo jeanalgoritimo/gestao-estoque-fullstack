@@ -1,0 +1,67 @@
+<section class="panel">
+  <div class="panel-heading"><div><h2>Requisições de materiais</h2><p>Aprovação reserva o estoque; entrega registra a saída.</p></div>
+    <div><button class="secondary" type="button" (click)="recarregar()" [disabled]="carregando() || processando()">Atualizar</button>
+    <button class="primary" type="button" (click)="abrirNova()" [disabled]="processando()">＋ Nova requisição</button></div>
+  </div>
+  @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
+  @if (sucesso()) { <div class="notice success" role="status">{{ sucesso() }}</div> }
+  @if (nova()) {
+    <form (ngSubmit)="criar()" class="fields">
+      <h3>Nova requisição</h3>
+      <label>Finalidade<textarea name="finalidade" [(ngModel)]="finalidade" maxlength="300" required [disabled]="processando()"></textarea></label>
+      <div class="field-row">
+        <label>Produto<select name="produto" [(ngModel)]="produtoId" [disabled]="processando()"><option [ngValue]="null">Selecione</option>
+          @for (p of ativos(); track p.id) { <option [ngValue]="p.id">{{ p.nome }} · disponível: {{ p.estoqueDisponivel }}</option> }
+        </select></label>
+        <label>Quantidade<input name="quantidade" type="number" min="1" max="2147483647" step="1" [(ngModel)]="quantidade" [disabled]="processando()" /></label>
+      </div>
+      <button type="button" class="secondary" (click)="adicionar()" [disabled]="processando()">Adicionar item</button>
+      @for (item of itens; track item.produtoId) {
+        <div>{{ nomeProduto(item.produtoId) }} · {{ item.quantidade }} unidades
+          <button type="button" (click)="remover(item.produtoId)" [disabled]="processando()">Remover</button></div>
+      }
+      <div class="dialog-actions"><button type="button" class="secondary" (click)="nova.set(false)" [disabled]="processando()">Fechar</button>
+        <button class="primary" type="submit" [disabled]="processando()">Salvar rascunho</button></div>
+    </form>
+  }
+  <div class="toolbar"><label>Pesquisar<input type="search" [(ngModel)]="busca" placeholder="Número, finalidade ou solicitante" /></label>
+    <label>Situação<select [(ngModel)]="filtro"><option [ngValue]="0">Todas</option><option [ngValue]="1">Rascunho</option><option [ngValue]="2">Pendente</option><option [ngValue]="3">Aprovada</option><option [ngValue]="4">Parcialmente atendida</option><option [ngValue]="5">Atendida</option><option [ngValue]="6">Cancelada</option></select></label></div>
+  <p>Últimas 100 requisições. {{ carregando() ? 'Carregando...' : '' }}</p>
+  @for (r of filtradas(); track r.id) {
+    <section class="panel">
+      <div class="panel-heading"><div><h3>Requisição #{{ r.id }} <span class="badge">{{ status(r) }}</span></h3>
+        <p>{{ r.finalidade }}</p><small>Solicitante: {{ r.solicitanteNome }} · {{ r.criadoUtc | date:'dd/MM/yyyy HH:mm' }}</small>
+        @if (r.aprovadoUtc) { <p>Aprovada por {{ r.aprovadoPorNome }} · {{ r.aprovadoUtc | date:'dd/MM/yyyy HH:mm' }}</p> }
+        @if (r.encerradoUtc) { <p>Encerrada por {{ r.encerradoPorNome }} · {{ r.encerradoUtc | date:'dd/MM/yyyy HH:mm' }}</p> }
+        @if (r.motivoCancelamento) { <p>Cancelamento: {{ r.motivoCancelamento }}</p> }
+      </div></div>
+      <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Solicitado</th><th>Entregue</th><th>Pendente</th>
+        @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) { <th>Entregar agora</th> }</tr></thead><tbody>
+        @for (i of r.itens; track i.produtoId) { <tr><td>{{ i.produto }}</td><td>{{ i.quantidade }}</td><td>{{ i.quantidadeEntregue }}</td>
+          <td>{{ r.situacao === 6 ? 0 : i.quantidade - i.quantidadeEntregue }}</td>
+          @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) {
+            <td><input type="number" min="0" step="1" [max]="i.quantidade - i.quantidadeEntregue"
+              [(ngModel)]="quantidades[r.id + '-' + i.produtoId]" [disabled]="processando() || i.quantidade === i.quantidadeEntregue"
+              [attr.aria-label]="'Quantidade a entregar de ' + i.produto" /></td>
+          }</tr> }
+      </tbody></table></div>
+      <div class="dialog-actions">
+        @if (podeEnviar(r)) { <button type="button" class="primary" (click)="enviar(r)" [disabled]="processando()">Enviar para aprovação</button> }
+        @if (administrador() && r.situacao === 2) { <button type="button" class="primary" (click)="aprovar(r)" [disabled]="processando()">Aprovar e reservar</button> }
+        @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) { <button type="button" class="primary" (click)="entregar(r)" [disabled]="processando()">Registrar entrega</button> }
+        @if (podeCancelar(r)) { <button type="button" class="secondary" (click)="cancelandoId = r.id; motivo = ''" [disabled]="processando()">Cancelar requisição</button> }
+        <button type="button" class="secondary" (click)="verEntregas(r.id)" [disabled]="processando()">Histórico de entregas</button>
+      </div>
+      @if (cancelandoId === r.id) { <form (ngSubmit)="cancelar(r)" class="fields"><label>Motivo do cancelamento<textarea name="motivo" [(ngModel)]="motivo" maxlength="300" required [disabled]="processando()"></textarea></label>
+        <p>As entregas anteriores permanecem no histórico. O saldo ainda reservado será liberado.</p>
+        <div class="dialog-actions"><button type="button" (click)="cancelandoId = null" [disabled]="processando()">Voltar</button><button type="submit" class="primary" [disabled]="processando()">Confirmar cancelamento</button></div></form> }
+      @if (historicoId() === r.id) { <div class="history">
+        @if (carregandoHistorico()) { <p>Carregando entregas...</p> }
+        @for (e of entregas(); track e.id) { <div class="history-row"><strong>{{ e.produto }} · {{ e.quantidade }} unidades</strong>
+          <small>{{ e.dataUtc | date:'dd/MM/yyyy HH:mm' }} · {{ e.usuarioNome }} · Movimento #{{ e.id }} · Saldo após: {{ e.saldoApos }}</small>
+          <small>Entrega: {{ e.entregaId }}</small></div> }
+        @if (!carregandoHistorico() && !entregas().length) { <p>Nenhuma entrega registrada.</p> }
+      </div> }
+    </section>
+  } @empty { @if (!carregando()) { <p class="empty">Nenhuma requisição encontrada.</p> } }
+</section>

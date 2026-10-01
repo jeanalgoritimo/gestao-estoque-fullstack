@@ -15,6 +15,8 @@ public class Produto
     public decimal Preco { get; private set; }
 
     public int Estoque { get; private set; }
+    public int EstoqueReservado { get; private set; }
+    public int EstoqueDisponivel => Estoque - EstoqueReservado;
     public int EstoqueMinimo { get; private set; }
     public byte[] Versao { get; private set; } = [];
 
@@ -93,10 +95,29 @@ public class Produto
     public void RegistrarSaida(int quantidade)
     {
         if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
-        if (quantidade > Estoque) throw new InvalidOperationException("Estoque insuficiente.");
+        if (quantidade > EstoqueDisponivel) throw new InvalidOperationException("Saldo disponível insuficiente. Há estoque reservado para requisições.");
         Estoque -= quantidade;
     }
 
+    public void Reservar(int quantidade)
+    {
+        if (!Ativo) throw new InvalidOperationException("Produto inativo.");
+        if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
+        if (quantidade > EstoqueDisponivel) throw new InvalidOperationException("Saldo disponível insuficiente para reserva.");
+        EstoqueReservado = checked(EstoqueReservado + quantidade);
+    }
+    public void LiberarReserva(int quantidade)
+    {
+        if (quantidade <= 0 || quantidade > EstoqueReservado)
+            throw new InvalidOperationException("Quantidade de reserva inválida.");
+        EstoqueReservado -= quantidade;
+    }
+    public void EntregarReserva(int quantidade)
+    {
+        if (!Ativo) throw new InvalidOperationException("Produto inativo.");
+        LiberarReserva(quantidade);
+        RegistrarSaida(quantidade);
+    }
     public void Ativar()
     {
         Ativo = true;
@@ -104,6 +125,7 @@ public class Produto
 
     public void Desativar()
     {
+        if (EstoqueReservado > 0) throw new InvalidOperationException("Libere as reservas antes de desativar o produto.");
         Ativo = false;
     }
 

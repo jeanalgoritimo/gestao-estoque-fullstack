@@ -1,3 +1,4 @@
+import { RequisitionsComponent } from './features/requisitions/requisitions.component';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -44,6 +45,7 @@ import {
     ReportsComponent,
     ReplenishmentComponent,
     PurchaseOrdersComponent,
+    RequisitionsComponent,
   ],
   templateUrl: './app.html',
 })
@@ -56,7 +58,7 @@ export class App {
   readonly categorias = signal<Categoria[]>([]);
   readonly fornecedores = signal<Fornecedor[]>([]);
   readonly tela = signal<
-    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'relatorios' | 'perfis' | 'usuarios'
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'relatorios' | 'perfis' | 'usuarios'
   >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
@@ -145,7 +147,7 @@ export class App {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'relatorios' | 'perfis' | 'usuarios'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'relatorios' | 'perfis' | 'usuarios'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');
