@@ -9,10 +9,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GestaoEstoque.Infrastructure.Persistence.Migrations
 {
-    [DbContext(typeof(GestaoEstoqueDbContext))]
-    partial class GestaoEstoqueDbContextModelSnapshot : ModelSnapshot
+        partial class StockLocations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

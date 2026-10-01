@@ -12,6 +12,15 @@ public class Produto
     public int? FornecedorId { get; private set; }
     public Fornecedor? Fornecedor { get; private set; }
 
+    public int? PosicaoEstoqueId { get; private set; }
+    public PosicaoEstoque? PosicaoEstoque { get; private set; }
+
+    public void AlterarPosicao(int? id)
+    {
+        if (id <= 0) throw new ArgumentException("Posição inválida.");
+        PosicaoEstoqueId = id;
+    }
+
     public decimal Preco { get; private set; }
 
     public int Estoque { get; private set; }

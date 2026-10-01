@@ -1,3 +1,4 @@
+import { Almoxarifado, PosicaoEstoque, PosicaoInput } from '../../shared/models/location.models';
 import { CentroCusto, ConsumoCentroCusto } from '../../shared/models/cost-center.models';
 import { RequisicaoMaterial, EntregaMaterial, DevolucaoMaterial, FiltroRequisicoes, PaginaRequisicoes } from '../../shared/models/requisition.models';
 import { HttpClient } from '@angular/common/http';
@@ -152,6 +153,16 @@ export class EstoqueApiService {
   recebimentosPedidoCompra(id: number) {
     return firstValueFrom(this.http.get<RecebimentoPedidoCompra[]>(`/api/pedidos-compra/${id}/recebimentos`));
   }
+  almoxarifados() { return firstValueFrom(this.http.get<Almoxarifado[]>('/api/localizacoes/almoxarifados')); }
+  posicoes() { return firstValueFrom(this.http.get<PosicaoEstoque[]>('/api/localizacoes/posicoes')); }
+  salvarAlmoxarifado(id: number | null, nome: string) {
+    return id === null ? firstValueFrom(this.http.post('/api/localizacoes/almoxarifados', { nome })) : firstValueFrom(this.http.put(`/api/localizacoes/almoxarifados/${id}`, { nome }));
+  }
+  salvarPosicao(id: number | null, input: PosicaoInput) {
+    return id === null ? firstValueFrom(this.http.post('/api/localizacoes/posicoes', input)) : firstValueFrom(this.http.put(`/api/localizacoes/posicoes/${id}`, input));
+  }
+  ativarAlmoxarifado(id: number, ativo: boolean) { return firstValueFrom(this.http.patch(`/api/localizacoes/almoxarifados/${id}/ativo`, ativo)); }
+  ativarPosicao(id: number, ativo: boolean) { return firstValueFrom(this.http.patch(`/api/localizacoes/posicoes/${id}/ativo`, ativo)); }
   sugestoesReposicao() {
     return firstValueFrom(this.http.get<SugestaoReposicao[]>('/api/reposicao'));
   }

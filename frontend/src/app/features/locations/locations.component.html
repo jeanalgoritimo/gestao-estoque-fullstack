@@ -1,0 +1,35 @@
+<section class="panel">
+  <div class="panel-heading"><div><h2>Almoxarifados e posições</h2><p>Cadastre onde encontrar os materiais. O saldo continua único por produto.</p></div>
+    @if (administrador()) { <div><button type="button" class="primary" (click)="editarAlmoxarifado()" [disabled]="processando()">Novo almoxarifado</button>
+      <button type="button" class="primary" (click)="editarPosicao()" [disabled]="processando()">Nova posição</button></div> }
+  </div>
+  @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
+  @if (sucesso()) { <div class="notice success" role="status">{{ sucesso() }}</div> }
+  @if (administrador() && novoAlmoxarifado) {
+    <form class="fields" (ngSubmit)="salvarAlmoxarifado()"><h3>{{ almoxarifadoId === null ? 'Novo almoxarifado' : 'Editar almoxarifado' }}</h3>
+      <label>Nome<input name="nome" [(ngModel)]="nome" maxlength="100" required [disabled]="processando()" /></label>
+      <div class="dialog-actions"><button type="button" (click)="novoAlmoxarifado = false" [disabled]="processando()">Fechar</button><button type="submit" class="primary" [disabled]="processando()">Salvar</button></div>
+    </form>
+  }
+  @if (administrador() && novaPosicao) {
+    <form class="fields" (ngSubmit)="salvarPosicao()"><h3>{{ posicaoId === null ? 'Nova posição' : 'Editar posição' }}</h3>
+      <label>Almoxarifado<select name="almoxarifado" [(ngModel)]="almoxarifadoPosicao" required [disabled]="processando() || posicaoId !== null"><option [ngValue]="null">Selecione</option>
+        @for (a of almoxarifados(); track a.id) { @if (a.ativo || a.id === almoxarifadoPosicao) { <option [ngValue]="a.id">{{ a.nome }}{{ a.ativo ? '' : ' (inativo)' }}</option> } }
+      </select></label>
+      <label>Corredor<input name="corredor" [(ngModel)]="corredor" maxlength="40" required [disabled]="processando()" /></label>
+      <label>Estante<input name="estante" [(ngModel)]="estante" maxlength="40" required [disabled]="processando()" /></label>
+      <label>Prateleira<input name="prateleira" [(ngModel)]="prateleira" maxlength="40" required [disabled]="processando()" /></label>
+      <div class="dialog-actions"><button type="button" (click)="novaPosicao = false" [disabled]="processando()">Fechar</button><button type="submit" class="primary" [disabled]="processando()">Salvar</button></div>
+    </form>
+  }
+  <h3>Almoxarifados</h3><div class="category-list">
+    @for (a of almoxarifados(); track a.id) { <div class="category-row"><div><strong>{{ a.nome }}</strong><small>{{ a.ativo ? 'Ativo' : 'Inativo' }}</small></div>
+      @if (administrador()) { <div><button type="button" (click)="editarAlmoxarifado(a)" [disabled]="processando()">Editar</button><button type="button" (click)="alternarAlmoxarifado(a)" [disabled]="processando()">{{ a.ativo ? 'Desativar' : 'Reativar' }}</button></div> }
+    </div> } @empty { <p>Nenhum almoxarifado cadastrado.</p> }
+  </div>
+  <h3>Posições</h3><div class="category-list">
+    @for (p of posicoes(); track p.id) { <div class="category-row"><div><strong>{{ p.descricao }}</strong><small>{{ p.ativo && p.almoxarifadoAtivo ? 'Disponível para vínculo' : 'Inativa para novos vínculos' }}</small></div>
+      @if (administrador()) { <div><button type="button" (click)="editarPosicao(p)" [disabled]="processando()">Editar</button><button type="button" (click)="alternarPosicao(p)" [disabled]="processando() || (!p.ativo && !p.almoxarifadoAtivo)">{{ p.ativo ? 'Desativar' : 'Reativar' }}</button></div> }
+    </div> } @empty { <p>Nenhuma posição cadastrada.</p> }
+  </div><p>Desativar preserva os vínculos existentes. Renomear atualiza a localização atual exibida; não registra transferência ou altera quantidades.</p>
+</section>

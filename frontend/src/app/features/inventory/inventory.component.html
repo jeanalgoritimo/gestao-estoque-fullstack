@@ -17,15 +17,19 @@
   @if (sucesso()) {
     <div class="notice success" role="status">{{ sucesso() }}</div>
   }
+  <label>Localização atual<select [ngModel]="filtroPosicao()" (ngModelChange)="alterarFiltro($event)" [disabled]="salvando()">
+    <option value="todos">Todas</option><option value="sem">Sem localização</option>
+    @for (p of posicoes(); track p.id) { <option [value]="p.id">{{ p.descricao }}</option> }
+  </select></label><p>Filtro pela localização atual do produto nas contagens carregadas, incluindo posições inativas.</p>
   @if (podeMovimentar()) {
     <form class="inventory-form" (ngSubmit)="abrir()">
       <label
         >Produto para nova contagem
         <select name="produto" [(ngModel)]="produtoId" required>
           <option [ngValue]="null" disabled>Selecione</option>
-          @for (p of produtos(); track p.id) {
+          @for (p of produtosLocalizados(); track p.id) {
             @if (p.ativo && !ocupados().has(p.id)) {
-              <option [ngValue]="p.id">{{ p.nome }} · saldo {{ p.estoque }}</option>
+              <option [ngValue]="p.id">{{ p.nome }} · {{ p.localizacao }} · saldo {{ p.estoque }}</option>
             }
           }
         </select></label
@@ -36,7 +40,7 @@
     </form>
   }
   <div class="category-list">
-    @for (i of inventarios(); track i.id) {
+    @for (i of inventariosLocalizados(); track i.id) {
       <div class="category-row">
         <div>
           <strong>#{{ i.id }} · {{ i.produto }}</strong
@@ -57,7 +61,7 @@
   </div>
   @if (selecionado(); as atual) {
     <div class="inventory-detail">
-      <h3>Conferir {{ atual.produto }}</h3>
+      <h3>Conferir {{ atual.produto }}</h3><p>Localização atual: {{ localizacao(atual.produtoId) }}</p>
       <p>
         Saldo na abertura: <strong>{{ atual.saldoInicial }}</strong>
       </p>

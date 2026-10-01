@@ -1,3 +1,4 @@
+import { PosicaoEstoque } from '../../shared/models/location.models';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
@@ -13,6 +14,16 @@ import { InventarioFisico, Produto } from '../../shared/models/stock.models';
 export class InventoryComponent implements OnInit {
   private readonly api = inject(EstoqueApiService);
   readonly produtos = input.required<Produto[]>();
+  readonly posicoes = input<PosicaoEstoque[]>([]);
+  readonly filtroPosicao = signal('todos');
+  private corresponde(id: number): boolean {
+    const p = this.produtos().find(p => p.id === id);
+    return this.filtroPosicao() === 'todos' || (this.filtroPosicao() === 'sem' ? p?.posicaoEstoqueId === null : p?.posicaoEstoqueId === Number(this.filtroPosicao()));
+  }
+  readonly produtosLocalizados = computed(() => this.produtos().filter(p => this.corresponde(p.id)));
+  readonly inventariosLocalizados = computed(() => this.inventarios().filter(i => this.corresponde(i.produtoId)));
+  localizacao(id: number): string { return this.produtos().find(p => p.id === id)?.localizacao ?? 'Sem localização'; }
+  alterarFiltro(valor: string): void { this.filtroPosicao.set(valor); this.produtoId = null; this.selecionado.set(null); }
   readonly podeMovimentar = input.required<boolean>();
   readonly alterado = output<void>();
   readonly sessaoExpirada = output<void>();
