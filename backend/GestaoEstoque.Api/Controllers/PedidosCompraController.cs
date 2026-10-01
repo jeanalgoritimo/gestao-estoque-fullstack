@@ -15,7 +15,9 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
 {
     public record ItemRequest(int ProdutoId, int Quantidade);
     public record ItemRecebimentoRequest(int ProdutoId, int Quantidade, decimal? CustoUnitario);
-    public record CriarRequest(int FornecedorId, List<ItemRequest> Itens);
+    public record CriarRequest(int FornecedorId, List<ItemRequest> Itens, bool Rascunho = false);
+    public record EditarRequest(List<ItemRequest> Itens, string Versao);
+    public record ConfirmarRequest(string Versao);
     public record ReceberRequest(List<ItemRecebimentoRequest> Itens);
     public record CancelarRequest(string Motivo);
     public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida);
@@ -25,11 +27,11 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
         List<LinhaRecebimentoResponse> Itens);
     public record PedidoResponse(long Id, int FornecedorId, string Fornecedor, SituacaoPedidoCompra Situacao,
         DateTime CriadoUtc, string CriadoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento,
-        List<ItemResponse> Itens);
+        List<ItemResponse> Itens, string Versao);
 
     private static PedidoResponse Map(PedidoCompra p) => new(p.Id, p.FornecedorId, p.Fornecedor.Nome,
         p.Situacao, p.CriadoUtc, p.CriadoPorNome, p.EncerradoUtc, p.EncerradoPorNome, p.MotivoCancelamento,
-        p.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeRecebida)).ToList());
+        p.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeRecebida)).ToList(), Convert.ToBase64String(p.Versao));
     private IQueryable<PedidoCompra> Consulta() => db.PedidosCompra.AsSplitQuery()
         .Include(p => p.Fornecedor).Include(p => p.Itens).ThenInclude(i => i.Produto);
     private bool Usuario(out int id, out string nome)
@@ -83,11 +85,65 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
             .ToDictionaryAsync(p => p.Id, ct);
         if (produtos.Count != ids.Count)
             return BadRequest(new { erro = "Todos os produtos devem estar ativos e vinculados ao fornecedor escolhido." });
-        var pedido = new PedidoCompra(fornecedor.Id, usuarioId, nome);
+        var pedido = new PedidoCompra(fornecedor.Id, usuarioId, nome, request.Rascunho);
         foreach (var item in request.Itens) pedido.AdicionarItem(item.ProdutoId, item.Quantidade);
         db.PedidosCompra.Add(pedido);
         await db.SaveChangesAsync(ct);
         return CreatedAtAction(nameof(Obter), new { id = pedido.Id }, new { pedido.Id });
+    }
+
+    private bool VersaoValida(PedidoCompra pedido, string versao)
+    {
+        try
+        {
+            var bytes = Convert.FromBase64String(versao ?? "");
+            if (bytes.Length != 8 || !bytes.SequenceEqual(pedido.Versao)) return false;
+            db.Entry(pedido).Property(p => p.Versao).OriginalValue = bytes;
+            return true;
+        }
+        catch (FormatException) { return false; }
+    }
+    private async Task<bool> VinculosAtivos(PedidoCompra pedido, IEnumerable<int> ids, CancellationToken ct)
+    {
+        var produtos = ids.Distinct().ToArray();
+        return await db.Fornecedores.AnyAsync(f => f.Id == pedido.FornecedorId && f.Ativo, ct) &&
+            await db.Produtos.CountAsync(p => produtos.Contains(p.Id) && p.Ativo && p.FornecedorId == pedido.FornecedorId, ct) == produtos.Length;
+    }
+    [HttpPut("{id:long}/rascunho")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> EditarRascunho(long id, EditarRequest request, CancellationToken ct)
+    {
+        var pedido = await db.PedidosCompra.Include(p => p.Itens).FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (pedido is null) return NotFound();
+        if (!VersaoValida(pedido, request.Versao)) return Conflict(new { erro = "Pedido alterado. Recarregue antes de editar." });
+        if (request.Itens is not { Count: > 0 and <= 100 } ||
+            !await VinculosAtivos(pedido, request.Itens.Select(i => i.ProdutoId), ct))
+            return BadRequest(new { erro = "Informe itens ativos do fornecedor ativo do pedido." });
+        try
+        {
+            pedido.AtualizarRascunho(request.Itens.Select(i => (i.ProdutoId, i.Quantidade)).ToArray());
+            db.Entry(pedido).Property(p => p.Situacao).IsModified = true;
+            await db.SaveChangesAsync(ct); return Ok();
+        }
+        catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }
+        catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Pedido alterado. Recarregue." }); }
+    }
+    [HttpPost("{id:long}/confirmar")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> ConfirmarRascunho(long id, ConfirmarRequest request, CancellationToken ct)
+    {
+        var pedido = await db.PedidosCompra.Include(p => p.Itens).FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (pedido is null) return NotFound();
+        if (!VersaoValida(pedido, request.Versao)) return Conflict(new { erro = "Pedido alterado. Recarregue antes de confirmar." });
+        if (!await VinculosAtivos(pedido, pedido.Itens.Select(i => i.ProdutoId), ct))
+            return Conflict(new { erro = "Produtos e fornecedor precisam estar ativos e vinculados antes de confirmar." });
+        try
+        {
+            pedido.ConfirmarRascunho(); await db.SaveChangesAsync(ct); return Ok();
+        }
+        catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }
+        catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Pedido alterado. Recarregue." }); }
     }
 
     [HttpPost("{id:long}/cancelar")]
@@ -116,7 +172,7 @@ public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
         var pedido = await db.PedidosCompra.Include(p => p.Itens).FirstOrDefaultAsync(p => p.Id == id, ct);
         if (pedido is null) return NotFound();
         if (pedido.Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
-            return Conflict(new { erro = "Pedido já encerrado." });
+            return Conflict(new { erro = "Pedido não permite recebimentos. Confirme a abertura do rascunho ou verifique se está encerrado." });
         if (request.Itens is not { Count: > 0 and <= 100 } ||
             request.Itens.Any(i => i.ProdutoId <= 0 || i.Quantidade <= 0 ||
                 i.CustoUnitario is null or <= 0 or > 999999999999.9999m ||

@@ -1,27 +1,30 @@
 <section class="panel" id="reposicao">
-  <div class="panel-heading"><div><h2>Sugestões de reposição</h2>
-    <p>Produtos ativos com saldo menor ou igual ao mínimo. A sugestão eleva o saldo para mínimo + 1 unidade.</p></div>
-    <div class="report-actions"><button class="secondary" type="button" (click)="atualizar.emit()" [disabled]="carregando()">↻ Atualizar saldos</button>
-      @if (administrador()) { <button class="primary" type="button" (click)="solicitarPedido()" [disabled]="carregando() || !filtrados().length">Criar pedido</button> }
-      <button class="secondary" type="button" (click)="exportarCsv()" [disabled]="carregando() || !filtrados().length">Exportar lista CSV</button></div>
+  <div class="panel-heading"><div><h2>Reposição de estoque</h2>
+    <p>Produtos ativos com saldo disponível abaixo do mínimo. Sugestão = mínimo − disponível − compras pendentes, limitada a zero.</p></div>
+    <div class="report-actions"><button class="secondary" type="button" (click)="recarregar()" [disabled]="carregando() || processando()">↻ Atualizar sugestões</button>
+      @if (administrador()) { <button class="primary" type="button" (click)="solicitarPedido()" [disabled]="carregando() || processando() || !filtrados().length">Gerar rascunho de compra</button> }
+      <button class="secondary" type="button" (click)="exportarCsv()" [disabled]="carregando() || processando() || !filtrados().length">Exportar CSV</button></div>
   </div>
-  <div class="toolbar report-filters">
-    <label class="search"><span aria-hidden="true">⌕</span><input type="search" aria-label="Buscar produto para reposição" placeholder="Buscar produto ou código" [ngModel]="busca()" (ngModelChange)="busca.set($event)" /></label>
-    <label>Fornecedor <select [ngModel]="fornecedorId()" (ngModelChange)="fornecedorId.set($event)"><option [ngValue]="null">Todos</option>
-      @for (f of fornecedores(); track f.id) { @if (f.ativo) { <option [ngValue]="f.id">{{ f.nome }}</option> } }
-    </select></label>
-    <label class="toggle"><input type="checkbox" [ngModel]="apenasComFornecedor()" (ngModelChange)="apenasComFornecedor.set($event)" /> Apenas com fornecedor ativo</label>
-  </div>
-  <div class="report-summary" aria-live="polite"><span><strong>{{ candidatos().length }}</strong> produtos precisam de reposição</span>
-    <span><strong>{{ semFornecedor() }}</strong> sem fornecedor ativo</span><span><strong>{{ filtrados().length }}</strong> exibidos</span></div>
-  @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
-  <div class="table-wrap"><table><thead><tr><th>PRODUTO</th><th>FORNECEDOR</th><th>SALDO</th><th>MÍNIMO</th><th>SUGERIDO</th><th>QUANTIDADE A REPOR</th></tr></thead><tbody>
-    @for (p of filtrados(); track p.id) { <tr><td><div class="product-name">{{ p.nome }}</div><small>#{{ p.id }} · {{ p.categoria }}</small></td>
-      <td>@if (fornecedorAtivo(p)) { {{ p.fornecedor }} } @else { <span class="badge warning">Fornecedor pendente</span> }</td>
-      <td>{{ p.estoque }}</td><td>{{ p.estoqueMinimo }}</td><td>{{ sugerida(p) }}</td>
-      <td><input class="replenishment-qty" type="number" min="1" step="1" [attr.aria-label]="'Quantidade a repor de ' + p.nome" [ngModel]="quantidade(p)" (ngModelChange)="alterarQuantidade(p, $event)" /></td></tr>
-    } @empty { <tr><td colspan="6" class="empty">{{ carregando() ? 'Carregando produtos...' : 'Nenhum produto precisa de reposição para os filtros selecionados.' }}</td></tr> }
-  </tbody></table></div>
-  <div class="panel-foot">Selecione um fornecedor ativo para criar um pedido com os produtos exibidos. A lista CSV é apenas um planejamento e não altera o estoque.
-    <button type="button" (click)="restaurar()">Restaurar sugestões</button></div>
+  <fieldset [disabled]="carregando() || processando()" style="border:0;padding:0;margin:0">
+    <div class="toolbar report-filters">
+      <label class="search"><span aria-hidden="true">⌕</span><input type="search" aria-label="Buscar produto para reposição" placeholder="Buscar produto ou código" [ngModel]="busca()" (ngModelChange)="busca.set($event)" /></label>
+      <label>Fornecedor <select [ngModel]="fornecedorId()" (ngModelChange)="fornecedorId.set($event)"><option [ngValue]="null">Todos</option>
+        @for (f of fornecedores(); track f.id) { @if (f.ativo) { <option [ngValue]="f.id">{{ f.nome }}</option> } }
+      </select></label>
+      <label class="toggle"><input type="checkbox" [ngModel]="apenasComFornecedor()" (ngModelChange)="apenasComFornecedor.set($event)" /> Apenas com fornecedor ativo</label>
+    </div>
+    <div class="report-summary" aria-live="polite"><span><strong>{{ candidatos().length }}</strong> produtos abaixo do mínimo disponível</span>
+      <span><strong>{{ semFornecedor() }}</strong> sem fornecedor ativo</span><span><strong>{{ filtrados().length }}</strong> exibidos</span></div>
+    @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }
+    <div class="table-wrap"><table><thead><tr><th>PRODUTO</th><th>FORNECEDOR</th><th>FÍSICO</th><th>RESERVADO</th><th>DISPONÍVEL</th><th>MÍNIMO</th><th>COMPRA PENDENTE</th><th>EM RASCUNHOS</th><th>SUGERIDO</th><th>A REPOR</th></tr></thead><tbody>
+      @for (p of filtrados(); track p.produtoId) { <tr><td><div class="product-name">{{ p.nome }}</div><small>#{{ p.produtoId }} · {{ p.categoria }}</small></td>
+        <td>@if (p.fornecedorAtivo) { {{ p.fornecedor }} } @else { <span class="badge warning">Fornecedor pendente</span> }</td>
+        <td>{{ p.estoque }}</td><td>{{ p.reservado }}</td><td>{{ p.disponivel }}</td><td>{{ p.minimo }}</td><td>{{ p.comprasPendentes }}</td>
+        <td>{{ p.emRascunhos }} @if (p.emRascunhos > 0) { <small>Revise os rascunhos existentes antes de gerar outro.</small> }</td><td>{{ p.sugerida }}</td>
+        <td><input class="replenishment-qty" type="number" min="0" max="2147483647" step="1" [attr.aria-label]="'Quantidade a repor de ' + p.nome" [ngModel]="quantidade(p)" (ngModelChange)="alterarQuantidade(p, $event)" /></td></tr>
+      } @empty { <tr><td colspan="10" class="empty">{{ carregando() ? 'Carregando sugestões...' : 'Nenhum produto encontrado para os filtros selecionados.' }}</td></tr> }
+    </tbody></table></div>
+    <div class="panel-foot">Selecione um fornecedor e ajuste as quantidades dos produtos exibidos; zero exclui o item do rascunho. Compras abertas/parcialmente recebidas abatem a sugestão, rascunhos não. Atualizar recalcula e restaura sugestões. O rascunho não altera estoque: revise em Pedidos de compra e confirme sua abertura.
+      <button type="button" (click)="restaurar()">Restaurar sugestões</button></div>
+  </fieldset>
 </section>

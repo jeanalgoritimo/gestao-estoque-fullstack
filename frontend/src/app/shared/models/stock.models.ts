@@ -83,10 +83,11 @@ export interface Perfil {
 }
 
 export interface PedidoCompra {
+  versao: string;
   id: number;
   fornecedorId: number;
   fornecedor: string;
-  situacao: 1 | 2 | 3 | 4 | 5;
+  situacao: 1 | 2 | 3 | 4 | 5 | 6;
   motivoCancelamento: string | null;
   criadoUtc: string;
   criadoPorNome: string;
@@ -95,6 +96,7 @@ export interface PedidoCompra {
   itens: { produtoId: number; produto: string; quantidade: number; quantidadeRecebida: number }[];
 }
 export interface NovoPedidoCompra {
+  rascunho?: boolean;
   fornecedorId: number;
   itens: { produtoId: number; quantidade: number }[];
 }
@@ -104,4 +106,11 @@ export interface RecebimentoPedidoCompra {
   dataUtc: string;
   usuarioNome: string;
   itens: { movimentoId: number; produtoId: number; produto: string; quantidade: number; custoUnitario: number | null; valorCompra: number | null }[];
+}
+
+export interface SugestaoReposicao {
+  produtoId: number; nome: string; categoria: string;
+  fornecedorId: number | null; fornecedor: string | null; fornecedorAtivo: boolean;
+  estoque: number; reservado: number; disponivel: number; minimo: number;
+  comprasPendentes: number; emRascunhos: number; sugerida: number;
 }
