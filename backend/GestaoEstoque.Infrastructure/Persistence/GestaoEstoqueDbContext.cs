@@ -11,6 +11,8 @@ public class GestaoEstoqueDbContext : DbContext
     {
     }
 
+    public DbSet<Almoxarifado> Almoxarifados => Set<Almoxarifado>();
+    public DbSet<PosicaoEstoque> PosicoesEstoque => Set<PosicaoEstoque>();
     public DbSet<CentroCusto> CentrosCusto => Set<CentroCusto>();
     public DbSet<RequisicaoMaterial> RequisicoesMaterial => Set<RequisicaoMaterial>();
     public DbSet<ItemRequisicaoMaterial> ItensRequisicaoMaterial => Set<ItemRequisicaoMaterial>();

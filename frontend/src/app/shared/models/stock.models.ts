@@ -1,5 +1,7 @@
 export type TipoMovimento = 1 | 2;
 export interface Produto {
+  posicaoEstoqueId: number | null;
+  localizacao: string;
   id: number;
   nome: string;
   categoriaId: number;
@@ -56,6 +58,7 @@ export interface InventarioFisico {
   motivo: string | null;
 }
 export interface ProdutoForm {
+  posicaoEstoqueId: number | null;
   fornecedorId: number | null;
   nome: string;
   categoriaId: number | null;

@@ -1,3 +1,5 @@
+import { Almoxarifado, PosicaoEstoque } from './shared/models/location.models';
+import { LocationsComponent } from './features/locations/locations.component';
 import { CostCentersComponent } from './features/cost-centers/cost-centers.component';
 import { ConsumptionComponent } from './features/cost-centers/consumption.component';
 import { CentroCusto } from './shared/models/cost-center.models';
@@ -51,6 +53,7 @@ import {
     RequisitionsComponent,
     CostCentersComponent,
     ConsumptionComponent,
+    LocationsComponent,
   ],
   templateUrl: './app.html',
 })
@@ -61,10 +64,13 @@ export class App {
   readonly perfis = signal<Perfil[]>([]);
   readonly produtos = signal<Produto[]>([]);
   readonly categorias = signal<Categoria[]>([]);
+  readonly almoxarifados = signal<Almoxarifado[]>([]);
+  readonly posicoes = signal<PosicaoEstoque[]>([]);
+  readonly filtroPosicao = signal('todos');
   readonly centrosCusto = signal<CentroCusto[]>([]);
   readonly fornecedores = signal<Fornecedor[]>([]);
   readonly tela = signal<
-    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios'
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes'
   >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
@@ -84,7 +90,8 @@ export class App {
     return this.produtos().filter(
       (p) =>
         (!this.somenteAtivos() || p.ativo) &&
-        (!termo || `${p.nome} ${p.categoria} ${p.id}`.toLocaleLowerCase('pt-BR').includes(termo)),
+        (this.filtroPosicao() === 'todos' || (this.filtroPosicao() === 'sem' ? p.posicaoEstoqueId === null : p.posicaoEstoqueId === Number(this.filtroPosicao()))) &&
+        (!termo || `${p.nome} ${p.categoria} ${p.id} ${p.localizacao}`.toLocaleLowerCase('pt-BR').includes(termo)),
     );
   });
   readonly ativos = computed(() => this.produtos().filter((p) => p.ativo));
@@ -119,7 +126,7 @@ export class App {
   novaSenha = '';
 
   private formVazio(): ProdutoForm {
-    return { nome: '', categoriaId: null, fornecedorId: null, preco: null, estoqueMinimo: 5 };
+    return { posicaoEstoqueId: null, nome: '', categoriaId: null, fornecedorId: null, preco: null, estoqueMinimo: 5 };
   }
   private mensagemErro(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
@@ -139,23 +146,26 @@ export class App {
     this.carregando.set(true);
     this.erro.set('');
     try {
-      const [produtos, categorias, fornecedores, centros] = await Promise.all([
+      const [produtos, categorias, fornecedores, centros, almoxarifados, posicoes] = await Promise.all([
         this.api.produtos(),
         this.api.categorias(),
         this.api.fornecedores(),
         this.api.centrosCusto(),
+        this.api.almoxarifados(),
+        this.api.posicoes(),
       ]);
       this.produtos.set(produtos);
       this.categorias.set(categorias);
       this.fornecedores.set(fornecedores);
       this.centrosCusto.set(centros);
+      this.almoxarifados.set(almoxarifados); this.posicoes.set(posicoes);
     } catch (error) {
       this.erro.set(this.mensagemErro(error));
     } finally {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');
@@ -371,6 +381,7 @@ export class App {
   editar(produto: Produto): void {
     this.selecionado.set(produto);
     this.form = {
+      posicaoEstoqueId: produto.posicaoEstoqueId,
       nome: produto.nome,
       categoriaId: produto.categoriaId,
       fornecedorId: produto.fornecedorId,

@@ -59,6 +59,7 @@
         >
           ▤ <span>Relatórios</span>
         </button>
+        <button type="button" aria-label="Localizações" title="Localizações" [class.nav-active]="tela() === 'localizacoes'" (click)="navegar('localizacoes')">▣ <span>Localizações</span></button>
         <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
         <button type="button" aria-label="Reposição" title="Reposição" [class.nav-active]="tela() === 'reposicao'" (click)="navegar('reposicao')">▣ <span>Reposição</span></button>
         <button type="button" aria-label="Pedidos de compra" title="Pedidos de compra" [class.nav-active]="tela() === 'pedidos'" (click)="navegar('pedidos')">▣ <span>Pedidos de compra</span></button>
@@ -131,7 +132,9 @@
                       ? 'Inventário'
                       : tela() === 'fornecedores'
                         ? 'Fornecedores'
-                      : tela() === 'reposicao'
+                      : tela() === 'localizacoes'
+                        ? 'Localizações'
+                        : tela() === 'reposicao'
                         ? 'Reposição'
                       : tela() === 'pedidos'
                         ? 'Pedidos de compra'
@@ -165,7 +168,9 @@
                       ? 'Inventário físico'
                       : tela() === 'fornecedores'
                         ? 'Fornecedores'
-                      : tela() === 'reposicao'
+                      : tela() === 'localizacoes'
+                        ? 'Localizações'
+                        : tela() === 'reposicao'
                         ? 'Reposição'
                       : tela() === 'pedidos'
                         ? 'Pedidos de compra'
@@ -192,7 +197,9 @@
                       ? 'Conte os produtos e registre ajustes com rastreabilidade.'
                       : tela() === 'fornecedores'
                         ? 'Cadastre fornecedores e associe-os aos produtos.'
-                      : tela() === 'reposicao'
+                      : tela() === 'localizacoes'
+                        ? 'Cadastre almoxarifados e posições dos materiais.'
+                        : tela() === 'reposicao'
                         ? 'Planeje a reposição dos produtos abaixo do estoque mínimo.'
                       : tela() === 'pedidos'
                         ? 'Acompanhe pedidos e registre o recebimento no estoque.'
@@ -261,8 +268,10 @@
           (editar)="editarCategoria($event)"
           (alternarAtiva)="definirCategoriaAtiva($event)"
         />
+      } @else if (tela() === 'localizacoes') {
+        <app-locations [almoxarifados]="almoxarifados()" [posicoes]="posicoes()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
       } @else if (tela() === 'inventarios') {
-        <app-inventory
+        <app-inventory [posicoes]="posicoes()"
           [produtos]="produtos()"
           [podeMovimentar]="!!auth.usuario()?.permissoes?.movimentarEstoque"
           (alterado)="recarregar()"
@@ -283,7 +292,7 @@
       } @else if (tela() === 'relatorios') {
         <app-reports [produtos]="produtos()" [carregando]="carregando()" (atualizar)="recarregar()" />
       } @else {
-        <app-products
+        <app-products [posicoes]="posicoes()" [filtroPosicao]="filtroPosicao()" (filtroPosicaoChange)="filtroPosicao.set($event)"
           [produtosFiltrados]="filtrados()"
           [totalProdutos]="produtos().length"
           [busca]="busca()"
@@ -391,6 +400,12 @@
                   @if (fornecedor.ativo || fornecedor.id === form.fornecedorId) { <option [ngValue]="fornecedor.id">{{ fornecedor.nome }}</option> }
                 }
               </select></label>
+            <label>Localização<select name="posicaoEstoqueId" [(ngModel)]="form.posicaoEstoqueId">
+              <option [ngValue]="null">Sem localização</option>
+              @for (p of posicoes(); track p.id) { @if ((p.ativo && p.almoxarifadoAtivo) || p.id === form.posicaoEstoqueId) {
+                <option [ngValue]="p.id">{{ p.descricao }}{{ p.ativo && p.almoxarifadoAtivo ? '' : ' (inativa — vínculo atual)' }}</option>
+              } }
+            </select></label>
             <div class="field-row">
               <label
                 >Preço (R$)

@@ -9,11 +9,14 @@
     </button>
   </div>
   <div class="toolbar">
+    <label>Localização<select [ngModel]="filtroPosicao()" (ngModelChange)="filtroPosicaoChange.emit($event)"><option value="todos">Todas</option><option value="sem">Sem localização</option>
+      @for (p of posicoes(); track p.id) { <option [value]="p.id">{{ p.descricao }}{{ p.ativo && p.almoxarifadoAtivo ? '' : ' (inativa)' }}</option> }
+    </select></label>
     <label class="search"
       ><span aria-hidden="true">⌕</span
       ><input
         type="search"
-        placeholder="Buscar por nome, categoria ou código"
+        placeholder="Buscar produto, categoria, código ou localização"
         [ngModel]="busca()"
         (ngModelChange)="buscaChange.emit($event)"
         aria-label="Buscar produtos" /></label
@@ -31,7 +34,7 @@
       <thead>
         <tr>
           <th>PRODUTO</th>
-          <th>CATEGORIA</th>
+          <th>CATEGORIA</th><th>LOCALIZAÇÃO ATUAL</th>
           <th>PREÇO</th>
           <th>ESTOQUE FÍSICO</th>
           <th>RESERVADO</th>
@@ -47,7 +50,7 @@
               <div class="product-name">{{ produto.nome }}</div>
               <small>#{{ produto.id }}</small>
             </td>
-            <td>{{ produto.categoria }}</td>
+            <td>{{ produto.categoria }}</td><td>{{ produto.localizacao }}</td>
             <td>{{ moeda(produto.preco) }}</td>
             <td>
               <strong>{{ produto.estoque }}</strong>
@@ -100,7 +103,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="8" class="empty">
+            <td colspan="9" class="empty">
               {{
                 carregando()
                   ? 'Carregando produtos...'
