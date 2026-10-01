@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { EstoqueApiService } from '../../core/api/estoque-api.service';
 import { CentroCusto } from '../../shared/models/cost-center.models';
 import { Produto } from '../../shared/models/stock.models';
-import { RequisicaoMaterial, EntregaMaterial, FiltroRequisicoes } from '../../shared/models/requisition.models';
+import { RequisicaoMaterial, EntregaMaterial, DevolucaoMaterial, FiltroRequisicoes } from '../../shared/models/requisition.models';
 
 @Component({ selector: 'app-requisitions', imports: [CommonModule, FormsModule], templateUrl: './requisitions.component.html' })
 export class RequisitionsComponent implements OnInit {
@@ -25,6 +25,12 @@ export class RequisitionsComponent implements OnInit {
   readonly sucesso = signal('');
   readonly nova = signal(false);
   readonly historicoId = signal<number | null>(null);
+  devolvendoId: number | null = null;
+  motivoDevolucao = '';
+  quantidadesDevolucao: Record<number, number> = {};
+  readonly devolucoesId = signal<number | null>(null);
+  readonly devolucoes = signal<DevolucaoMaterial[]>([]);
+  readonly carregandoDevolucoes = signal(false);
   readonly entregas = signal<EntregaMaterial[]>([]);
   readonly carregandoHistorico = signal(false);
   readonly ativos = computed(() => this.produtos().filter(p => p.ativo));
@@ -111,6 +117,7 @@ export class RequisitionsComponent implements OnInit {
     const consulta = ++this.consultaAtual;
     this.carregando.set(true); this.erro.set('');
     this.requisicoes.set([]); this.historicoId.set(null); this.cancelandoId = null;
+    this.devolvendoId = null; this.devolucoesId.set(null);
     try {
       const resultado = await this.api.requisicoes(this.filtrosAplicados, this.pagina());
       if (consulta !== this.consultaAtual) return;
@@ -163,6 +170,30 @@ export class RequisitionsComponent implements OnInit {
       for (const i of r.itens) delete this.quantidades[`${r.id}-${i.produtoId}`];
       if (this.historicoId() === r.id) this.historicoId.set(null);
     }, 'Entrega registrada no histórico de estoque.');
+  }
+  podeDevolver(r: RequisicaoMaterial): boolean {
+    return this.podeEntregar() && r.itens.some(i => i.quantidadeEntregue > i.quantidadeDevolvida);
+  }
+  abrirDevolucao(r: RequisicaoMaterial): void {
+    this.devolvendoId = r.id; this.motivoDevolucao = ''; this.quantidadesDevolucao = {}; this.erro.set('');
+  }
+  async devolver(r: RequisicaoMaterial): Promise<void> {
+    const itens = r.itens.map(i => ({ produtoId: i.produtoId, quantidade: this.quantidadesDevolucao[i.produtoId] ?? 0 }))
+      .filter(i => i.quantidade !== 0);
+    if (!this.motivoDevolucao.trim() || !itens.length || itens.some(i => !Number.isInteger(i.quantidade) || i.quantidade <= 0 ||
+      i.quantidade > r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeEntregue - r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeDevolvida)) {
+      this.erro.set('Informe o motivo e quantidades positivas dentro do saldo entregue ainda não devolvido.'); return;
+    }
+    await this.executar(async () => {
+      await this.api.devolverRequisicao(r.id, itens, this.motivoDevolucao); this.devolvendoId = null;
+    }, 'Devolução registrada. Materiais retornaram ao estoque; entregas originais preservadas.');
+  }
+  async verDevolucoes(id: number): Promise<void> {
+    if (this.devolucoesId() === id) { this.devolucoesId.set(null); return; }
+    this.devolucoesId.set(id); this.devolucoes.set([]); this.carregandoDevolucoes.set(true);
+    try { const linhas = await this.api.devolucoesRequisicao(id); if (this.devolucoesId() === id) this.devolucoes.set(linhas); }
+    catch (error) { this.erro.set(this.mensagem(error)); }
+    finally { this.carregandoDevolucoes.set(false); }
   }
   async verEntregas(id: number): Promise<void> {
     if (this.historicoId() === id) { this.historicoId.set(null); return; }

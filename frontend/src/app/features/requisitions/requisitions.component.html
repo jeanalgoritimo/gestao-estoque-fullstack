@@ -65,9 +65,9 @@
         @if (r.encerradoUtc) { <p>Encerrada por {{ r.encerradoPorNome }} · {{ r.encerradoUtc | date:'dd/MM/yyyy HH:mm' }}</p> }
         @if (r.motivoCancelamento) { <p>Cancelamento: {{ r.motivoCancelamento }}</p> }
       </div></div>
-      <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Solicitado</th><th>Entregue</th><th>Pendente</th>
+      <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Solicitado</th><th>Entregue</th><th>Devolvido</th><th>Entregue líquido</th><th>Pendente</th>
         @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) { <th>Entregar agora</th> }</tr></thead><tbody>
-        @for (i of r.itens; track i.produtoId) { <tr><td>{{ i.produto }}</td><td>{{ i.quantidade }}</td><td>{{ i.quantidadeEntregue }}</td>
+        @for (i of r.itens; track i.produtoId) { <tr><td>{{ i.produto }}</td><td>{{ i.quantidade }}</td><td>{{ i.quantidadeEntregue }}</td><td>{{ i.quantidadeDevolvida }}</td><td>{{ i.quantidadeEntregue - i.quantidadeDevolvida }}</td>
           <td>{{ r.situacao === 6 ? 0 : i.quantidade - i.quantidadeEntregue }}</td>
           @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) {
             <td><input type="number" min="0" step="1" [max]="i.quantidade - i.quantidadeEntregue"
@@ -80,8 +80,33 @@
         @if (administrador() && r.situacao === 2) { <button type="button" class="primary" (click)="aprovar(r)" [disabled]="processando()">Aprovar e reservar</button> }
         @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) { <button type="button" class="primary" (click)="entregar(r)" [disabled]="processando()">Registrar entrega</button> }
         @if (podeCancelar(r)) { <button type="button" class="secondary" (click)="cancelandoId = r.id; motivo = ''" [disabled]="processando()">Cancelar requisição</button> }
+        @if (podeDevolver(r)) { <button type="button" class="secondary" (click)="abrirDevolucao(r)" [disabled]="processando()">Devolver materiais</button> }
+        <button type="button" class="secondary" (click)="verDevolucoes(r.id)" [disabled]="processando()">Histórico de devoluções</button>
         <button type="button" class="secondary" (click)="verEntregas(r.id)" [disabled]="processando()">Histórico de entregas</button>
       </div>
+      @if (devolvendoId === r.id) {
+        <form class="fields" (ngSubmit)="devolver(r)">
+          <h3>Devolver materiais da requisição #{{ r.id }}</h3>
+          <p>A devolução registra uma entrada sem reabrir a requisição ou reservar novamente o material.</p>
+          <label>Motivo<textarea name="motivoDevolucao" [(ngModel)]="motivoDevolucao" maxlength="150" required [disabled]="processando()"></textarea></label>
+          @for (i of r.itens; track i.produtoId) { @if (i.quantidadeEntregue > i.quantidadeDevolvida) {
+            <label>{{ i.produto }} · máximo: {{ i.quantidadeEntregue - i.quantidadeDevolvida }}
+              <input [name]="'devolucao-' + i.produtoId" type="number" min="0" step="1" [max]="i.quantidadeEntregue - i.quantidadeDevolvida" [(ngModel)]="quantidadesDevolucao[i.produtoId]" [disabled]="processando()" />
+            </label>
+          } }
+          <div class="dialog-actions"><button type="button" (click)="devolvendoId = null" [disabled]="processando()">Voltar</button>
+            <button type="submit" class="primary" [disabled]="processando()">Registrar devolução</button></div>
+        </form>
+      }
+      @if (devolucoesId() === r.id) {
+        <div class="history"><h3>Devoluções</h3>
+          @if (carregandoDevolucoes()) { <p>Carregando devoluções...</p> }
+          @for (d of devolucoes(); track d.id) { <div class="history-row"><strong>{{ d.produto }} · +{{ d.quantidade }} unidades</strong>
+            <small>{{ d.dataUtc | date:'dd/MM/yyyy HH:mm' }} · {{ d.usuarioNome }} · Movimento #{{ d.id }} · Saldo após: {{ d.saldoApos }}</small>
+            <small>Motivo: {{ d.motivo }} · Devolução: {{ d.devolucaoId }}</small></div> }
+          @if (!carregandoDevolucoes() && !devolucoes().length) { <p>Nenhuma devolução registrada.</p> }
+        </div>
+      }
       @if (cancelandoId === r.id) { <form (ngSubmit)="cancelar(r)" class="fields"><label>Motivo do cancelamento<textarea name="motivo" [(ngModel)]="motivo" maxlength="300" required [disabled]="processando()"></textarea></label>
         <p>As entregas anteriores permanecem no histórico. O saldo ainda reservado será liberado.</p>
         <div class="dialog-actions"><button type="button" (click)="cancelandoId = null" [disabled]="processando()">Voltar</button><button type="submit" class="primary" [disabled]="processando()">Confirmar cancelamento</button></div></form> }

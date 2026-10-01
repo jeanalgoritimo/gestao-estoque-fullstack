@@ -10,6 +10,7 @@ public class MovimentoEstoqueConfiguration : IEntityTypeConfiguration<MovimentoE
     {
         builder.HasOne<RequisicaoMaterial>().WithMany().HasForeignKey(m => m.RequisicaoMaterialId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(m => new { m.RequisicaoMaterialId, m.EntregaId });
+        builder.HasIndex(m => new { m.RequisicaoMaterialId, m.DevolucaoId });
         builder.ToTable("MovimentosEstoque");
         builder.HasKey(m => m.Id);
         builder.Property(m => m.Tipo).HasConversion<int>();

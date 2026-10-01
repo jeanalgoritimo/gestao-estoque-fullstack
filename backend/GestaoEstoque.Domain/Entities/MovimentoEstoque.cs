@@ -19,6 +19,7 @@ public class MovimentoEstoque
     public int? SaldoApos { get; private set; }
     public long? PedidoCompraId { get; private set; }
     public long? RequisicaoMaterialId { get; private set; }
+    public Guid? DevolucaoId { get; private set; }
     public Guid? EntregaId { get; private set; }
     public Guid? RecebimentoId { get; private set; }
 
@@ -70,10 +71,17 @@ public class MovimentoEstoque
             throw new InvalidOperationException("Vínculo de entrega inválido.");
         RequisicaoMaterialId = requisicaoId; EntregaId = entregaId;
     }
+    public void VincularDevolucao(long requisicaoId, Guid devolucaoId)
+    {
+        if (Tipo != TipoMovimento.Entrada || requisicaoId <= 0 || devolucaoId == Guid.Empty ||
+            RequisicaoMaterialId is not null || PedidoCompraId is not null || RecebimentoId is not null)
+            throw new InvalidOperationException("Vínculo de devolução inválido.");
+        RequisicaoMaterialId = requisicaoId; DevolucaoId = devolucaoId;
+    }
     public void VincularRecebimento(long pedidoCompraId, Guid recebimentoId)
     {
         if (Tipo != TipoMovimento.Entrada || pedidoCompraId <= 0 || recebimentoId == Guid.Empty ||
-            PedidoCompraId is not null || RecebimentoId is not null)
+            PedidoCompraId is not null || RecebimentoId is not null || RequisicaoMaterialId is not null)
             throw new InvalidOperationException("Vínculo de recebimento inválido.");
         PedidoCompraId = pedidoCompraId;
         RecebimentoId = recebimentoId;

@@ -5,7 +5,7 @@ export interface RequisicaoMaterial {
   criadoUtc: string; situacao: 1 | 2 | 3 | 4 | 5 | 6;
   aprovadoUtc: string | null; aprovadoPorNome: string | null;
   encerradoUtc: string | null; encerradoPorNome: string | null; motivoCancelamento: string | null;
-  itens: { produtoId: number; produto: string; quantidade: number; quantidadeEntregue: number }[];
+  itens: { produtoId: number; produto: string; quantidade: number; quantidadeEntregue: number; quantidadeDevolvida: number }[];
 }
 export interface EntregaMaterial {
   id: number; entregaId: string; produtoId: number; produto: string; quantidade: number;
@@ -18,4 +18,9 @@ export interface FiltroRequisicoes {
 }
 export interface PaginaRequisicoes {
   itens: RequisicaoMaterial[]; pagina: number; tamanhoPagina: number; total: number; totalPaginas: number;
+}
+
+export interface DevolucaoMaterial {
+  id: number; devolucaoId: string; produtoId: number; produto: string; quantidade: number;
+  dataUtc: string; usuarioNome: string; motivo: string; saldoApos: number;
 }
