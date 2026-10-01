@@ -15,16 +15,17 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
 {
     public record ItemRequest(int ProdutoId, int Quantidade);
     public record CriarRequest(string Finalidade, List<ItemRequest> Itens);
+    public record EditarRequest(string Finalidade, List<ItemRequest> Itens, string Versao);
     public record EntregarRequest(List<ItemRequest> Itens);
     public record CancelarRequest(string Motivo);
     public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeEntregue);
     public record RequisicaoResponse(long Id, string Finalidade, int SolicitanteId, string SolicitanteNome,
         DateTime CriadoUtc, SituacaoRequisicao Situacao, DateTime? AprovadoUtc, string? AprovadoPorNome,
-        DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento, List<ItemResponse> Itens);
+        DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento, List<ItemResponse> Itens, string Versao);
     private static RequisicaoResponse Map(RequisicaoMaterial r) => new(r.Id, r.Finalidade, r.SolicitanteId,
         r.SolicitanteNome, r.CriadoUtc, r.Situacao, r.AprovadoUtc, r.AprovadoPorNome, r.EncerradoUtc,
         r.EncerradoPorNome, r.MotivoCancelamento,
-        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue)).ToList());
+        r.Itens.Select(i => new ItemResponse(i.ProdutoId, i.Produto.Nome, i.Quantidade, i.QuantidadeEntregue)).ToList(), Convert.ToBase64String(r.Versao));
     private IQueryable<RequisicaoMaterial> Consulta() => db.RequisicoesMaterial.AsSplitQuery()
         .Include(r => r.Itens).ThenInclude(i => i.Produto);
     private bool Usuario(out int id, out string nome)
@@ -61,6 +62,33 @@ public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
             return CreatedAtAction(nameof(Obter), new { id = r.Id }, new { r.Id });
         }
         catch (ArgumentException ex) { return BadRequest(new { erro = ex.Message }); }
+    }
+    [HttpPut("{id:long}")]
+    public async Task<IActionResult> Editar(long id, EditarRequest request, CancellationToken ct)
+    {
+        if (!Usuario(out var usuarioId, out _)) return Unauthorized();
+        var r = await Consulta().FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (r is null) return NotFound();
+        if (r.SolicitanteId != usuarioId && !User.IsInRole("Administrador")) return Forbid();
+        if (r.Situacao != SituacaoRequisicao.Rascunho)
+            return Conflict(new { erro = "Somente rascunhos podem ser editados. Recarregue a lista." });
+        byte[] versao;
+        try { versao = Convert.FromBase64String(request.Versao ?? ""); }
+        catch (FormatException) { return BadRequest(new { erro = "Versão do rascunho inválida." }); }
+        if (versao.Length != 8) return BadRequest(new { erro = "Versão do rascunho inválida." });
+        if (!r.Versao.SequenceEqual(versao))
+            return Conflict(new { erro = "O rascunho foi alterado. Feche a edição, atualize a lista e abra novamente." });
+        if (!ItensValidos(request.Itens))
+            return BadRequest(new { erro = "Informe de 1 a 100 produtos distintos com quantidades positivas." });
+        var ids = request.Itens.Select(i => i.ProdutoId).ToList();
+        if (await db.Produtos.CountAsync(p => ids.Contains(p.Id) && p.Ativo, ct) != ids.Count)
+            return BadRequest(new { erro = "Selecione somente produtos ativos. Remova itens de produtos inativos." });
+        return await Salvar(() =>
+        {
+            r.AtualizarRascunho(request.Finalidade, request.Itens.Select(i => (i.ProdutoId, i.Quantidade)).ToList());
+            // Inclui o cabeçalho na checagem de rowversion mesmo ao alterar somente itens.
+            db.Entry(r).Property(r => r.Finalidade).IsModified = true;
+        }, ct);
     }
     [HttpPost("{id:long}/enviar")]
     public async Task<IActionResult> Enviar(long id, CancellationToken ct)

@@ -24,6 +24,8 @@ export class RequisitionsComponent implements OnInit {
   readonly entregas = signal<EntregaMaterial[]>([]);
   readonly carregandoHistorico = signal(false);
   readonly ativos = computed(() => this.produtos().filter(p => p.ativo));
+  editandoId: number | null = null;
+  versaoEdicao = '';
   finalidade = '';
   produtoId: number | null = null;
   quantidade: number | null = null;
@@ -59,7 +61,18 @@ export class RequisitionsComponent implements OnInit {
     this.produtoId = null; this.quantidade = null; this.erro.set('');
   }
   remover(id: number): void { this.itens = this.itens.filter(i => i.produtoId !== id); }
+  editar(r: RequisicaoMaterial): void {
+    if (!this.podeEnviar(r) || this.processando()) return;
+    this.editandoId = r.id; this.versaoEdicao = r.versao; this.finalidade = r.finalidade;
+    this.itens = r.itens.map(i => ({ produtoId: i.produtoId, quantidade: i.quantidade }));
+    this.produtoId = null; this.quantidade = null; this.erro.set(''); this.sucesso.set(''); this.nova.set(true);
+  }
+  fecharEdicao(): void {
+    if (this.processando()) return;
+    this.nova.set(false); this.editandoId = null; this.versaoEdicao = '';
+  }
   abrirNova(): void {
+    this.editandoId = null; this.versaoEdicao = '';
     this.finalidade = ''; this.itens = []; this.produtoId = null; this.quantidade = null;
     this.erro.set(''); this.sucesso.set(''); this.nova.set(true);
   }
@@ -86,10 +99,16 @@ export class RequisitionsComponent implements OnInit {
     finally { this.processando.set(false); }
   }
   async criar(): Promise<void> {
-    if (!this.finalidade.trim() || !this.itens.length) { this.erro.set('Informe finalidade e pelo menos um item.'); return; }
+    if (!this.finalidade.trim() || !this.itens.length || this.itens.some(i =>
+      !Number.isInteger(i.quantidade) || i.quantidade <= 0 || i.quantidade > 2147483647)) {
+      this.erro.set('Informe finalidade, itens e quantidades inteiras positivas.'); return;
+    }
+    const id = this.editandoId;
     await this.executar(async () => {
-      await this.api.criarRequisicao({ finalidade: this.finalidade, itens: this.itens }); this.nova.set(false);
-    }, 'Rascunho criado. Envie a requisição para aprovação.');
+      if (id !== null) await this.api.editarRequisicao(id, { finalidade: this.finalidade, itens: this.itens, versao: this.versaoEdicao });
+      else await this.api.criarRequisicao({ finalidade: this.finalidade, itens: this.itens });
+      this.nova.set(false); this.editandoId = null; this.versaoEdicao = '';
+    }, id !== null ? 'Rascunho atualizado.' : 'Rascunho criado. Envie a requisição para aprovação.');
   }
   enviar(r: RequisicaoMaterial): Promise<void> {
     return this.executar(() => this.api.enviarRequisicao(r.id), 'Requisição enviada para aprovação.');

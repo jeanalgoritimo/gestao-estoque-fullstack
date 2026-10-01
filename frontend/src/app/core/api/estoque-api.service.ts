@@ -37,6 +37,9 @@ export class EstoqueApiService {
   criarRequisicao(input: { finalidade: string; itens: { produtoId: number; quantidade: number }[] }) {
     return firstValueFrom(this.http.post<{ id: number }>('/api/requisicoes', input));
   }
+  editarRequisicao(id: number, input: { finalidade: string; itens: { produtoId: number; quantidade: number }[]; versao: string }) {
+    return firstValueFrom(this.http.put<void>(`/api/requisicoes/${id}`, input));
+  }
   enviarRequisicao(id: number) { return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/enviar`, {})); }
   aprovarRequisicao(id: number) { return firstValueFrom(this.http.post<void>(`/api/requisicoes/${id}/aprovar`, {})); }
   cancelarRequisicao(id: number, motivo: string) {

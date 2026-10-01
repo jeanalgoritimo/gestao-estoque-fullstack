@@ -40,6 +40,26 @@ public class RequisicaoMaterial
             throw new ArgumentException("Informe até 100 produtos distintos.");
         Itens.Add(new ItemRequisicaoMaterial(produtoId, quantidade));
     }
+    public void AtualizarRascunho(string finalidade, IReadOnlyCollection<(int ProdutoId, int Quantidade)> itens)
+    {
+        if (Situacao != SituacaoRequisicao.Rascunho)
+            throw new InvalidOperationException("Somente rascunhos podem ser editados.");
+        if (string.IsNullOrWhiteSpace(finalidade) || finalidade.Trim().Length > 300)
+            throw new ArgumentException("Informe a finalidade com até 300 caracteres.");
+        if (itens is null || itens.Count is < 1 or > 100 ||
+            itens.Select(i => i.ProdutoId).Distinct().Count() != itens.Count)
+            throw new ArgumentException("Informe de 1 a 100 produtos distintos.");
+        // Valida tudo antes de modificar o agregado e preserva IDs dos itens mantidos.
+        var novos = itens.Select(i => new ItemRequisicaoMaterial(i.ProdutoId, i.Quantidade)).ToList();
+        Finalidade = finalidade.Trim();
+        Itens.RemoveAll(i => !novos.Any(n => n.ProdutoId == i.ProdutoId));
+        foreach (var novo in novos)
+        {
+            var existente = Itens.SingleOrDefault(i => i.ProdutoId == novo.ProdutoId);
+            if (existente is null) Itens.Add(novo);
+            else existente.AlterarQuantidadeRascunho(novo.Quantidade);
+        }
+    }
     public void Enviar()
     {
         if (Situacao != SituacaoRequisicao.Rascunho || Itens.Count == 0)
@@ -91,6 +111,12 @@ public class ItemRequisicaoMaterial
     {
         if (produtoId <= 0 || quantidade <= 0) throw new ArgumentException("Produto e quantidade devem ser positivos.");
         ProdutoId = produtoId; Quantidade = quantidade;
+    }
+    internal void AlterarQuantidadeRascunho(int quantidade)
+    {
+        if (quantidade <= 0 || QuantidadeEntregue != 0)
+            throw new ArgumentException("Quantidade de rascunho inválida.");
+        Quantidade = quantidade;
     }
     internal void Entregar(int quantidade)
     {

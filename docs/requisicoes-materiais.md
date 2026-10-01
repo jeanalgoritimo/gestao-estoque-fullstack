@@ -7,6 +7,7 @@ Acesse **Requisições → Nova requisição**, informe a finalidade, adicione p
 | Ação | Acesso |
 |---|---|
 | Consultar e criar requisição | Usuário autenticado |
+| Editar rascunho | Solicitante ou administrador |
 | Enviar rascunho | Solicitante ou administrador |
 | Aprovar e reservar | Administrador |
 | Registrar entrega | Perfil com permissão de movimentar estoque |
@@ -21,7 +22,8 @@ Acesse **Requisições → Nova requisição**, informe a finalidade, adicione p
 - Cancelamento exige motivo e libera somente o saldo pendente. Entregas realizadas permanecem no histórico. Requisições atendidas não podem ser canceladas.
 - Saídas avulsas e ajustes negativos de inventário respeitam o saldo disponível. Produtos com reserva não podem ser desativados.
 - Reservas e entregas usam rowversion de produto e requisição. Conflitos devolvem HTTP 409; recarregue antes de repetir. Cada operação é gravada em uma transação.
-- Nesta versão, itens são montados antes de salvar; um rascunho salvo não pode ser editado. Para corrigir, cancele com motivo e crie outra requisição.
+- O solicitante ou administrador pode editar finalidade, produtos e quantidades enquanto a requisição estiver em rascunho, usando **Editar rascunho**. Após o envio, a edição é bloqueada na interface e na API. A edição não reserva nem movimenta estoque.
+- Edições usam a versão recebida ao abrir o formulário; uma edição concorrente retorna HTTP 409 e preserva o formulário para consulta. Feche a edição, atualize a lista e abra novamente antes de reaplicar mudanças.
 - A lista mostra as últimas 100 requisições, com pesquisa e filtro de situação.
 
 ## Atualização local após integrar o PR
@@ -38,13 +40,14 @@ Reinicie a API e o frontend após atualizar. A migration adiciona tabelas de req
 
 ## Roteiro para a futura bateria de testes
 
-1. Com saldo físico 20, solicitar 8, enviar e aprovar: físico 20, reservado 8, disponível 12.
-2. Tentar saída avulsa de 13: deve falhar sem movimento novo.
-3. Entregar 3: físico 17, reservado 5, disponível 12; situação parcialmente atendida e movimento no histórico.
-4. Cancelar o restante com motivo: físico 17, reservado 0, disponível 17; entrega anterior preservada.
-5. Criar outra requisição, entregar tudo e verificar situação atendida e bloqueio de nova entrega.
-6. Aprovar duas requisições simultâneas que excederiam o saldo: uma deve falhar sem reserva parcial.
-7. Tentar aprovar como operador: HTTP 403. Operador pode entregar se tiver permissão de movimentação.
-8. Ajuste de inventário abaixo da reserva ou desativação de produto reservado deve falhar.
+1. Criar rascunho, editar finalidade e quantidades, remover/adicionar produtos e salvar. Conferir que o saldo não mudou; após envio, tentar editar deve falhar. Duas edições da mesma versão devem permitir apenas a primeira.
+2. Com saldo físico 20, solicitar 8, enviar e aprovar: físico 20, reservado 8, disponível 12.
+3. Tentar saída avulsa de 13: deve falhar sem movimento novo.
+4. Entregar 3: físico 17, reservado 5, disponível 12; situação parcialmente atendida e movimento no histórico.
+5. Cancelar o restante com motivo: físico 17, reservado 0, disponível 17; entrega anterior preservada.
+6. Criar outra requisição, entregar tudo e verificar situação atendida e bloqueio de nova entrega.
+7. Aprovar duas requisições simultâneas que excederiam o saldo: uma deve falhar sem reserva parcial.
+8. Tentar aprovar como operador: HTTP 403. Operador pode entregar se tiver permissão de movimentação.
+9. Ajuste de inventário abaixo da reserva ou desativação de produto reservado deve falhar.
 
 A execução desse roteiro no SQL Server Express do usuário não foi realizada pelo ambiente de desenvolvimento remoto.
