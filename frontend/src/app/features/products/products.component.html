@@ -9,14 +9,14 @@
     </button>
   </div>
   <div class="toolbar">
-    <label>Localização<select [ngModel]="filtroPosicao()" (ngModelChange)="filtroPosicaoChange.emit($event)"><option value="todos">Todas</option><option value="sem">Sem localização</option>
+    <label>Posição padrão<select [ngModel]="filtroPosicao()" (ngModelChange)="filtroPosicaoChange.emit($event)"><option value="todos">Todas</option><option value="sem">Sem localização</option>
       @for (p of posicoes(); track p.id) { <option [value]="p.id">{{ p.descricao }}{{ p.ativo && p.almoxarifadoAtivo ? '' : ' (inativa)' }}</option> }
     </select></label>
     <label class="search"
       ><span aria-hidden="true">⌕</span
       ><input
         type="search"
-        placeholder="Buscar produto, categoria, código ou localização"
+        placeholder="Buscar produto, categoria, código ou posição padrão"
         [ngModel]="busca()"
         (ngModelChange)="buscaChange.emit($event)"
         aria-label="Buscar produtos" /></label

@@ -43,8 +43,11 @@ public class LocalizacoesController(GestaoEstoqueDbContext db) : ControllerBase
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> AtivarAlmoxarifado(int id, [FromBody] bool ativo, CancellationToken ct)
     {
+        await using var tx = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct);
         var a = await db.Almoxarifados.FindAsync([id], ct); if (a is null) return NotFound();
-        a.DefinirAtivo(ativo); await db.SaveChangesAsync(ct); return Ok();
+        if (!ativo && await db.SaldosLocais.AnyAsync(s => s.PosicaoEstoque != null && s.PosicaoEstoque.AlmoxarifadoId == id && (s.Quantidade > 0 || s.Reservado > 0), ct))
+            return Conflict(new { erro = "Transfira os saldos e libere as reservas antes de desativar o almoxarifado." });
+        a.DefinirAtivo(ativo); await db.SaveChangesAsync(ct); await tx.CommitAsync(ct); return Ok();
     }
     [HttpPost("posicoes")]
     [Authorize(Roles = "Administrador")]
@@ -73,8 +76,11 @@ public class LocalizacoesController(GestaoEstoqueDbContext db) : ControllerBase
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> AtivarPosicao(int id, [FromBody] bool ativo, CancellationToken ct)
     {
+        await using var tx = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct);
         var p = await db.PosicoesEstoque.FindAsync([id], ct); if (p is null) return NotFound();
         if (ativo && !await db.Almoxarifados.AnyAsync(a => a.Id == p.AlmoxarifadoId && a.Ativo, ct)) return Conflict(new { erro = "Reative o almoxarifado primeiro." });
-        p.DefinirAtivo(ativo); await db.SaveChangesAsync(ct); return Ok();
+        if (!ativo && await db.SaldosLocais.AnyAsync(s => s.PosicaoEstoqueId == id && (s.Quantidade > 0 || s.Reservado > 0), ct))
+            return Conflict(new { erro = "Transfira o saldo e libere as reservas antes de desativar a posição." });
+        p.DefinirAtivo(ativo); await db.SaveChangesAsync(ct); await tx.CommitAsync(ct); return Ok();
     }
 }

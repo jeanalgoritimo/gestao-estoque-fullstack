@@ -60,6 +60,7 @@
           ▤ <span>Relatórios</span>
         </button>
         <button type="button" aria-label="Unidades de medida" title="Unidades de medida" [class.nav-active]="tela() === 'unidades'" (click)="navegar('unidades')">▣ <span>Unidades de medida</span></button>
+        <button type="button" aria-label="Transferências" title="Transferências" [class.nav-active]="tela() === 'transferencias'" (click)="navegar('transferencias')">⇄ <span>Transferências</span></button>
         <button type="button" aria-label="Localizações" title="Localizações" [class.nav-active]="tela() === 'localizacoes'" (click)="navegar('localizacoes')">▣ <span>Localizações</span></button>
         <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
         <button type="button" aria-label="Reposição" title="Reposição" [class.nav-active]="tela() === 'reposicao'" (click)="navegar('reposicao')">▣ <span>Reposição</span></button>
@@ -135,6 +136,8 @@
                         ? 'Fornecedores'
                       : tela() === 'unidades'
                         ? 'Unidades de medida'
+                        : tela() === 'transferencias'
+                          ? 'Transferências entre locais'
                         : tela() === 'localizacoes'
                         ? 'Localizações'
                         : tela() === 'reposicao'
@@ -173,6 +176,8 @@
                         ? 'Fornecedores'
                       : tela() === 'unidades'
                         ? 'Unidades de medida'
+                        : tela() === 'transferencias'
+                          ? 'Transferências entre locais'
                         : tela() === 'localizacoes'
                         ? 'Localizações'
                         : tela() === 'reposicao'
@@ -204,6 +209,8 @@
                         ? 'Cadastre fornecedores e associe-os aos produtos.'
                       : tela() === 'unidades'
                         ? 'Cadastre as unidades usadas nas quantidades dos produtos.'
+                        : tela() === 'transferencias'
+                          ? 'Transferências entre locais'
                         : tela() === 'localizacoes'
                         ? 'Cadastre almoxarifados e posições dos materiais.'
                         : tela() === 'reposicao'
@@ -277,6 +284,8 @@
         />
       } @else if (tela() === 'unidades') {
         <app-units [unidades]="unidadesMedida()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
+      } @else if (tela() === 'transferencias') {
+        <app-transfers [produtos]="produtos()" [posicoes]="posicoes()" [podeMovimentar]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
       } @else if (tela() === 'localizacoes') {
         <app-locations [almoxarifados]="almoxarifados()" [posicoes]="posicoes()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
       } @else if (tela() === 'inventarios') {
@@ -414,8 +423,8 @@
                 <option [ngValue]="u.id">{{ u.sigla }} · {{ u.nome }}{{ u.ativo ? '' : ' (inativa — vínculo atual)' }}</option>
               } }
             </select></label><p>Quantidades com até três casas decimais, sem conversão automática. A unidade de produto com saldo ou operações anteriores não pode ser trocada.</p>
-            <label>Localização<select name="posicaoEstoqueId" [(ngModel)]="form.posicaoEstoqueId">
-              <option [ngValue]="null">Sem localização</option>
+            <label>Posição padrão<select name="posicaoEstoqueId" [(ngModel)]="form.posicaoEstoqueId">
+              <option [ngValue]="null">Sem localização (padrão)</option>
               @for (p of posicoes(); track p.id) { @if ((p.ativo && p.almoxarifadoAtivo) || p.id === form.posicaoEstoqueId) {
                 <option [ngValue]="p.id">{{ p.descricao }}{{ p.ativo && p.almoxarifadoAtivo ? '' : ' (inativa — vínculo atual)' }}</option>
               } }

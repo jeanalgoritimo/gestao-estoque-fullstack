@@ -84,3 +84,18 @@ dotnet ef database update --project GestaoEstoque.Infrastructure --startup-proje
 ```
 
 A migration `20261002100000_FractionalQuantities` altera as colunas de quantidade para `decimal(13,3)`. A reversão é bloqueada se houver frações ou valores fora do intervalo inteiro, para impedir perda de dados.
+
+### Transferências e saldos por local
+
+A tela **Transferências** consulta os saldos de um produto em cada posição e permite transferir quantidades disponíveis entre locais, com motivo, responsável e histórico paginado. Operadores com permissão de movimentar estoque e administradores podem transferir; usuários autenticados podem consultar. Não há edição ou exclusão de transferências; correções exigem outra transferência.
+
+- O saldo total e as reservas totais são preservados em transferências. Materiais reservados ficam protegidos em cada origem.
+- A migration `20261002140000_StockTransfers` coloca os saldos e reservas existentes na posição cadastrada ou em **Sem localização**, sem inventar movimentações. É possível transferir de Sem localização para uma posição ativa.
+- A posição cadastrada no produto passa a ser a **posição padrão**. Alterá-la define o destino de futuras entradas, sem mover o saldo existente. Entradas de compras, devoluções e ajustes positivos usam essa posição; posições padrão inativas impedem novas entradas até sua correção.
+- Reservas e saídas usam o padrão primeiro, depois os demais locais em ordem de posição. Entregas liberam somente a quantidade reservada entregue; cancelamentos liberam o restante. Saídas não consomem as reservas restantes.
+- Inventário continua sendo uma contagem **total por produto**, abrangendo todos os locais. Um ajuste negativo consome apenas saldo disponível; inventário individual por posição fica para uma evolução futura.
+- Os saldos locais, totais e históricos são gravados na mesma transação, com controle de concorrência. A transferência exige a versão dos saldos consultados; uma alteração concorrente exige recarregar.
+- Destino precisa estar ativo. Origem inativa pode ser esvaziada; posições/almoxarifados com saldo ou reservas não podem ser desativados. O histórico guarda os nomes dos locais no momento da transferência.
+- Reversão da migration é bloqueada se houver transferências, para preservar o histórico e a distribuição por local.
+
+Após merge, execute na pasta `backend`: `dotnet ef database update --project .\GestaoEstoque.Infrastructure --startup-project .\GestaoEstoque.Api`, e reinicie a API e o frontend. Testes manuais com SQL Server Express continuam pendentes.
