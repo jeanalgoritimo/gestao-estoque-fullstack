@@ -1,3 +1,4 @@
+import { TransfersComponent } from './features/transfers/transfers.component';
 import { quantidadeValida, diferencaQuantidade } from './shared/models/quantity';
 import { agruparSaldos } from './shared/models/stock-totals';
 import { UnidadeMedida } from './shared/models/unit.models';
@@ -57,7 +58,7 @@ import {
     RequisitionsComponent,
     CostCentersComponent,
     ConsumptionComponent,
-    LocationsComponent,
+    LocationsComponent, TransfersComponent,
     UnitsComponent,
   ],
   templateUrl: './app.html',
@@ -78,7 +79,7 @@ export class App {
   readonly centrosCusto = signal<CentroCusto[]>([]);
   readonly fornecedores = signal<Fornecedor[]>([]);
   readonly tela = signal<
-    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes' | 'unidades'
+    'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes' | 'unidades' | 'transferencias'
   >('visao');
   readonly menuRecolhido = signal(false);
   readonly menuMobileAberto = signal(false);
@@ -174,7 +175,7 @@ export class App {
       this.carregando.set(false);
     }
   }
-  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes' | 'unidades'): void {
+  navegar(tela: 'visao' | 'produtos' | 'categorias' | 'inventarios' | 'fornecedores' | 'reposicao' | 'pedidos' | 'requisicoes' | 'centros' | 'consumo' | 'relatorios' | 'perfis' | 'usuarios' | 'localizacoes' | 'unidades' | 'transferencias'): void {
     this.tela.set(tela);
     this.erro.set('');
     this.sucesso.set('');

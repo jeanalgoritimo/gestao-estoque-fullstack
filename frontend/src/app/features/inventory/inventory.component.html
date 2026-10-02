@@ -17,10 +17,10 @@
   @if (sucesso()) {
     <div class="notice success" role="status">{{ sucesso() }}</div>
   }
-  <label>Localização atual<select [ngModel]="filtroPosicao()" (ngModelChange)="alterarFiltro($event)" [disabled]="salvando()">
+  <label>Posição padrão atual<select [ngModel]="filtroPosicao()" (ngModelChange)="alterarFiltro($event)" [disabled]="salvando()">
     <option value="todos">Todas</option><option value="sem">Sem localização</option>
     @for (p of posicoes(); track p.id) { <option [value]="p.id">{{ p.descricao }}</option> }
-  </select></label><p>Filtro pela localização atual do produto nas contagens carregadas, incluindo posições inativas.</p>
+  </select></label><p>Filtro pela posição padrão atual do produto, incluindo posições inativas. As contagens abrangem o saldo total de todos os locais.</p>
   @if (podeMovimentar()) {
     <form class="inventory-form" (ngSubmit)="abrir()">
       <label
@@ -61,13 +61,13 @@
   </div>
   @if (selecionado(); as atual) {
     <div class="inventory-detail">
-      <h3>Conferir {{ atual.produto }} ({{ atual.unidade }})</h3><p>Localização atual: {{ localizacao(atual.produtoId) }}</p>
+      <h3>Conferir {{ atual.produto }} ({{ atual.unidade }})</h3><p>Posição padrão atual: {{ localizacao(atual.produtoId) }}</p>
       <p>
         Saldo na abertura: <strong>{{ atual.saldoInicial }}</strong>
       </p>
       <form (ngSubmit)="registrar()" class="inventory-form">
         <label
-          >Quantidade encontrada
+          >Quantidade total encontrada (todos os locais)
           <input
             name="quantidade"
             type="number"

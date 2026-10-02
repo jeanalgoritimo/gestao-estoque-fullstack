@@ -1,0 +1,41 @@
+<section class="panel">
+  <div class="panel-heading"><div><h2>Transferências e saldos por local</h2><p>Transfira apenas materiais disponíveis. As reservas permanecem na origem.</p></div></div>
+  @if (erro()) { <p class="notice error" role="alert">{{ erro() }}</p> }
+  @if (sucesso()) { <p class="notice success" role="status">{{ sucesso() }}</p> }
+  <label>Produto<select name="produtoTransferencia" [(ngModel)]="produtoId" (ngModelChange)="selecionar()" [disabled]="processando()">
+    <option [ngValue]="null">Selecione um produto</option>
+    @for (p of produtos(); track p.id) { <option [ngValue]="p.id">{{ p.nome }} ({{ p.unidade }}){{ p.ativo ? '' : ' · Inativo' }}</option> }
+  </select></label>
+  @if (carregando()) { <p role="status">Carregando saldos e histórico...</p> }
+  @if (saldos(); as s) {
+    <p>Total: <strong>{{ formatar(s.estoque) }} {{ s.unidade }}</strong> · Reservado: {{ formatar(s.estoqueReservado) }} {{ s.unidade }} · Disponível: {{ formatar(s.estoqueDisponivel) }} {{ s.unidade }}</p>
+    <div class="table-wrap"><table><thead><tr><th>Local</th><th>Saldo</th><th>Reservado</th><th>Disponível</th></tr></thead><tbody>
+      @for (l of s.locais; track chave(l.posicaoEstoqueId)) {
+        <tr><td>{{ l.local }}</td><td>{{ formatar(l.quantidade) }} {{ s.unidade }}</td><td>{{ formatar(l.reservado) }} {{ s.unidade }}</td><td>{{ formatar(l.disponivel) }} {{ s.unidade }}</td></tr>
+      } @empty { <tr><td colspan="4">Ainda não há saldo por local. Registre uma entrada para começar.</td></tr> }
+    </tbody></table></div>
+    @if (podeMovimentar()) {
+      <form class="form-grid" (ngSubmit)="transferir()">
+        <label>Origem<select name="origem" [(ngModel)]="origem" required [disabled]="processando() || carregando()">
+          <option value="">Selecione</option>@for (l of s.locais; track chave(l.posicaoEstoqueId)) { <option [value]="chave(l.posicaoEstoqueId)">{{ l.local }} · {{ formatar(l.disponivel) }} {{ s.unidade }} disponíveis</option> }
+        </select></label>
+        <label>Destino<select name="destino" [(ngModel)]="destinoId" required [disabled]="processando() || carregando()">
+          <option [ngValue]="null">Selecione uma posição ativa</option>@for (p of destinos(); track p.id) { @if (chave(p.id) !== origem) { <option [ngValue]="p.id">{{ p.descricao }}</option> } }
+        </select></label>
+        <label>Quantidade ({{ s.unidade }})<input name="quantidadeTransferencia" type="number" min="0.001" step="0.001" [max]="disponivel()" required [(ngModel)]="quantidade" [disabled]="processando() || carregando()" /></label>
+        <label>Motivo<input name="motivoTransferencia" maxlength="150" required [(ngModel)]="motivo" [disabled]="processando() || carregando()" /></label>
+        <button class="primary" type="submit" [disabled]="processando() || carregando()">{{ processando() ? 'Transferindo...' : 'Registrar transferência' }}</button>
+        <button class="secondary" type="button" (click)="carregar()" [disabled]="processando() || carregando()">Atualizar saldos</button>
+      </form>
+    }
+    <p>Entradas vão para a posição padrão do produto. Reservas e saídas começam nessa posição e usam os demais locais quando necessário. Alterar a posição padrão não transfere os saldos existentes.</p>
+  }
+  @if (historico(); as h) {
+    <h3>Histórico de transferências</h3>
+    <div class="table-wrap"><table><thead><tr><th>Data</th><th>Origem</th><th>Destino</th><th>Quantidade</th><th>Responsável</th><th>Motivo</th></tr></thead><tbody>
+      @for (t of h.itens; track t.id) { <tr><td>{{ t.dataUtc | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ t.origemDescricao }}</td><td>{{ t.destinoDescricao }}</td><td>{{ formatar(t.quantidade) }} {{ saldos()?.unidade }}</td><td>{{ t.usuarioNome }}</td><td>{{ t.motivo }}</td></tr> }
+      @empty { <tr><td colspan="6">Nenhuma transferência registrada para este produto.</td></tr> }
+    </tbody></table></div>
+    <div class="panel-actions"><button class="secondary" (click)="carregar(h.pagina - 1)" [disabled]="h.pagina <= 1 || carregando() || processando()">Anterior</button><span>Página {{ h.pagina }} de {{ h.totalPaginas }} · {{ h.total }} registros</span><button class="secondary" (click)="carregar(h.pagina + 1)" [disabled]="h.pagina >= h.totalPaginas || carregando() || processando()">Próxima</button></div>
+  }
+</section>

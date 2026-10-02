@@ -92,7 +92,8 @@ public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbCo
                 await db.MovimentosEstoque.AnyAsync(m => m.ProdutoId == id, ct) ||
                 await db.ItensPedidoCompra.AnyAsync(i => i.ProdutoId == id, ct) ||
                 await db.ItensRequisicaoMaterial.AnyAsync(i => i.ProdutoId == id, ct) ||
-                await db.InventariosFisicos.AnyAsync(i => i.ProdutoId == id, ct));
+                await db.InventariosFisicos.AnyAsync(i => i.ProdutoId == id, ct) ||
+                await db.TransferenciasEstoque.AnyAsync(t => t.ProdutoId == id, ct));
             produto.AlterarUnidade(unidadeId, historico);
             produto.AlterarPosicao(request.PosicaoEstoqueId);
             produto.AlterarFornecedor(request.FornecedorId);

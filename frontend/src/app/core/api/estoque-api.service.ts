@@ -1,3 +1,4 @@
+import { SaldosProduto, HistoricoTransferencias, TransferenciaInput } from '../../shared/models/transfer.models';
 import { UnidadeMedida } from '../../shared/models/unit.models';
 import { Almoxarifado, PosicaoEstoque, PosicaoInput } from '../../shared/models/location.models';
 import { CentroCusto, ConsumoCentroCusto } from '../../shared/models/cost-center.models';
@@ -159,6 +160,9 @@ export class EstoqueApiService {
     return id === null ? firstValueFrom(this.http.post('/api/unidades-medida', { sigla, nome })) : firstValueFrom(this.http.put(`/api/unidades-medida/${id}`, { sigla, nome }));
   }
   ativarUnidade(id: number, ativo: boolean) { return firstValueFrom(this.http.patch(`/api/unidades-medida/${id}/ativo`, ativo)); }
+  saldosLocais(produtoId: number) { return firstValueFrom(this.http.get<SaldosProduto>(`/api/transferencias/saldos/${produtoId}`)); }
+  transferencias(produtoId: number, pagina = 1) { return firstValueFrom(this.http.get<HistoricoTransferencias>('/api/transferencias', { params: { produtoId, pagina } })); }
+  transferirEstoque(input: TransferenciaInput) { return firstValueFrom(this.http.post('/api/transferencias', input)); }
   almoxarifados() { return firstValueFrom(this.http.get<Almoxarifado[]>('/api/localizacoes/almoxarifados')); }
   posicoes() { return firstValueFrom(this.http.get<PosicaoEstoque[]>('/api/localizacoes/posicoes')); }
   salvarAlmoxarifado(id: number | null, nome: string) {
