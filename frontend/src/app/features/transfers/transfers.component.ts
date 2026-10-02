@@ -8,7 +8,7 @@ import { PosicaoEstoque } from '../../shared/models/location.models';
 import { HistoricoTransferencias, SaldosProduto } from '../../shared/models/transfer.models';
 import { quantidadeValida } from '../../shared/models/quantity';
 
-@Component({ selector: 'app-transfers', imports: [CommonModule, FormsModule], templateUrl: './transfers.component.html' })
+@Component({ selector: 'app-transfers', imports: [CommonModule, FormsModule], templateUrl: './transfers.component.html', styleUrl: './transfers.component.css' })
 export class TransfersComponent {
   private readonly api = inject(EstoqueApiService);
   readonly produtos = input.required<Produto[]>();

@@ -118,7 +118,7 @@ public class TransferenciasEstoqueTests
     public void SnapshotCorrespondeAoModeloAtual()
     {
         using var db = Contexto();
-        var snapshot = new GestaoEstoqueDbContextModelSnapshot().Model;
+        var snapshot = db.GetService<IMigrationsAssembly>().ModelSnapshot!.Model;
         var modelo = db.GetService<IModelRuntimeInitializer>().Initialize(snapshot, designTime: true);
         var atual = db.GetService<IDesignTimeModel>().Model;
         var diferencas = db.GetService<IMigrationsModelDiffer>().GetDifferences(modelo.GetRelationalModel(), atual.GetRelationalModel());

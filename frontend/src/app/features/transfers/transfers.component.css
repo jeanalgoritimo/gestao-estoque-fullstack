@@ -1,0 +1,9 @@
+:host { display: block; }
+.panel > label, .panel > p, .panel > h3, .panel > .notice { margin: 16px 24px; }
+.panel > label { display: flex; flex-direction: column; gap: 8px; max-width: 680px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 16px 24px; }
+.form-grid label { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+select, input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #e0e6ef; border-radius: 8px; background: white; color: #24364b; }
+select:disabled, input:disabled { background: #f3f6fa; }
+.panel-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; flex-wrap: wrap; }
+@media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
