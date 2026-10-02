@@ -66,7 +66,7 @@ export class ReplenishmentComponent implements OnInit {
   }
   exportarCsv(): void {
     const itens = this.filtrados();
-    if (!itens.length || !this.quantidadesValidas()) { this.erro.set('Informe quantidades inteiras de zero a 2147483647.999.'); return; }
+    if (!itens.length || !this.quantidadesValidas()) { this.erro.set('Informe quantidades com até três casas decimais de zero a 2147483647,999.'); return; }
     const celula = (valor: string | number): string => {
       let texto = String(valor); if (/^\s*[=+\-@]/.test(texto)) texto = `'${texto}`;
       return `"${texto.replace(/"/g, '""')}"`;

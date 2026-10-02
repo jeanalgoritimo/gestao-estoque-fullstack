@@ -84,7 +84,7 @@ export class PurchaseOrdersComponent implements OnInit {
         (quantidade > 0 && (custo === null || !Number.isFinite(custo) || custo <= 0 ||
           custo > 999999999999.9999 || Math.abs(Math.round(custo * 10000) - custo * 10000) > 0.0000001));
     })) {
-      this.erro.set('Informe quantidades inteiras dentro do saldo pendente e custo unitário de compra positivo (até 4 casas decimais) para os itens recebidos.');
+      this.erro.set('Informe quantidades com até três casas decimais dentro do saldo pendente e custo unitário de compra positivo (até 4 casas decimais) para os itens recebidos.');
       return;
     }
     const total = itens.reduce((valor, item) => valor + item.quantidade * item.custoUnitario, 0);

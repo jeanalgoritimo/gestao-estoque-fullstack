@@ -72,3 +72,15 @@ As senhas são armazenadas com hash pelo `PasswordHasher` do ASP.NET Core. O tok
 Cada nova entrada ou saída exige um motivo e registra data efetiva, data de registro, usuário autenticado, saldo após a operação, documento de origem e custo unitário informado (os dois últimos opcionais). O histórico do produto apresenta esses dados em ordem de registro e não oferece edição ou exclusão de movimentações. Para corrigir um lançamento, registre uma operação compensatória com motivo e referência ao documento original.
 
 Após atualizar o código, execute `dotnet ef database update` na pasta `backend` usando a configuração local de conexão. A migração preserva os movimentos antigos e usa a observação anterior como motivo quando existir; responsável, custo, documento e saldo por lançamento anteriores permanecem desconhecidos. O custo informado não calcula custo médio, CMV ou conformidade SPED.
+
+### Quantidades fracionadas
+
+Quantidades e saldos aceitam até três casas decimais (ex.: 0,001 M ou 1,250 L), mantendo os registros inteiros existentes. Valores negativos, acima de 2147483647,999 ou com mais de três casas são rejeitados, sem arredondamento silencioso. A unidade cadastrada continua sendo a referência de todo o fluxo; não há conversão automática entre unidades.
+
+Após atualizar o código, aplique as migrations na pasta `backend`:
+
+```powershell
+dotnet ef database update --project GestaoEstoque.Infrastructure --startup-project GestaoEstoque.API
+```
+
+A migration `20261002100000_FractionalQuantities` altera as colunas de quantidade para `decimal(13,3)`. A reversão é bloqueada se houver frações ou valores fora do intervalo inteiro, para impedir perda de dados.
