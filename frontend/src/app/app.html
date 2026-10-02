@@ -17,82 +17,29 @@
         <div><strong>Gestão de Estoque</strong><small>Controle inteligente</small></div>
       </div>
       <div class="nav-label">MENU PRINCIPAL</div>
+
+      <!-- Menu refatorado usando @for e navItems -->
       <nav aria-label="Menu principal">
-        <button
-          type="button"
-          aria-label="Visão geral"
-          title="Visão geral"
-          [class.nav-active]="tela() === 'visao'"
-          (click)="navegar('visao')"
-        >
-          ▦ <span>Visão geral</span></button
-        ><button
-          type="button"
-          aria-label="Produtos"
-          title="Produtos"
-          [class.nav-active]="tela() === 'produtos'"
-          (click)="navegar('produtos')"
-        >
-          ▤ <span>Produtos</span></button
-        ><button
-          type="button"
-          aria-label="Categorias"
-          title="Categorias"
-          [class.nav-active]="tela() === 'categorias'"
-          (click)="navegar('categorias')"
-        >
-          ▥ <span>Categorias</span></button
-        ><button
-          type="button"
-          aria-label="Inventário físico"
-          title="Inventário físico"
-          [class.nav-active]="tela() === 'inventarios'"
-          (click)="navegar('inventarios')"
-        >
-          ▣ <span>Inventário</span>
-        </button><button
-          type="button"
-          aria-label="Relatórios"
-          title="Relatórios"
-          [class.nav-active]="tela() === 'relatorios'"
-          (click)="navegar('relatorios')"
-        >
-          ▤ <span>Relatórios</span>
-        </button>
-        <button type="button" aria-label="Unidades de medida" title="Unidades de medida" [class.nav-active]="tela() === 'unidades'" (click)="navegar('unidades')">▣ <span>Unidades de medida</span></button>
-        <button type="button" aria-label="Transferências" title="Transferências" [class.nav-active]="tela() === 'transferencias'" (click)="navegar('transferencias')">⇄ <span>Transferências</span></button>
-        <button type="button" aria-label="Localizações" title="Localizações" [class.nav-active]="tela() === 'localizacoes'" (click)="navegar('localizacoes')">▣ <span>Localizações</span></button>
-        <button type="button" aria-label="Fornecedores" title="Fornecedores" [class.nav-active]="tela() === 'fornecedores'" (click)="navegar('fornecedores')">▤ <span>Fornecedores</span></button>
-        <button type="button" aria-label="Reposição" title="Reposição" [class.nav-active]="tela() === 'reposicao'" (click)="navegar('reposicao')">▣ <span>Reposição</span></button>
-        <button type="button" aria-label="Pedidos de compra" title="Pedidos de compra" [class.nav-active]="tela() === 'pedidos'" (click)="navegar('pedidos')">▣ <span>Pedidos de compra</span></button>
-        <button type="button" aria-label="Centros de custo" title="Centros de custo" [class.nav-active]="tela() === 'centros'" (click)="navegar('centros')">▣ <span>Centros de custo</span></button>
-        <button type="button" aria-label="Consumo por centro" title="Consumo por centro" [class.nav-active]="tela() === 'consumo'" (click)="navegar('consumo')">▤ <span>Consumo por centro</span></button>
-        <button type="button" aria-label="Requisições" title="Requisições" [class.nav-active]="tela() === 'requisicoes'" (click)="navegar('requisicoes')">▣ <span>Requisições</span></button>
-        @if (auth.usuario()?.perfil === 'Administrador') {
-          <button
-            type="button"
-            aria-label="Perfis"
-            title="Perfis"
-            [class.nav-active]="tela() === 'perfis'"
-            (click)="navegar('perfis')"
-          >
-            ♧ <span>Perfis</span></button
-          ><button
-            type="button"
-            aria-label="Usuários"
-            title="Usuários"
-            [class.nav-active]="tela() === 'usuarios'"
-            (click)="navegar('usuarios')"
-          >
-            ♙ <span>Usuários</span>
-          </button>
+        @for (item of navItems; track item.id) {
+          @if (!item.adminOnly || auth.usuario()?.perfil === 'Administrador') {
+            <button
+              type="button"
+              [attr.aria-label]="item.label"
+              [attr.title]="item.label"
+              [class.nav-active]="tela() === item.id"
+              (click)="navegar(item.id)"
+            >
+              {{ item.icon }} <span>{{ item.label }}</span>
+            </button>
+          }
         }
       </nav>
+
       <div class="sidebar-foot">
         {{ auth.usuario()?.nome }}<br /><small>{{ auth.usuario()?.perfil }}</small>
         <div>
-          <button type="button" (click)="abrirSenha()">Alterar senha</button
-          ><button type="button" (click)="sair()">Sair</button>
+          <button type="button" (click)="abrirSenha()">Alterar senha</button>
+          <button type="button" (click)="sair()">Sair</button>
         </div>
       </div>
     </aside>
@@ -109,8 +56,9 @@
             [title]="menuRecolhido() ? 'Expandir menu' : 'Recolher menu'"
             (click)="menuRecolhido.set(!menuRecolhido())"
           >
-            ☰</button
-          ><button
+            ☰
+          </button>
+          <button
             class="menu-toggle mobile-toggle"
             type="button"
             [attr.aria-label]="menuMobileAberto() ? 'Fechar menu' : 'Abrir menu'"
@@ -118,115 +66,23 @@
             aria-controls="menu-principal"
             (click)="menuMobileAberto.set(!menuMobileAberto())"
           >
-            {{ menuMobileAberto() ? '×' : '☰' }}</button
-          ><span
-            >Painel de controle
-            <span class="breadcrumb"
-              >/
-              {{
-                tela() === 'visao'
-                  ? 'Visão geral'
-                  : tela() === 'produtos'
-                    ? 'Produtos'
-                    : tela() === 'categorias'
-                      ? 'Categorias'
-                    : tela() === 'inventarios'
-                      ? 'Inventário'
-                      : tela() === 'fornecedores'
-                        ? 'Fornecedores'
-                      : tela() === 'unidades'
-                        ? 'Unidades de medida'
-                        : tela() === 'transferencias'
-                          ? 'Transferências entre locais'
-                        : tela() === 'localizacoes'
-                        ? 'Localizações'
-                        : tela() === 'reposicao'
-                        ? 'Reposição'
-                      : tela() === 'pedidos'
-                        ? 'Pedidos de compra'
-                      : tela() === 'centros' ? 'Centros de custo'
-                      : tela() === 'consumo' ? 'Consumo por centro de custo'
-                      : tela() === 'requisicoes'
-                        ? 'Requisições de materiais'
-                      : tela() === 'relatorios'
-                        ? 'Relatórios'
-                        : tela() === 'usuarios'
-                          ? 'Usuários'
-                          : 'Perfis'
-              }}</span
-            ></span
-          >
+            {{ menuMobileAberto() ? '×' : '☰' }}
+          </button>
+          <span>
+            Painel de controle
+            <span class="breadcrumb">/ {{ telaMeta().breadcrumb }}</span>
+          </span>
         </div>
         <span class="environment">● Ambiente local</span>
       </header>
+
       <section class="heading">
         <div>
           <p class="eyebrow">SEU ESTOQUE EM UM SÓ LUGAR</p>
-          <h1>
-            {{
-              tela() === 'visao'
-                ? 'Visão geral'
-                : tela() === 'produtos'
-                  ? 'Produtos'
-                  : tela() === 'categorias'
-                    ? 'Categorias'
-                    : tela() === 'inventarios'
-                      ? 'Inventário físico'
-                      : tela() === 'fornecedores'
-                        ? 'Fornecedores'
-                      : tela() === 'unidades'
-                        ? 'Unidades de medida'
-                        : tela() === 'transferencias'
-                          ? 'Transferências entre locais'
-                        : tela() === 'localizacoes'
-                        ? 'Localizações'
-                        : tela() === 'reposicao'
-                        ? 'Reposição'
-                      : tela() === 'pedidos'
-                        ? 'Pedidos de compra'
-                      : tela() === 'centros' ? 'Centros de custo'
-                      : tela() === 'consumo' ? 'Consumo por centro de custo'
-                      : tela() === 'requisicoes'
-                        ? 'Requisições de materiais'
-                      : tela() === 'relatorios'
-                        ? 'Relatórios'
-                      : tela() === 'usuarios'
-                        ? 'Usuários'
-                        : 'Perfis de acesso'
-            }}
-          </h1>
-          <p class="subtitle">
-            {{
-              tela() === 'usuarios'
-                ? 'Cadastre usuários e defina seus perfis de acesso.'
-                : tela() === 'perfis'
-                  ? 'Defina o que cada perfil pode fazer no sistema.'
-                  : tela() === 'categorias'
-                    ? 'Organize as categorias usadas no cadastro de produtos.'
-                    : tela() === 'inventarios'
-                      ? 'Conte os produtos e registre ajustes com rastreabilidade.'
-                      : tela() === 'fornecedores'
-                        ? 'Cadastre fornecedores e associe-os aos produtos.'
-                      : tela() === 'unidades'
-                        ? 'Cadastre as unidades usadas nas quantidades dos produtos.'
-                        : tela() === 'transferencias'
-                          ? 'Transferências entre locais'
-                        : tela() === 'localizacoes'
-                        ? 'Cadastre almoxarifados e posições dos materiais.'
-                        : tela() === 'reposicao'
-                        ? 'Planeje a reposição dos produtos abaixo do estoque mínimo.'
-                      : tela() === 'pedidos'
-                        ? 'Acompanhe pedidos e registre o recebimento no estoque.'
-                      : tela() === 'centros' ? 'Centros de custo'
-                      : tela() === 'consumo' ? 'Consumo por centro de custo'
-                      : tela() === 'requisicoes'
-                        ? 'Solicite materiais, reserve o saldo e acompanhe as entregas.'
-                      : tela() === 'relatorios'
-                        ? 'Consulte a posição do estoque e exporte os dados filtrados.'
-                      : 'Acompanhe seus produtos e mantenha o controle das movimentações.'
-            }}
-          </p>
+          <h1>{{ telaMeta().title }}</h1>
+          <p class="subtitle">{{ telaMeta().subtitle }}</p>
         </div>
+
         @if (auth.usuario()?.perfil === 'Administrador' && tela() === 'usuarios') {
           <button class="primary" type="button" (click)="novoUsuarioForm()">＋ Novo usuário</button>
         } @else if (auth.usuario()?.perfil === 'Administrador' && tela() === 'perfis') {
@@ -247,6 +103,7 @@
           <button type="button" (click)="sucesso.set('')" aria-label="Fechar aviso">×</button>
         </div>
       }
+
       @if (erro() && !modal()) {
         <div class="notice error" role="alert">
           {{ erro() }} <button type="button" (click)="recarregar()">Tentar novamente</button>
@@ -283,34 +140,79 @@
           (alternarAtiva)="definirCategoriaAtiva($event)"
         />
       } @else if (tela() === 'unidades') {
-        <app-units [unidades]="unidadesMedida()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
+        <app-units
+          [unidades]="unidadesMedida()"
+          [administrador]="auth.usuario()?.perfil === 'Administrador'"
+          (alterado)="recarregar()"
+        />
       } @else if (tela() === 'transferencias') {
-        <app-transfers [produtos]="produtos()" [posicoes]="posicoes()" [podeMovimentar]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
+        <app-transfers
+          [produtos]="produtos()"
+          [posicoes]="posicoes()"
+          [podeMovimentar]="!!auth.usuario()?.permissoes?.movimentarEstoque"
+          (alterado)="recarregar()"
+        />
       } @else if (tela() === 'localizacoes') {
-        <app-locations [almoxarifados]="almoxarifados()" [posicoes]="posicoes()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
+        <app-locations
+          [almoxarifados]="almoxarifados()"
+          [posicoes]="posicoes()"
+          [administrador]="auth.usuario()?.perfil === 'Administrador'"
+          (alterado)="recarregar()"
+        />
       } @else if (tela() === 'inventarios') {
-        <app-inventory [posicoes]="posicoes()"
+        <app-inventory
+          [posicoes]="posicoes()"
           [produtos]="produtos()"
           [podeMovimentar]="!!auth.usuario()?.permissoes?.movimentarEstoque"
           (alterado)="recarregar()"
           (sessaoExpirada)="sair()"
         />
       } @else if (tela() === 'fornecedores') {
-        <app-suppliers [fornecedores]="fornecedores()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (atualizar)="recarregar()" />
+        <app-suppliers
+          [fornecedores]="fornecedores()"
+          [administrador]="auth.usuario()?.perfil === 'Administrador'"
+          (atualizar)="recarregar()"
+        />
       } @else if (tela() === 'reposicao') {
-        <app-replenishment [fornecedores]="fornecedores()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (criado)="navegar('pedidos'); sucesso.set('Rascunho #' + $event + ' criado. Revise e confirme a abertura.')" />
+        <app-replenishment
+          [fornecedores]="fornecedores()"
+          [administrador]="auth.usuario()?.perfil === 'Administrador'"
+          (criado)="navegar('pedidos'); sucesso.set('Rascunho #' + $event + ' criado. Revise e confirme a abertura.')"
+        />
       } @else if (tela() === 'pedidos') {
-        <app-purchase-orders [administrador]="auth.usuario()?.perfil === 'Administrador'" [podeReceber]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
+        <app-purchase-orders
+          [administrador]="auth.usuario()?.perfil === 'Administrador'"
+          [podeReceber]="!!auth.usuario()?.permissoes?.movimentarEstoque"
+          (alterado)="recarregar()"
+        />
       } @else if (tela() === 'centros') {
-        <app-cost-centers [centros]="centrosCusto()" [administrador]="auth.usuario()?.perfil === 'Administrador'" (alterado)="recarregar()" />
+        <app-cost-centers
+          [centros]="centrosCusto()"
+          [administrador]="auth.usuario()?.perfil === 'Administrador'"
+          (alterado)="recarregar()"
+        />
       } @else if (tela() === 'consumo') {
         <app-consumption [centros]="centrosCusto()" />
       } @else if (tela() === 'requisicoes') {
-        <app-requisitions [centrosCusto]="centrosCusto()" [produtos]="produtos()" [administrador]="auth.usuario()?.perfil === 'Administrador'" [usuarioId]="auth.usuario()!.id" [podeEntregar]="!!auth.usuario()?.permissoes?.movimentarEstoque" (alterado)="recarregar()" />
+        <app-requisitions
+          [centrosCusto]="centrosCusto()"
+          [produtos]="produtos()"
+          [administrador]="auth.usuario()?.perfil === 'Administrador'"
+          [usuarioId]="auth.usuario()!.id"
+          [podeEntregar]="!!auth.usuario()?.permissoes?.movimentarEstoque"
+          (alterado)="recarregar()"
+        />
       } @else if (tela() === 'relatorios') {
-        <app-reports [produtos]="produtos()" [carregando]="carregando()" (atualizar)="recarregar()" />
+        <app-reports
+          [produtos]="produtos()"
+          [carregando]="carregando()"
+          (atualizar)="recarregar()"
+        />
       } @else {
-        <app-products [posicoes]="posicoes()" [filtroPosicao]="filtroPosicao()" (filtroPosicaoChange)="filtroPosicao.set($event)"
+        <app-products
+          [posicoes]="posicoes()"
+          [filtroPosicao]="filtroPosicao()"
+          (filtroPosicaoChange)="filtroPosicao.set($event)"
           [produtosFiltrados]="filtrados()"
           [totalProdutos]="produtos().length"
           [busca]="busca()"
@@ -337,110 +239,95 @@
       class="dialog"
       role="dialog"
       aria-modal="true"
-      [attr.aria-label]="
-        modal() === 'produto'
-          ? 'Produto'
-          : modal() === 'categoria'
-            ? 'Categoria'
-            : modal() === 'perfil'
-              ? 'Perfil'
-              : modal() === 'movimento'
-                ? 'Movimentação'
-                : modal() === 'usuario'
-                  ? 'Novo usuário'
-                  : modal() === 'senha'
-                    ? 'Alterar senha'
-                    : 'Histórico'
-      "
+      [attr.aria-label]="modalMeta().ariaLabel"
       (click)="$event.stopPropagation()"
     >
       <div class="dialog-head">
         <div>
           <p class="eyebrow">GESTÃO DE ESTOQUE</p>
-          <h2>
-            {{
-              modal() === 'produto'
-                ? selecionado()
-                  ? 'Editar produto'
-                  : 'Novo produto'
-                : modal() === 'categoria'
-                  ? categoriaSelecionada
-                    ? 'Editar categoria'
-                    : 'Nova categoria'
-                  : modal() === 'perfil'
-                    ? perfilSelecionado
-                      ? 'Editar perfil'
-                      : 'Novo perfil'
-                    : modal() === 'movimento'
-                      ? tipoMovimento === 1
-                        ? 'Registrar entrada'
-                        : 'Registrar saída'
-                      : modal() === 'usuario'
-                        ? 'Novo usuário'
-                        : modal() === 'senha'
-                          ? 'Alterar senha'
-                          : 'Histórico de movimentações'
-            }}
-          </h2>
+          <h2>{{ modalMeta().title }}</h2>
+
           @if (selecionado() && (modal() === 'movimento' || modal() === 'historico')) {
             <p>{{ selecionado()?.nome }} · saldo atual: {{ selecionado()?.estoque }} {{ selecionado()?.unidade }}</p>
           }
         </div>
+
         <button class="close" type="button" (click)="fechar()" aria-label="Fechar">×</button>
       </div>
+
       @if (erro()) {
         <div class="notice error" role="alert">{{ erro() }}</div>
       }
+
       @if (modal() === 'produto') {
         <form (ngSubmit)="salvarProduto()">
           <div class="fields">
-            <label
-              >Nome do produto
+            <label>
+              Nome do produto
               <input
                 name="nome"
                 [(ngModel)]="form.nome"
                 required
                 maxlength="150"
-                placeholder="Ex.: Parafuso sextavado" /></label
-            ><label
-              >Categoria
+                placeholder="Ex.: Parafuso sextavado"
+              />
+            </label>
+            <label>
+              Categoria
               <select name="categoriaId" [(ngModel)]="form.categoriaId" required>
                 <option [ngValue]="null" disabled>Selecione uma categoria</option>
                 @for (categoria of categoriasAtivas(); track categoria.id) {
                   <option [ngValue]="categoria.id">{{ categoria.nome }}</option>
                 }
-              </select></label
-            >
-            <label>Fornecedor
+              </select>
+            </label>
+            <label>
+              Fornecedor
               <select name="fornecedorId" [(ngModel)]="form.fornecedorId">
                 <option [ngValue]="null">Sem fornecedor</option>
                 @for (fornecedor of fornecedores(); track fornecedor.id) {
-                  @if (fornecedor.ativo || fornecedor.id === form.fornecedorId) { <option [ngValue]="fornecedor.id">{{ fornecedor.nome }}</option> }
+                  @if (fornecedor.ativo || fornecedor.id === form.fornecedorId) {
+                    <option [ngValue]="fornecedor.id">{{ fornecedor.nome }}</option>
+                  }
                 }
-              </select></label>
-            <label>Unidade de medida<select name="unidadeMedidaId" [(ngModel)]="form.unidadeMedidaId" required>
-              @for (u of unidadesMedida(); track u.id) { @if (u.ativo || u.id === form.unidadeMedidaId) {
-                <option [ngValue]="u.id">{{ u.sigla }} · {{ u.nome }}{{ u.ativo ? '' : ' (inativa — vínculo atual)' }}</option>
-              } }
-            </select></label><p>Quantidades com até três casas decimais, sem conversão automática. A unidade de produto com saldo ou operações anteriores não pode ser trocada.</p>
-            <label>Posição padrão<select name="posicaoEstoqueId" [(ngModel)]="form.posicaoEstoqueId">
-              <option [ngValue]="null">Sem localização (padrão)</option>
-              @for (p of posicoes(); track p.id) { @if ((p.ativo && p.almoxarifadoAtivo) || p.id === form.posicaoEstoqueId) {
-                <option [ngValue]="p.id">{{ p.descricao }}{{ p.ativo && p.almoxarifadoAtivo ? '' : ' (inativa — vínculo atual)' }}</option>
-              } }
-            </select></label>
+              </select>
+            </label>
+            <label>
+              Unidade de medida
+              <select name="unidadeMedidaId" [(ngModel)]="form.unidadeMedidaId" required>
+                @for (u of unidadesMedida(); track u.id) {
+                  @if (u.ativo || u.id === form.unidadeMedidaId) {
+                    <option [ngValue]="u.id">{{ u.sigla }} · {{ u.nome }}{{ u.ativo ? '' : ' (inativa — vínculo atual)' }}</option>
+                  }
+                }
+              </select>
+            </label>
+            <p>Quantidades com até três casas decimais, sem conversão automática. A unidade de produto com saldo ou operações anteriores não pode ser trocada.</p>
+            <label>
+              Posição padrão
+              <select name="posicaoEstoqueId" [(ngModel)]="form.posicaoEstoqueId">
+                <option [ngValue]="null">Sem localização (padrão)</option>
+                @for (p of posicoes(); track p.id) {
+                  @if ((p.ativo && p.almoxarifadoAtivo) || p.id === form.posicaoEstoqueId) {
+                    <option [ngValue]="p.id">{{ p.descricao }}{{ p.ativo && p.almoxarifadoAtivo ? '' : ' (inativa — vínculo atual)' }}</option>
+                  }
+                }
+              </select>
+            </label>
             <div class="field-row">
-              <label
-                >Preço por {{ unidadePorId(form.unidadeMedidaId) }} (R$)
+              <label>
+                Preço por {{ unidadePorId(form.unidadeMedidaId) }} (R$)
                 <input
                   name="preco"
                   type="number"
                   min="0.01"
                   step="0.01"
                   [(ngModel)]="form.preco"
-                  required /></label
-              ><label
-                >Estoque mínimo
+                  required
+                />
+              </label>
+              <label>
+                Estoque mínimo
                 <input
                   name="minimo"
                   type="number"
@@ -448,12 +335,14 @@
                   step="0.001"
                   [(ngModel)]="form.estoqueMinimo"
                   required
-              /></label>
+                />
+              </label>
             </div>
           </div>
+
           <div class="dialog-actions">
-            <button class="secondary" type="button" (click)="fechar()">Cancelar</button
-            ><button class="primary" type="submit" [disabled]="salvando()">
+            <button class="secondary" type="button" (click)="fechar()">Cancelar</button>
+            <button class="primary" type="submit" [disabled]="salvando()">
               {{ salvando() ? 'Salvando...' : 'Salvar produto' }}
             </button>
           </div>
@@ -461,226 +350,59 @@
       } @else if (modal() === 'categoria') {
         <form (ngSubmit)="salvarCategoria()">
           <div class="fields">
-            <label
-              >Nome da categoria<input
+            <label>
+              Nome da categoria
+              <input
                 name="categoriaNome"
                 [(ngModel)]="categoriaNome"
                 required
                 maxlength="100"
                 placeholder="Ex.: Ferragens"
-            /></label>
+              />
+            </label>
           </div>
+
           <div class="dialog-actions">
-            <button class="secondary" type="button" (click)="fechar()">Cancelar</button
-            ><button class="primary" type="submit" [disabled]="salvando()">Salvar categoria</button>
+            <button class="secondary" type="button" (click)="fechar()">Cancelar</button>
+            <button class="primary" type="submit" [disabled]="salvando()">Salvar categoria</button>
           </div>
         </form>
       } @else if (modal() === 'perfil') {
         <form (ngSubmit)="salvarPerfil()">
           <div class="fields">
-            <label
-              >Nome do perfil<input
+            <label>
+              Nome do perfil
+              <input
                 name="perfilNome"
                 [(ngModel)]="perfilForm.nome"
                 required
                 maxlength="80"
-                placeholder="Ex.: Conferente" /></label
-            ><label class="check-line"
-              ><input
+                placeholder="Ex.: Conferente"
+              />
+            </label>
+            <label class="check-line">
+              <input
                 name="criarProdutos"
                 type="checkbox"
                 [(ngModel)]="perfilForm.cadastrarProdutos"
               />
-              Cadastrar produtos</label
-            ><label class="check-line"
-              ><input
+              Cadastrar produtos
+            </label>
+            <label class="check-line">
+              <input
                 name="permProdutos"
                 type="checkbox"
                 [(ngModel)]="perfilForm.gerenciarProdutos"
               />
-              Editar e desativar produtos</label
-            ><label class="check-line"
-              ><input
-                name="criarCategorias"
-                type="checkbox"
-                [(ngModel)]="perfilForm.cadastrarCategorias"
-              />
-              Cadastrar categorias</label
-            ><label class="check-line"
-              ><input
-                name="permCategorias"
-                type="checkbox"
-                [(ngModel)]="perfilForm.gerenciarCategorias"
-              />
-              Editar e desativar categorias</label
-            ><label class="check-line"
-              ><input
-                name="permMovimentos"
-                type="checkbox"
-                [(ngModel)]="perfilForm.movimentarEstoque"
-              />
-              Registrar entradas e saídas</label
-            >
-          </div>
-          <div class="dialog-actions">
-            <button class="secondary" type="button" (click)="fechar()">Cancelar</button
-            ><button class="primary" type="submit" [disabled]="salvando()">Salvar perfil</button>
-          </div>
-        </form>
-      } @else if (modal() === 'movimento') {
-        <form (ngSubmit)="salvarMovimento()">
-          <div class="fields">
-            <label
-              >Tipo de movimento
-              <select name="tipo" [(ngModel)]="tipoMovimento">
-                <option [ngValue]="1">Entrada</option>
-                <option [ngValue]="2">Saída</option>
-              </select></label
-            ><label
-              >Quantidade ({{ selecionado()?.unidade }})
-              <input
-                name="quantidade"
-                type="number"
-                min="0.001"
-                step="0.001"
-                [(ngModel)]="quantidade"
-                required /></label
-            ><label
-              >Data efetiva (opcional; padrão: agora)
-              <input name="dataEfetiva" type="datetime-local" [(ngModel)]="dataEfetiva" /></label
-            ><label
-              >Documento de origem (opcional)
-              <input
-                name="documentoOrigem"
-                [(ngModel)]="documentoOrigem"
-                maxlength="100"
-                placeholder="Pedido, nota ou referência" /></label
-            ><label
-              >Motivo
-              <input
-                name="motivo"
-                [(ngModel)]="motivo"
-                maxlength="150"
-                required
-                placeholder="Ex.: Compra, venda ou ajuste" /></label
-            ><label
-              >Custo por {{ selecionado()?.unidade }} (R$, opcional)
-              <input
-                name="custoUnitario"
-                type="number"
-                min="0"
-                step="0.0001"
-                [(ngModel)]="custoUnitario" /></label
-            ><label
-              >Observação (opcional)
-              <textarea
-                name="observacao"
-                [(ngModel)]="observacao"
-                maxlength="300"
-                rows="3"
-                placeholder="Detalhes adicionais"
-              ></textarea>
+              Gerenciar produtos
             </label>
           </div>
+
           <div class="dialog-actions">
-            <button class="secondary" type="button" (click)="fechar()">Cancelar</button
-            ><button class="primary" type="submit" [disabled]="salvando()">
-              {{ salvando() ? 'Registrando...' : 'Registrar movimento' }}
-            </button>
+            <button class="secondary" type="button" (click)="fechar()">Cancelar</button>
+            <button class="primary" type="submit" [disabled]="salvando()">Salvar perfil</button>
           </div>
         </form>
-      } @else if (modal() === 'usuario') {
-        <form (ngSubmit)="criarUsuario()">
-          <div class="fields">
-            <label
-              >Nome<input
-                name="userName"
-                [(ngModel)]="novoUsuario.nome"
-                required
-                maxlength="120" /></label
-            ><label
-              >E-mail<input
-                name="userEmail"
-                type="email"
-                [(ngModel)]="novoUsuario.email"
-                required /></label
-            ><label
-              >Senha inicial (mínimo 12 caracteres)<input
-                name="userPassword"
-                type="password"
-                [(ngModel)]="novoUsuario.senha"
-                minlength="12"
-                required
-                autocomplete="new-password" /></label
-            ><label
-              >Perfil<select name="userRole" [(ngModel)]="novoUsuario.perfilId">
-                @for (p of perfis(); track p.id) {
-                  @if (p.ativo) {
-                    <option [ngValue]="p.id">{{ p.nome }}</option>
-                  }
-                }
-              </select></label
-            >
-          </div>
-          <div class="dialog-actions">
-            <button class="secondary" type="button" (click)="fechar()">Cancelar</button
-            ><button class="primary" type="submit" [disabled]="salvando()">
-              Cadastrar usuário
-            </button>
-          </div>
-        </form>
-      } @else if (modal() === 'senha') {
-        <form (ngSubmit)="alterarSenha()">
-          <div class="fields">
-            <label
-              >Senha atual<input
-                name="senhaAtual"
-                type="password"
-                [(ngModel)]="senhaAtual"
-                required
-                autocomplete="current-password" /></label
-            ><label
-              >Nova senha (mínimo 12 caracteres)<input
-                name="novaSenha"
-                type="password"
-                [(ngModel)]="novaSenha"
-                minlength="12"
-                required
-                autocomplete="new-password"
-            /></label>
-          </div>
-          <div class="dialog-actions">
-            <button class="primary" type="submit" [disabled]="salvando()">Alterar senha</button>
-          </div>
-        </form>
-      } @else {
-        <div class="history">
-          <p>
-            Livro de movimentações em ordem de registro. Saldo após cada operação; custos
-            informativos, sem apuração de CMV.
-          </p>
-          @for (m of movimentos(); track m.id) {
-            <div class="history-row">
-              <span class="badge" [class.warning]="m.tipo === 2">{{
-                m.tipo === 1 ? 'Entrada' : 'Saída'
-              }}</span
-              ><strong>{{ m.tipo === 1 ? '+' : '−' }}{{ m.quantidade }} {{ m.unidade }}</strong
-              ><span>Saldo: {{ m.saldoApos ?? 'anterior à rastreabilidade' }} {{ m.unidade }}</span
-              ><small
-                >Efetiva: {{ m.dataEfetivaUtc | date: 'dd/MM/yyyy HH:mm' }} · Registrada:
-                {{ m.dataUtc | date: 'dd/MM/yyyy HH:mm' }}</small
-              ><small
-                >Motivo: {{ m.motivo }} · Documento:
-                {{ m.documentoOrigem || 'não informado' }}</small
-              ><small
-                >Responsável: {{ m.usuarioNome || 'registro anterior' }} · Custo por {{ m.unidade }}:
-                {{ m.custoUnitario === null ? 'não informado' : moeda(m.custoUnitario) }}</small
-              ><small>{{ m.observacao || 'Sem observação' }}</small>
-            </div>
-          } @empty {
-            <p class="empty">Nenhuma movimentação registrada.</p>
-          }
-        </div>
       }
     </section>
   </div>
