@@ -7,7 +7,7 @@ public class MovimentoEstoque
     public long Id { get; private set; }
     public int ProdutoId { get; private set; }
     public TipoMovimento Tipo { get; private set; }
-    public int Quantidade { get; private set; }
+    public decimal Quantidade { get; private set; }
     public DateTime DataUtc { get; private set; }
     public string? Observacao { get; private set; }
     public DateTime DataEfetivaUtc { get; private set; }
@@ -16,7 +16,7 @@ public class MovimentoEstoque
     public int? UsuarioId { get; private set; }
     public string UsuarioNome { get; private set; } = string.Empty;
     public decimal? CustoUnitario { get; private set; }
-    public int? SaldoApos { get; private set; }
+    public decimal? SaldoApos { get; private set; }
     public long? PedidoCompraId { get; private set; }
     public long? RequisicaoMaterialId { get; private set; }
     public Guid? DevolucaoId { get; private set; }
@@ -25,8 +25,9 @@ public class MovimentoEstoque
 
     protected MovimentoEstoque() { }
 
-    public MovimentoEstoque(int produtoId, TipoMovimento tipo, int quantidade, string? observacao)
+    public MovimentoEstoque(int produtoId, TipoMovimento tipo, decimal quantidade, string? observacao)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (produtoId <= 0) throw new ArgumentOutOfRangeException(nameof(produtoId));
         if (!Enum.IsDefined(tipo)) throw new ArgumentOutOfRangeException(nameof(tipo));
         if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
@@ -39,9 +40,9 @@ public class MovimentoEstoque
         DataEfetivaUtc = DataUtc;
     }
 
-    public MovimentoEstoque(int produtoId, TipoMovimento tipo, int quantidade, string? observacao,
+    public MovimentoEstoque(int produtoId, TipoMovimento tipo, decimal quantidade, string? observacao,
         DateTime dataEfetivaUtc, string documentoOrigem, string motivo, int usuarioId,
-        string usuarioNome, decimal? custoUnitario, int saldoApos)
+        string usuarioNome, decimal? custoUnitario, decimal saldoApos)
         : this(produtoId, tipo, quantidade, observacao)
     {
         if (dataEfetivaUtc.Kind != DateTimeKind.Utc || dataEfetivaUtc > DataUtc.AddMinutes(1))
@@ -62,6 +63,7 @@ public class MovimentoEstoque
         UsuarioId = usuarioId;
         UsuarioNome = usuarioNome.Trim();
         CustoUnitario = custoUnitario;
+        QuantidadeEstoque.Validar(saldoApos);
         SaldoApos = saldoApos;
     }
 

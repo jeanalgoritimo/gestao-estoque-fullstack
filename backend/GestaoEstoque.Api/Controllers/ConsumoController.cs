@@ -10,8 +10,8 @@ namespace GestaoEstoque.Api.Controllers;
 [Route("api/relatorios/consumo")]
 public class ConsumoController(GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record Linha(int? CentroCustoId, string CentroCusto, int ProdutoId, string Produto, long Solicitado, long Entregue, long Devolvido, string Unidade)
-    { public long ConsumoLiquido => Entregue - Devolvido; }
+    public record Linha(int? CentroCustoId, string CentroCusto, int ProdutoId, string Produto, decimal Solicitado, decimal Entregue, decimal Devolvido, string Unidade)
+    { public decimal ConsumoLiquido => Entregue - Devolvido; }
     [HttpGet]
     public async Task<IActionResult> Consultar([FromQuery] DateOnly inicio, [FromQuery] DateOnly fim,
         [FromQuery] int? centroCustoId, [FromQuery] bool semCentro, CancellationToken ct)

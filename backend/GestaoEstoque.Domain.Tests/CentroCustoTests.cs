@@ -52,7 +52,7 @@ public class CentroCustoTests
         var entregues = ConsumoQueries.Entregues(db, inicio, fim, centro, semCentro).ToQueryString();
         Assert.Contains("GROUP BY", solicitadas); Assert.Contains("[CriadoUtc]", solicitadas);
         Assert.Contains("GROUP BY", entregues); Assert.Contains("[DataUtc]", entregues);
-        Assert.Contains("bigint", entregues);
+        Assert.Contains("SUM", entregues);
         Assert.DoesNotContain("[CriadoUtc]", entregues);
     }
 }

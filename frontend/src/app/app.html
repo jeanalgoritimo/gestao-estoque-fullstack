@@ -413,7 +413,7 @@
               @for (u of unidadesMedida(); track u.id) { @if (u.ativo || u.id === form.unidadeMedidaId) {
                 <option [ngValue]="u.id">{{ u.sigla }} · {{ u.nome }}{{ u.ativo ? '' : ' (inativa — vínculo atual)' }}</option>
               } }
-            </select></label><p>Quantidades inteiras, sem conversão automática. A unidade de produto com saldo ou operações anteriores não pode ser trocada.</p>
+            </select></label><p>Quantidades com até três casas decimais, sem conversão automática. A unidade de produto com saldo ou operações anteriores não pode ser trocada.</p>
             <label>Localização<select name="posicaoEstoqueId" [(ngModel)]="form.posicaoEstoqueId">
               <option [ngValue]="null">Sem localização</option>
               @for (p of posicoes(); track p.id) { @if ((p.ativo && p.almoxarifadoAtivo) || p.id === form.posicaoEstoqueId) {
@@ -436,7 +436,7 @@
                   name="minimo"
                   type="number"
                   min="0"
-                  step="1"
+                  step="0.001"
                   [(ngModel)]="form.estoqueMinimo"
                   required
               /></label>
@@ -532,8 +532,8 @@
               <input
                 name="quantidade"
                 type="number"
-                min="1"
-                step="1"
+                min="0.001"
+                step="0.001"
                 [(ngModel)]="quantidade"
                 required /></label
             ><label

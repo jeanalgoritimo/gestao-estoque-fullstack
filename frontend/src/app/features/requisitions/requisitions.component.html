@@ -20,12 +20,12 @@
         <label>Produto<select name="produto" [(ngModel)]="produtoId" [disabled]="processando()"><option [ngValue]="null">Selecione</option>
           @for (p of ativos(); track p.id) { <option [ngValue]="p.id">{{ p.nome }} · disponível: {{ p.estoqueDisponivel }} {{ p.unidade }}</option> }
         </select></label>
-        <label>Quantidade<input name="quantidade" type="number" min="1" max="2147483647" step="1" [(ngModel)]="quantidade" [disabled]="processando()" /></label>
+        <label>Quantidade<input name="quantidade" type="number" min="0.001" max="2147483647.999" step="0.001" [(ngModel)]="quantidade" [disabled]="processando()" /></label>
       </div>
       <button type="button" class="secondary" (click)="adicionar()" [disabled]="processando()">Adicionar item</button>
       @for (item of itens; track item.produtoId) {
         <div>{{ nomeProduto(item.produtoId) }}
-          <label>Quantidade<input type="number" [name]="'item-' + item.produtoId" min="1" max="2147483647" step="1" required
+          <label>Quantidade<input type="number" [name]="'item-' + item.produtoId" min="0.001" max="2147483647.999" step="0.001" required
             [(ngModel)]="item.quantidade" [disabled]="processando()" /></label>
           <button type="button" (click)="remover(item.produtoId)" [disabled]="processando()">Remover</button></div>
       }
@@ -67,10 +67,10 @@
       </div></div>
       <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Solicitado</th><th>Entregue</th><th>Devolvido</th><th>Entregue líquido</th><th>Pendente</th>
         @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) { <th>Entregar agora</th> }</tr></thead><tbody>
-        @for (i of r.itens; track i.produtoId) { <tr><td>{{ i.produto }} ({{ i.unidade }})</td><td>{{ i.quantidade }}</td><td>{{ i.quantidadeEntregue }}</td><td>{{ i.quantidadeDevolvida }}</td><td>{{ i.quantidadeEntregue - i.quantidadeDevolvida }}</td>
-          <td>{{ r.situacao === 6 ? 0 : i.quantidade - i.quantidadeEntregue }}</td>
+        @for (i of r.itens; track i.produtoId) { <tr><td>{{ i.produto }} ({{ i.unidade }})</td><td>{{ i.quantidade }}</td><td>{{ i.quantidadeEntregue }}</td><td>{{ i.quantidadeDevolvida }}</td><td>{{ diferencaQuantidade(i.quantidadeEntregue, i.quantidadeDevolvida) }}</td>
+          <td>{{ r.situacao === 6 ? 0 : diferencaQuantidade(i.quantidade, i.quantidadeEntregue) }}</td>
           @if (podeEntregar() && (r.situacao === 3 || r.situacao === 4)) {
-            <td><input type="number" min="0" step="1" [max]="i.quantidade - i.quantidadeEntregue"
+            <td><input type="number" min="0" step="0.001" [max]="diferencaQuantidade(i.quantidade, i.quantidadeEntregue)"
               [(ngModel)]="quantidades[r.id + '-' + i.produtoId]" [disabled]="processando() || i.quantidade === i.quantidadeEntregue"
               [attr.aria-label]="'Quantidade a entregar de ' + i.produto" /></td>
           }</tr> }
@@ -90,8 +90,8 @@
           <p>A devolução registra uma entrada sem reabrir a requisição ou reservar novamente o material.</p>
           <label>Motivo<textarea name="motivoDevolucao" [(ngModel)]="motivoDevolucao" maxlength="150" required [disabled]="processando()"></textarea></label>
           @for (i of r.itens; track i.produtoId) { @if (i.quantidadeEntregue > i.quantidadeDevolvida) {
-            <label>{{ i.produto }} ({{ i.unidade }}) · máximo: {{ i.quantidadeEntregue - i.quantidadeDevolvida }}
-              <input [name]="'devolucao-' + i.produtoId" type="number" min="0" step="1" [max]="i.quantidadeEntregue - i.quantidadeDevolvida" [(ngModel)]="quantidadesDevolucao[i.produtoId]" [disabled]="processando()" />
+            <label>{{ i.produto }} ({{ i.unidade }}) · máximo: {{ diferencaQuantidade(i.quantidadeEntregue, i.quantidadeDevolvida) }}
+              <input [name]="'devolucao-' + i.produtoId" type="number" min="0" step="0.001" [max]="diferencaQuantidade(i.quantidadeEntregue, i.quantidadeDevolvida)" [(ngModel)]="quantidadesDevolucao[i.produtoId]" [disabled]="processando()" />
             </label>
           } }
           <div class="dialog-actions"><button type="button" (click)="devolvendoId = null" [disabled]="processando()">Voltar</button>

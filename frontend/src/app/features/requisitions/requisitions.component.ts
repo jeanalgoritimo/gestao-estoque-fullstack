@@ -1,3 +1,4 @@
+import { quantidadeValida, diferencaQuantidade } from '../../shared/models/quantity';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
@@ -9,6 +10,7 @@ import { RequisicaoMaterial, EntregaMaterial, DevolucaoMaterial, FiltroRequisico
 
 @Component({ selector: 'app-requisitions', imports: [CommonModule, FormsModule], templateUrl: './requisitions.component.html' })
 export class RequisitionsComponent implements OnInit {
+  readonly diferencaQuantidade = diferencaQuantidade;
   private readonly api = inject(EstoqueApiService);
   readonly centrosCusto = input<CentroCusto[]>([]);
   centroCustoId: number | null = null;
@@ -79,9 +81,9 @@ export class RequisitionsComponent implements OnInit {
   }
   nomeProduto(id: number): string { const p = this.produtos().find(p => p.id === id); return p ? `${p.nome} (${p.unidade})` : `#${id}`; }
   adicionar(): void {
-    if (!this.produtoId || !Number.isInteger(this.quantidade) || this.quantidade! <= 0 || this.quantidade! > 2147483647 ||
+    if (!this.produtoId || !quantidadeValida(this.quantidade) || this.quantidade! <= 0 || this.quantidade! > 2147483647.999 ||
       this.itens.length >= 100 || this.itens.some(i => i.produtoId === this.produtoId)) {
-      this.erro.set('Selecione um produto distinto e uma quantidade inteira positiva.'); return;
+      this.erro.set('Selecione um produto distinto e uma quantidade positiva com até três casas decimais.'); return;
     }
     this.itens = [...this.itens, { produtoId: this.produtoId, quantidade: this.quantidade! }];
     this.produtoId = null; this.quantidade = null; this.erro.set('');
@@ -136,8 +138,8 @@ export class RequisitionsComponent implements OnInit {
   }
   async criar(): Promise<void> {
     if (!this.centroCustoId || !this.centrosCusto().some(c => c.id === this.centroCustoId && c.ativo) || !this.finalidade.trim() || !this.itens.length || this.itens.some(i =>
-      !Number.isInteger(i.quantidade) || i.quantidade <= 0 || i.quantidade > 2147483647)) {
-      this.erro.set('Selecione um centro de custo ativo, informe finalidade, itens e quantidades inteiras positivas.'); return;
+      !quantidadeValida(i.quantidade) || i.quantidade <= 0 || i.quantidade > 2147483647.999)) {
+      this.erro.set('Selecione um centro de custo ativo, informe finalidade, itens e quantidades positivas com até três casas decimais.'); return;
     }
     const id = this.editandoId;
     await this.executar(async () => {
@@ -161,9 +163,9 @@ export class RequisitionsComponent implements OnInit {
   async entregar(r: RequisicaoMaterial): Promise<void> {
     const itens = r.itens.map(i => ({ produtoId: i.produtoId, quantidade: this.quantidades[`${r.id}-${i.produtoId}`] ?? 0 }))
       .filter(i => i.quantidade !== 0);
-    if (!itens.length || itens.some(i => !Number.isInteger(i.quantidade) || i.quantidade <= 0 ||
-      i.quantidade > r.itens.find(l => l.produtoId === i.produtoId)!.quantidade - r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeEntregue)) {
-      this.erro.set('Informe quantidades inteiras positivas dentro do saldo pendente.'); return;
+    if (!itens.length || itens.some(i => !quantidadeValida(i.quantidade) || i.quantidade <= 0 ||
+      i.quantidade > diferencaQuantidade(r.itens.find(l => l.produtoId === i.produtoId)!.quantidade, r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeEntregue))) {
+      this.erro.set('Informe quantidades positivas com até três casas decimais dentro do saldo pendente.'); return;
     }
     await this.executar(async () => {
       await this.api.entregarRequisicao(r.id, itens);
@@ -180,8 +182,8 @@ export class RequisitionsComponent implements OnInit {
   async devolver(r: RequisicaoMaterial): Promise<void> {
     const itens = r.itens.map(i => ({ produtoId: i.produtoId, quantidade: this.quantidadesDevolucao[i.produtoId] ?? 0 }))
       .filter(i => i.quantidade !== 0);
-    if (!this.motivoDevolucao.trim() || !itens.length || itens.some(i => !Number.isInteger(i.quantidade) || i.quantidade <= 0 ||
-      i.quantidade > r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeEntregue - r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeDevolvida)) {
+    if (!this.motivoDevolucao.trim() || !itens.length || itens.some(i => !quantidadeValida(i.quantidade) || i.quantidade <= 0 ||
+      i.quantidade > diferencaQuantidade(r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeEntregue, r.itens.find(l => l.produtoId === i.produtoId)!.quantidadeDevolvida))) {
       this.erro.set('Informe o motivo e quantidades positivas dentro do saldo entregue ainda não devolvido.'); return;
     }
     await this.executar(async () => {

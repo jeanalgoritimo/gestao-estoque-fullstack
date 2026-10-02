@@ -26,6 +26,8 @@ public class ItemPedidoCompraConfiguration : IEntityTypeConfiguration<ItemPedido
 {
     public void Configure(EntityTypeBuilder<ItemPedidoCompra> b)
     {
+        b.Property(e => e.Quantidade).HasPrecision(13, 3);
+        b.Property(e => e.QuantidadeRecebida).HasPrecision(13, 3);
         b.ToTable("ItensPedidoCompra");
         b.HasKey(i => i.Id);
         b.HasOne(i => i.Produto).WithMany().HasForeignKey(i => i.ProdutoId).OnDelete(DeleteBehavior.Restrict);

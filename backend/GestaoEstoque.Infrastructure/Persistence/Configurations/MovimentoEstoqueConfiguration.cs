@@ -8,6 +8,8 @@ public class MovimentoEstoqueConfiguration : IEntityTypeConfiguration<MovimentoE
 {
     public void Configure(EntityTypeBuilder<MovimentoEstoque> builder)
     {
+        builder.Property(e => e.Quantidade).HasPrecision(13, 3);
+        builder.Property(e => e.SaldoApos).HasPrecision(13, 3);
         builder.HasOne<RequisicaoMaterial>().WithMany().HasForeignKey(m => m.RequisicaoMaterialId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(m => new { m.RequisicaoMaterialId, m.EntregaId });
         builder.HasIndex(m => new { m.RequisicaoMaterialId, m.DevolucaoId });

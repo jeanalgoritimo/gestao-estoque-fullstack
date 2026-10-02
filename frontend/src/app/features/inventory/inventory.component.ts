@@ -1,3 +1,4 @@
+import { quantidadeValida, diferencaQuantidade } from '../../shared/models/quantity';
 import { PosicaoEstoque } from '../../shared/models/location.models';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -12,6 +13,7 @@ import { InventarioFisico, Produto } from '../../shared/models/stock.models';
   templateUrl: './inventory.component.html',
 })
 export class InventoryComponent implements OnInit {
+  readonly diferencaQuantidade = diferencaQuantidade;
   private readonly api = inject(EstoqueApiService);
   readonly produtos = input.required<Produto[]>();
   readonly posicoes = input<PosicaoEstoque[]>([]);
@@ -104,10 +106,10 @@ export class InventoryComponent implements OnInit {
       !atual ||
       !this.podeMovimentar() ||
       this.quantidade === null ||
-      !Number.isInteger(this.quantidade) ||
+      !quantidadeValida(this.quantidade) ||
       this.quantidade < 0
     ) {
-      this.erro.set('Informe uma quantidade inteira maior ou igual a zero.');
+      this.erro.set('Informe uma quantidade com até três casas decimais maior ou igual a zero.');
       return;
     }
     this.salvando.set(true);

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GestaoEstoque.Infrastructure.Reports;
 
 public record NecessidadeReposicao(int ProdutoId, string Nome, string Categoria, int? FornecedorId, string? Fornecedor,
-    bool FornecedorAtivo, int Estoque, int Reservado, int Disponivel, int Minimo, long ComprasPendentes, long EmRascunhos, string Unidade);
+    bool FornecedorAtivo, decimal Estoque, decimal Reservado, decimal Disponivel, decimal Minimo, decimal ComprasPendentes, decimal EmRascunhos, string Unidade);
 public static class ReposicaoQueries
 {
     public static IQueryable<NecessidadeReposicao> Consultar(GestaoEstoqueDbContext db) =>
@@ -15,8 +15,8 @@ public static class ReposicaoQueries
             p.Estoque, p.EstoqueReservado, p.Estoque - p.EstoqueReservado, p.EstoqueMinimo,
             (from i in db.ItensPedidoCompra join pedido in db.PedidosCompra on i.PedidoCompraId equals pedido.Id
              where i.ProdutoId == p.Id && (pedido.Situacao == SituacaoPedidoCompra.Aberto || pedido.Situacao == SituacaoPedidoCompra.ParcialmenteRecebido)
-             select (long?)(i.Quantidade - i.QuantidadeRecebida)).Sum() ?? 0,
+             select (decimal?)(i.Quantidade - i.QuantidadeRecebida)).Sum() ?? 0,
             (from i in db.ItensPedidoCompra join pedido in db.PedidosCompra on i.PedidoCompraId equals pedido.Id
              where i.ProdutoId == p.Id && pedido.Situacao == SituacaoPedidoCompra.Rascunho
-             select (long?)i.Quantidade).Sum() ?? 0, p.UnidadeMedida.Sigla));
+             select (decimal?)i.Quantidade).Sum() ?? 0, p.UnidadeMedida.Sigla));
 }

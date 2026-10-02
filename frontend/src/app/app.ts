@@ -1,3 +1,4 @@
+import { quantidadeValida, diferencaQuantidade } from './shared/models/quantity';
 import { agruparSaldos } from './shared/models/stock-totals';
 import { UnidadeMedida } from './shared/models/unit.models';
 import { UnitsComponent } from './features/units/units.component';
@@ -62,6 +63,7 @@ import {
   templateUrl: './app.html',
 })
 export class App {
+  readonly diferencaQuantidade = diferencaQuantidade;
   private readonly api = inject(EstoqueApiService);
   readonly auth = inject(AuthService);
   readonly usuarios = signal<Usuario[]>([]);
@@ -406,7 +408,7 @@ export class App {
       this.form.preco === null ||
       this.form.preco <= 0 ||
       this.form.estoqueMinimo === null ||
-      !Number.isInteger(this.form.estoqueMinimo) ||
+      !quantidadeValida(this.form.estoqueMinimo) ||
       this.form.estoqueMinimo < 0
     ) {
       this.erro.set('Informe nome, categoria, preço maior que zero e estoque mínimo válido.');
@@ -448,13 +450,13 @@ export class App {
     if (
       !produto ||
       this.quantidade === null ||
-      !Number.isInteger(this.quantidade) ||
+      !quantidadeValida(this.quantidade) ||
       this.quantidade <= 0 ||
       !this.motivo.trim() ||
       (this.custoUnitario !== null &&
         (!Number.isFinite(this.custoUnitario) || this.custoUnitario < 0))
     ) {
-      this.erro.set('Informe quantidade inteira positiva, motivo e custo unitário válido.');
+      this.erro.set('Informe quantidade positiva com até três casas decimais, motivo e custo unitário válido.');
       return;
     }
     this.salvando.set(true);
