@@ -33,10 +33,10 @@ public class Produto
 
     public decimal Preco { get; private set; }
 
-    public int Estoque { get; private set; }
-    public int EstoqueReservado { get; private set; }
-    public int EstoqueDisponivel => Estoque - EstoqueReservado;
-    public int EstoqueMinimo { get; private set; }
+    public decimal Estoque { get; private set; }
+    public decimal EstoqueReservado { get; private set; }
+    public decimal EstoqueDisponivel => Estoque - EstoqueReservado;
+    public decimal EstoqueMinimo { get; private set; }
     public byte[] Versao { get; private set; } = [];
 
     public bool Ativo { get; private set; }
@@ -49,7 +49,7 @@ public class Produto
         string nome,
         int categoriaId,
         decimal preco,
-        int estoqueMinimo = 5)
+        decimal estoqueMinimo = 5)
     {
         AlterarNome(nome);
         AlterarCategoria(categoriaId);
@@ -95,44 +95,52 @@ public class Produto
         Preco = preco;
     }
 
-    public void AlterarEstoqueMinimo(int estoqueMinimo)
+    public void AlterarEstoqueMinimo(decimal estoqueMinimo)
     {
         if (estoqueMinimo < 0)
             throw new ArgumentException(
                 "O estoque mínimo não pode ser negativo.",
                 nameof(estoqueMinimo));
 
+        QuantidadeEstoque.Validar(estoqueMinimo);
         EstoqueMinimo = estoqueMinimo;
     }
 
-    public void RegistrarEntrada(int quantidade)
+    public void RegistrarEntrada(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
-        Estoque = checked(Estoque + quantidade);
+        var novoSaldo = checked(Estoque + quantidade);
+        QuantidadeEstoque.Validar(novoSaldo);
+        Estoque = novoSaldo;
     }
 
-    public void RegistrarSaida(int quantidade)
+    public void RegistrarSaida(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
         if (quantidade > EstoqueDisponivel) throw new InvalidOperationException("Saldo disponível insuficiente. Há estoque reservado para requisições.");
         Estoque -= quantidade;
     }
 
-    public void Reservar(int quantidade)
+    public void Reservar(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (!Ativo) throw new InvalidOperationException("Produto inativo.");
         if (quantidade <= 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
         if (quantidade > EstoqueDisponivel) throw new InvalidOperationException("Saldo disponível insuficiente para reserva.");
         EstoqueReservado = checked(EstoqueReservado + quantidade);
     }
-    public void LiberarReserva(int quantidade)
+    public void LiberarReserva(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0 || quantidade > EstoqueReservado)
             throw new InvalidOperationException("Quantidade de reserva inválida.");
         EstoqueReservado -= quantidade;
     }
-    public void EntregarReserva(int quantidade)
+    public void EntregarReserva(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (!Ativo) throw new InvalidOperationException("Produto inativo.");
         LiberarReserva(quantidade);
         RegistrarSaida(quantidade);

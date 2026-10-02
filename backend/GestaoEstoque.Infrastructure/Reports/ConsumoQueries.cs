@@ -3,7 +3,7 @@ using GestaoEstoque.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace GestaoEstoque.Infrastructure.Reports;
 
-public record QuantidadeCentro(int? CentroCustoId, string Centro, int ProdutoId, string Produto, long Quantidade, string Unidade);
+public record QuantidadeCentro(int? CentroCustoId, string Centro, int ProdutoId, string Produto, decimal Quantidade, string Unidade);
 public static class ConsumoQueries
 {
     public static IQueryable<QuantidadeCentro> Solicitadas(GestaoEstoqueDbContext db, DateTime inicioUtc, DateTime fimUtc, int? centroCustoId, bool semCentro)
@@ -16,7 +16,7 @@ public static class ConsumoQueries
             where r.CriadoUtc >= inicioUtc && r.CriadoUtc < fimUtc
             group i by new { r.CentroCustoId, Centro = r.CentroCusto == null ? "Sem centro de custo" : r.CentroCusto.Nome,
                 i.ProdutoId, Produto = i.Produto.Nome, Unidade = i.Produto.UnidadeMedida.Sigla } into g
-            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, g.Key.Unidade, Quantidade = g.Sum(i => (long)i.Quantidade) })
+            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, g.Key.Unidade, Quantidade = g.Sum(i => (decimal)i.Quantidade) })
             .Select(x => new QuantidadeCentro(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade, x.Unidade));
     }
     public static IQueryable<QuantidadeCentro> Entregues(GestaoEstoqueDbContext db, DateTime inicioUtc, DateTime fimUtc, int? centroCustoId, bool semCentro) =>
@@ -29,12 +29,12 @@ public static class ConsumoQueries
             .Where(r => (!semCentro || r.CentroCustoId == null) &&
                 (centroCustoId == null || r.CentroCustoId == centroCustoId));
         return (from m in db.MovimentosEstoque.AsNoTracking()
-            join r in requisicoes on m.RequisicaoMaterialId equals (long?)r.Id
+            join r in requisicoes on m.RequisicaoMaterialId equals (decimal?)r.Id
             join p in db.Produtos.AsNoTracking() on m.ProdutoId equals p.Id
             where m.Tipo == tipo && (tipo == TipoMovimento.Saida || m.DevolucaoId != null) && m.DataUtc >= inicioUtc && m.DataUtc < fimUtc
             group m by new { r.CentroCustoId, Centro = r.CentroCusto == null ? "Sem centro de custo" : r.CentroCusto.Nome,
                 m.ProdutoId, Produto = p.Nome, Unidade = p.UnidadeMedida.Sigla } into g
-            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, g.Key.Unidade, Quantidade = g.Sum(m => (long)m.Quantidade) })
+            select new { g.Key.CentroCustoId, g.Key.Centro, g.Key.ProdutoId, g.Key.Produto, g.Key.Unidade, Quantidade = g.Sum(m => (decimal)m.Quantidade) })
             .Select(x => new QuantidadeCentro(x.CentroCustoId, x.Centro, x.ProdutoId, x.Produto, x.Quantidade, x.Unidade));
     }
 }

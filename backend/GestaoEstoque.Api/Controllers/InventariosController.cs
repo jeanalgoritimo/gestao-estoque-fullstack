@@ -14,10 +14,10 @@ namespace GestaoEstoque.Api.Controllers;
 public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
 {
     public record AbrirRequest(int ProdutoId);
-    public record ContagemRequest(int Quantidade);
-    public record ConfirmarRequest(string Motivo, int QuantidadeEsperada);
-    public record InventarioResponse(long Id, int ProdutoId, string Produto, int SaldoInicial,
-        int? QuantidadeContada, int? Diferenca, SituacaoInventario Situacao, DateTime AbertoUtc,
+    public record ContagemRequest(decimal Quantidade);
+    public record ConfirmarRequest(string Motivo, decimal QuantidadeEsperada);
+    public record InventarioResponse(long Id, int ProdutoId, string Produto, decimal SaldoInicial,
+        decimal? QuantidadeContada, decimal? Diferenca, SituacaoInventario Situacao, DateTime AbertoUtc,
         string AbertoPorNome, DateTime? EncerradoUtc, string? EncerradoPorNome, string? Motivo, string Unidade);
 
     private static InventarioResponse Map(InventarioFisico i, string produto, string unidade) =>
@@ -82,7 +82,7 @@ public class InventariosController(GestaoEstoqueDbContext db) : ControllerBase
             var produto = await db.Produtos.AsNoTracking().Include(p => p.UnidadeMedida).FirstAsync(p => p.Id == inventario.ProdutoId, ct);
             return Ok(Map(inventario, produto.Nome, produto.UnidadeMedida.Sigla));
         }
-        catch (ArgumentOutOfRangeException) { return BadRequest(new { erro = "A quantidade contada não pode ser negativa." }); }
+        catch (ArgumentOutOfRangeException ex) { return BadRequest(new { erro = ex.Message }); }
         catch (InvalidOperationException ex) { return Conflict(new { erro = ex.Message }); }
         catch (DbUpdateConcurrencyException) { return Conflict(new { erro = "Contagem alterada por outra operação. Recarregue." }); }
     }

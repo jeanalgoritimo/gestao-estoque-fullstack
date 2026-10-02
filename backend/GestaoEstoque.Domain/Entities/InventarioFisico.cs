@@ -7,9 +7,9 @@ public class InventarioFisico
 {
     public long Id { get; private set; }
     public int ProdutoId { get; private set; }
-    public int SaldoInicial { get; private set; }
+    public decimal SaldoInicial { get; private set; }
     public byte[] VersaoProduto { get; private set; } = [];
-    public int? QuantidadeContada { get; private set; }
+    public decimal? QuantidadeContada { get; private set; }
     public SituacaoInventario Situacao { get; private set; }
     public DateTime AbertoUtc { get; private set; }
     public int AbertoPorId { get; private set; }
@@ -20,15 +20,16 @@ public class InventarioFisico
     public string? Motivo { get; private set; }
     public byte[] Versao { get; private set; } = [];
 
-    public int? Diferenca => QuantidadeContada - SaldoInicial;
+    public decimal? Diferenca => QuantidadeContada - SaldoInicial;
 
     protected InventarioFisico() { }
 
-    public InventarioFisico(int produtoId, int saldoInicial, byte[] versaoProduto, int usuarioId, string usuarioNome)
+    public InventarioFisico(int produtoId, decimal saldoInicial, byte[] versaoProduto, int usuarioId, string usuarioNome)
     {
         if (produtoId <= 0 || saldoInicial < 0 || versaoProduto.Length == 0 || usuarioId <= 0 ||
             string.IsNullOrWhiteSpace(usuarioNome)) throw new ArgumentException("Dados da abertura inválidos.");
         ProdutoId = produtoId;
+        QuantidadeEstoque.Validar(saldoInicial);
         SaldoInicial = saldoInicial;
         VersaoProduto = (byte[])versaoProduto.Clone();
         AbertoPorId = usuarioId;
@@ -37,8 +38,9 @@ public class InventarioFisico
         Situacao = SituacaoInventario.Aberto;
     }
 
-    public void RegistrarContagem(int quantidade)
+    public void RegistrarContagem(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (Situacao != SituacaoInventario.Aberto) throw new InvalidOperationException("Contagem encerrada.");
         if (quantidade < 0) throw new ArgumentOutOfRangeException(nameof(quantidade));
         QuantidadeContada = quantidade;

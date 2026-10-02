@@ -26,6 +26,9 @@ public class ItemRequisicaoMaterialConfiguration : IEntityTypeConfiguration<Item
 {
     public void Configure(EntityTypeBuilder<ItemRequisicaoMaterial> b)
     {
+        b.Property(e => e.Quantidade).HasPrecision(13, 3);
+        b.Property(e => e.QuantidadeEntregue).HasPrecision(13, 3);
+        b.Property(e => e.QuantidadeDevolvida).HasPrecision(13, 3);
         b.ToTable("ItensRequisicaoMaterial"); b.HasKey(i => i.Id);
         b.HasIndex(i => new { i.RequisicaoMaterialId, i.ProdutoId }).IsUnique();
         b.HasOne(i => i.Produto).WithMany().HasForeignKey(i => i.ProdutoId).OnDelete(DeleteBehavior.Restrict);

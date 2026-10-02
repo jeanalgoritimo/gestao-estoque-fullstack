@@ -8,6 +8,9 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
 {
     public void Configure(EntityTypeBuilder<Produto> builder)
     {
+        builder.Property(e => e.Estoque).HasPrecision(13, 3);
+        builder.Property(e => e.EstoqueReservado).HasPrecision(13, 3);
+        builder.Property(e => e.EstoqueMinimo).HasPrecision(13, 3);
         builder.ToTable("Produtos");
 
         builder.HasKey(produto => produto.Id);

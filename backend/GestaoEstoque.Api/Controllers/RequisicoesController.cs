@@ -14,13 +14,13 @@ namespace GestaoEstoque.Api.Controllers;
 [Route("api/requisicoes")]
 public class RequisicoesController(GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record ItemRequest(int ProdutoId, int Quantidade);
+    public record ItemRequest(int ProdutoId, decimal Quantidade);
     public record CriarRequest(string Finalidade, List<ItemRequest> Itens, int CentroCustoId);
     public record EditarRequest(string Finalidade, List<ItemRequest> Itens, string Versao, int CentroCustoId);
     public record EntregarRequest(List<ItemRequest> Itens);
     public record DevolverRequest(List<ItemRequest> Itens, string Motivo);
     public record CancelarRequest(string Motivo);
-    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeEntregue, int QuantidadeDevolvida, string Unidade);
+    public record ItemResponse(int ProdutoId, string Produto, decimal Quantidade, decimal QuantidadeEntregue, decimal QuantidadeDevolvida, string Unidade);
     public record RequisicaoResponse(long Id, string Finalidade, int SolicitanteId, string SolicitanteNome,
         DateTime CriadoUtc, SituacaoRequisicao Situacao, DateTime? AprovadoUtc, string? AprovadoPorNome,
         DateTime? EncerradoUtc, string? EncerradoPorNome, string? MotivoCancelamento, List<ItemResponse> Itens, string Versao, int? CentroCustoId, string CentroCusto);

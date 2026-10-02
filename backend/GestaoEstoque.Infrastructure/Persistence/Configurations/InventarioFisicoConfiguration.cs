@@ -8,6 +8,8 @@ public class InventarioFisicoConfiguration : IEntityTypeConfiguration<Inventario
 {
     public void Configure(EntityTypeBuilder<InventarioFisico> builder)
     {
+        builder.Property(e => e.SaldoInicial).HasPrecision(13, 3);
+        builder.Property(e => e.QuantidadeContada).HasPrecision(13, 3);
         builder.ToTable("InventariosFisicos");
         builder.HasKey(i => i.Id);
         builder.Property(i => i.Situacao).HasConversion<int>();

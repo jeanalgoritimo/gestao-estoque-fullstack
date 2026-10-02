@@ -1,5 +1,5 @@
 <section class="panel">
-  <div class="panel-heading"><div><h2>Unidades de medida</h2><p>Exemplos: UN (unidade), CX (caixa), PCT (pacote), M (metro) e L (litro). Nesta etapa, use apenas quantidades inteiras.</p></div>
+  <div class="panel-heading"><div><h2>Unidades de medida</h2><p>Exemplos: UN (unidade), CX (caixa), PCT (pacote), M (metro) e L (litro). As quantidades aceitam até três casas decimais. Não há conversão automática entre unidades.</p></div>
     @if (administrador()) { <button type="button" class="primary" (click)="editar()" [disabled]="processando()">Nova unidade</button> }
   </div>
   @if (erro()) { <div class="notice error" role="alert">{{ erro() }}</div> }

@@ -36,8 +36,9 @@ public class RequisicaoMaterial
         if (id <= 0 || string.IsNullOrWhiteSpace(nome) || nome.Trim().Length > 120)
             throw new ArgumentException("Responsável inválido.");
     }
-    public void AdicionarItem(int produtoId, int quantidade)
+    public void AdicionarItem(int produtoId, decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (Situacao != SituacaoRequisicao.Rascunho) throw new InvalidOperationException("Requisição já enviada.");
         if (Itens.Count >= 100 || Itens.Any(i => i.ProdutoId == produtoId))
             throw new ArgumentException("Informe até 100 produtos distintos.");
@@ -50,7 +51,7 @@ public class RequisicaoMaterial
         if (centroCustoId <= 0) throw new ArgumentException("Centro de custo inválido.");
         CentroCustoId = centroCustoId;
     }
-    public void AtualizarRascunho(string finalidade, IReadOnlyCollection<(int ProdutoId, int Quantidade)> itens)
+    public void AtualizarRascunho(string finalidade, IReadOnlyCollection<(int ProdutoId, decimal Quantidade)> itens)
     {
         if (Situacao != SituacaoRequisicao.Rascunho)
             throw new InvalidOperationException("Somente rascunhos podem ser editados.");
@@ -83,8 +84,9 @@ public class RequisicaoMaterial
         Situacao = SituacaoRequisicao.Aprovada; AprovadoUtc = DateTime.UtcNow;
         AprovadoPorId = usuarioId; AprovadoPorNome = nome.Trim();
     }
-    public void Entregar(int produtoId, int quantidade, int usuarioId, string nome)
+    public void Entregar(int produtoId, decimal quantidade, int usuarioId, string nome)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (Situacao is not (SituacaoRequisicao.Aprovada or SituacaoRequisicao.ParcialmenteAtendida))
             throw new InvalidOperationException("Requisição não permite entregas.");
         ValidarUsuario(usuarioId, nome);
@@ -96,8 +98,9 @@ public class RequisicaoMaterial
         if (Situacao == SituacaoRequisicao.Atendida)
         { EncerradoUtc = DateTime.UtcNow; EncerradoPorId = usuarioId; EncerradoPorNome = nome.Trim(); }
     }
-    public void RegistrarDevolucao(int produtoId, int quantidade)
+    public void RegistrarDevolucao(int produtoId, decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (Situacao is not (SituacaoRequisicao.ParcialmenteAtendida or SituacaoRequisicao.Atendida or SituacaoRequisicao.Cancelada))
             throw new InvalidOperationException("Somente materiais já entregues podem ser devolvidos.");
         var item = Itens.SingleOrDefault(i => i.ProdutoId == produtoId)
@@ -123,29 +126,33 @@ public class ItemRequisicaoMaterial
     public long RequisicaoMaterialId { get; private set; }
     public int ProdutoId { get; private set; }
     public Produto Produto { get; private set; } = null!;
-    public int Quantidade { get; private set; }
-    public int QuantidadeEntregue { get; private set; }
-    public int QuantidadeDevolvida { get; private set; }
+    public decimal Quantidade { get; private set; }
+    public decimal QuantidadeEntregue { get; private set; }
+    public decimal QuantidadeDevolvida { get; private set; }
     protected ItemRequisicaoMaterial() { }
-    public ItemRequisicaoMaterial(int produtoId, int quantidade)
+    public ItemRequisicaoMaterial(int produtoId, decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (produtoId <= 0 || quantidade <= 0) throw new ArgumentException("Produto e quantidade devem ser positivos.");
         ProdutoId = produtoId; Quantidade = quantidade;
     }
-    internal void AlterarQuantidadeRascunho(int quantidade)
+    internal void AlterarQuantidadeRascunho(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0 || QuantidadeEntregue != 0)
             throw new ArgumentException("Quantidade de rascunho inválida.");
         Quantidade = quantidade;
     }
-    internal void Devolver(int quantidade)
+    internal void Devolver(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0 || quantidade > QuantidadeEntregue - QuantidadeDevolvida)
             throw new ArgumentException("Quantidade de devolução excede o saldo entregue ainda não devolvido.");
         QuantidadeDevolvida += quantidade;
     }
-    internal void Entregar(int quantidade)
+    internal void Entregar(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0 || quantidade > Quantidade - QuantidadeEntregue)
             throw new ArgumentException("Quantidade de entrega excede o saldo pendente.");
         QuantidadeEntregue += quantidade;

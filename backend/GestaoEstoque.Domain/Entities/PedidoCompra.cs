@@ -28,19 +28,21 @@ public class PedidoCompra
         CriadoPorId = usuarioId;
         CriadoPorNome = nome.Trim();
     }
-    public void AdicionarItem(int produtoId, int quantidade)
+    public void AdicionarItem(int produtoId, decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.Rascunho)) throw new InvalidOperationException("Pedido encerrado.");
         if (produtoId <= 0 || quantidade <= 0) throw new ArgumentException("Produto ou quantidade inválida.");
         if (Itens.Any(i => i.ProdutoId == produtoId)) throw new ArgumentException("Produto repetido no pedido.");
         Itens.Add(new ItemPedidoCompra(produtoId, quantidade));
     }
-    public void AtualizarRascunho(IReadOnlyCollection<(int ProdutoId, int Quantidade)> itens)
+    public void AtualizarRascunho(IReadOnlyCollection<(int ProdutoId, decimal Quantidade)> itens)
     {
         if (Situacao != SituacaoPedidoCompra.Rascunho) throw new InvalidOperationException("Somente rascunhos podem ser editados.");
         if (itens is null || itens.Count is < 1 or > 100 || itens.Any(i => i.ProdutoId <= 0 || i.Quantidade <= 0) ||
             itens.Select(i => i.ProdutoId).Distinct().Count() != itens.Count)
             throw new ArgumentException("Informe de 1 a 100 produtos distintos com quantidades positivas.");
+        foreach (var item in itens) QuantidadeEstoque.Validar(item.Quantidade);
         Itens.RemoveAll(i => !itens.Any(n => n.ProdutoId == i.ProdutoId));
         foreach (var novo in itens)
         {
@@ -55,8 +57,9 @@ public class PedidoCompra
             throw new InvalidOperationException("Somente rascunhos com itens podem ser confirmados.");
         Situacao = SituacaoPedidoCompra.Aberto;
     }
-    public void RegistrarRecebimento(int produtoId, int quantidade, int usuarioId, string nome)
+    public void RegistrarRecebimento(int produtoId, decimal quantidade, int usuarioId, string nome)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (Situacao is not (SituacaoPedidoCompra.Aberto or SituacaoPedidoCompra.ParcialmenteRecebido))
             throw new InvalidOperationException("Pedido já encerrado.");
         var item = Itens.SingleOrDefault(i => i.ProdutoId == produtoId)
@@ -98,22 +101,25 @@ public class ItemPedidoCompra
     public long PedidoCompraId { get; private set; }
     public int ProdutoId { get; private set; }
     public Produto Produto { get; private set; } = null!;
-    public int Quantidade { get; private set; }
-    public int QuantidadeRecebida { get; private set; }
+    public decimal Quantidade { get; private set; }
+    public decimal QuantidadeRecebida { get; private set; }
     protected ItemPedidoCompra() { }
-    public ItemPedidoCompra(int produtoId, int quantidade)
+    public ItemPedidoCompra(int produtoId, decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (produtoId <= 0 || quantidade <= 0) throw new ArgumentException("Item inválido.");
         ProdutoId = produtoId;
         Quantidade = quantidade;
     }
-    internal void AlterarQuantidade(int quantidade)
+    internal void AlterarQuantidade(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0 || QuantidadeRecebida != 0) throw new ArgumentException("Quantidade inválida para rascunho.");
         Quantidade = quantidade;
     }
-    public void Receber(int quantidade)
+    public void Receber(decimal quantidade)
     {
+        if (quantidade >= 0) QuantidadeEstoque.Validar(quantidade);
         if (quantidade <= 0 || quantidade > Quantidade - QuantidadeRecebida)
             throw new ArgumentException("Quantidade recebida excede o saldo pendente ou é inválida.");
         QuantidadeRecebida = checked(QuantidadeRecebida + quantidade);

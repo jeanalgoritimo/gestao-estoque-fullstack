@@ -1,3 +1,4 @@
+import { quantidadeValida, diferencaQuantidade } from '../../shared/models/quantity';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, output, signal, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +7,7 @@ import { PedidoCompra, RecebimentoPedidoCompra } from '../../shared/models/stock
 
 @Component({ selector: 'app-purchase-orders', imports: [FormsModule], templateUrl: './purchase-orders.component.html' })
 export class PurchaseOrdersComponent implements OnInit {
+  readonly diferencaQuantidade = diferencaQuantidade;
   private readonly api = inject(EstoqueApiService);
   readonly podeReceber = input(false);
   readonly administrador = input(false);
@@ -78,7 +80,7 @@ export class PurchaseOrdersComponent implements OnInit {
     if (!itens.length || p.itens.some(item => {
       const quantidade = this.quantidade(p.id, item.produtoId);
       const custo = this.custo(p.id, item.produtoId);
-      return !Number.isSafeInteger(quantidade) || quantidade < 0 || quantidade > item.quantidade - item.quantidadeRecebida ||
+      return !quantidadeValida(quantidade) || quantidade < 0 || quantidade > diferencaQuantidade(item.quantidade, item.quantidadeRecebida) ||
         (quantidade > 0 && (custo === null || !Number.isFinite(custo) || custo <= 0 ||
           custo > 999999999999.9999 || Math.abs(Math.round(custo * 10000) - custo * 10000) > 0.0000001));
     })) {
@@ -107,8 +109,8 @@ export class PurchaseOrdersComponent implements OnInit {
   async salvarRascunho(): Promise<void> {
     const p = this.editando;
     if (!p || this.processando()) return;
-    if (!this.itensEdicao.length || this.itensEdicao.some(i => !Number.isInteger(i.quantidade) || i.quantidade < 1 || i.quantidade > 2147483647)) {
-      this.erro.set('Mantenha pelo menos um item com quantidade inteira positiva.'); return;
+    if (!this.itensEdicao.length || this.itensEdicao.some(i => !quantidadeValida(i.quantidade) || i.quantidade <= 0 || i.quantidade > 2147483647.999)) {
+      this.erro.set('Mantenha pelo menos um item com quantidade positiva com até três casas decimais.'); return;
     }
     this.processando.set(true); this.erro.set(''); this.sucesso.set('');
     try {

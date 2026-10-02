@@ -13,15 +13,15 @@ namespace GestaoEstoque.Api.Controllers;
 [Route("api/pedidos-compra")]
 public class PedidosCompraController(GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record ItemRequest(int ProdutoId, int Quantidade);
-    public record ItemRecebimentoRequest(int ProdutoId, int Quantidade, decimal? CustoUnitario);
+    public record ItemRequest(int ProdutoId, decimal Quantidade);
+    public record ItemRecebimentoRequest(int ProdutoId, decimal Quantidade, decimal? CustoUnitario);
     public record CriarRequest(int FornecedorId, List<ItemRequest> Itens, bool Rascunho = false);
     public record EditarRequest(List<ItemRequest> Itens, string Versao);
     public record ConfirmarRequest(string Versao);
     public record ReceberRequest(List<ItemRecebimentoRequest> Itens);
     public record CancelarRequest(string Motivo);
-    public record ItemResponse(int ProdutoId, string Produto, int Quantidade, int QuantidadeRecebida, string Unidade);
-    public record LinhaRecebimentoResponse(long MovimentoId, int ProdutoId, string Produto, int Quantidade,
+    public record ItemResponse(int ProdutoId, string Produto, decimal Quantidade, decimal QuantidadeRecebida, string Unidade);
+    public record LinhaRecebimentoResponse(long MovimentoId, int ProdutoId, string Produto, decimal Quantidade,
         decimal? CustoUnitario, decimal? ValorCompra, string Unidade);
     public record RecebimentoResponse(Guid Id, DateTime DataUtc, string UsuarioNome,
         List<LinhaRecebimentoResponse> Itens);

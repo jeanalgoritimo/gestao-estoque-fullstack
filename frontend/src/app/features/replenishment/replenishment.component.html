@@ -21,7 +21,7 @@
         <td>@if (p.fornecedorAtivo) { {{ p.fornecedor }} } @else { <span class="badge warning">Fornecedor pendente</span> }</td>
         <td>{{ p.estoque }}</td><td>{{ p.reservado }}</td><td>{{ p.disponivel }}</td><td>{{ p.minimo }}</td><td>{{ p.comprasPendentes }}</td>
         <td>{{ p.emRascunhos }} @if (p.emRascunhos > 0) { <small>Revise os rascunhos existentes antes de gerar outro.</small> }</td><td>{{ p.sugerida }}</td>
-        <td><input class="replenishment-qty" type="number" min="0" max="2147483647" step="1" [attr.aria-label]="'Quantidade a repor de ' + p.nome" [ngModel]="quantidade(p)" (ngModelChange)="alterarQuantidade(p, $event)" /></td></tr>
+        <td><input class="replenishment-qty" type="number" min="0" max="2147483647.999" step="0.001" [attr.aria-label]="'Quantidade a repor de ' + p.nome" [ngModel]="quantidade(p)" (ngModelChange)="alterarQuantidade(p, $event)" /></td></tr>
       } @empty { <tr><td colspan="10" class="empty">{{ carregando() ? 'Carregando sugestões...' : 'Nenhum produto encontrado para os filtros selecionados.' }}</td></tr> }
     </tbody></table></div>
     <div class="panel-foot">Selecione um fornecedor e ajuste as quantidades dos produtos exibidos; zero exclui o item do rascunho. Compras abertas/parcialmente recebidas abatem a sugestão, rascunhos não. Atualizar recalcula e restaura sugestões. O rascunho não altera estoque: revise em Pedidos de compra e confirme sua abertura.

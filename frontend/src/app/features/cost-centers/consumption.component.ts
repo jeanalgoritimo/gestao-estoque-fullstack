@@ -27,7 +27,7 @@ export class ConsumptionComponent implements OnInit {
     finally { this.carregando.set(false); }
   }
   exportar(): void {
-    const celula = (v: string | number) => { let s = String(v); if (/^\s*[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+    const celula = (v: string | number) => { let s = typeof v === 'number' ? v.toLocaleString('pt-BR', { useGrouping: false, maximumFractionDigits: 3 }) : v; if (typeof v === 'string' && /^\s*[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
     const rows = [['Centro de custo', 'Código produto', 'Produto', 'Unidade', 'Solicitado (data de criação)', 'Entregue (data da saída)', 'Devolvido (data da entrada)', 'Consumo líquido no período'],
       ...this.linhas().map(l => [l.centroCusto, l.produtoId, l.produto, l.unidade, l.solicitado, l.entregue, l.devolvido, l.consumoLiquido])];
     const url = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(celula).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));

@@ -1,3 +1,4 @@
+import { quantidadeValida, diferencaQuantidade } from '../../shared/models/quantity';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +7,7 @@ import { Fornecedor, SugestaoReposicao } from '../../shared/models/stock.models'
 
 @Component({ selector: 'app-replenishment', imports: [FormsModule], templateUrl: './replenishment.component.html' })
 export class ReplenishmentComponent implements OnInit {
+  readonly diferencaQuantidade = diferencaQuantidade;
   private readonly api = inject(EstoqueApiService);
   readonly fornecedores = input.required<Fornecedor[]>();
   readonly administrador = input(false);
@@ -44,7 +46,7 @@ export class ReplenishmentComponent implements OnInit {
   }
   restaurar(): void { this.quantidades.set({}); this.erro.set(''); }
   private quantidadesValidas(): boolean {
-    return this.filtrados().every(p => Number.isInteger(this.quantidade(p)) && this.quantidade(p) >= 0 && this.quantidade(p) <= 2147483647);
+    return this.filtrados().every(p => quantidadeValida(this.quantidade(p)) && this.quantidade(p) >= 0 && this.quantidade(p) <= 2147483647.999);
   }
   async solicitarPedido(): Promise<void> {
     if (this.processando() || this.carregando() || !this.administrador()) return;
@@ -52,7 +54,7 @@ export class ReplenishmentComponent implements OnInit {
     const fornecedorId = this.fornecedorId();
     if (!fornecedorId || !itens.length || itens.length > 100 || !this.quantidadesValidas() ||
       itens.some(p => !p.fornecedorAtivo || p.fornecedorId !== fornecedorId)) {
-      this.erro.set('Selecione um fornecedor ativo e de 1 a 100 itens com quantidades inteiras positivas. Use zero para excluir um item.'); return;
+      this.erro.set('Selecione um fornecedor ativo e de 1 a 100 itens com quantidades positivas com até três casas decimais. Use zero para excluir um item.'); return;
     }
     this.processando.set(true); this.erro.set('');
     try {
@@ -64,7 +66,7 @@ export class ReplenishmentComponent implements OnInit {
   }
   exportarCsv(): void {
     const itens = this.filtrados();
-    if (!itens.length || !this.quantidadesValidas()) { this.erro.set('Informe quantidades inteiras de zero a 2147483647.'); return; }
+    if (!itens.length || !this.quantidadesValidas()) { this.erro.set('Informe quantidades inteiras de zero a 2147483647.999.'); return; }
     const celula = (valor: string | number): string => {
       let texto = String(valor); if (/^\s*[=+\-@]/.test(texto)) texto = `'${texto}`;
       return `"${texto.replace(/"/g, '""')}"`;

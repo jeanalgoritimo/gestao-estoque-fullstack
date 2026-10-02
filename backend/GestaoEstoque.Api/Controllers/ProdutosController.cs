@@ -14,11 +14,11 @@ namespace GestaoEstoque.Api.Controllers;
 [Route("api/produtos")]
 public class ProdutosController(IProdutoRepository repository, GestaoEstoqueDbContext db) : ControllerBase
 {
-    public record ProdutoRequest(string Nome, int CategoriaId, decimal Preco, int EstoqueMinimo, int? FornecedorId, int? PosicaoEstoqueId = null, int? UnidadeMedidaId = null);
-    public record MovimentoRequest(TipoMovimento Tipo, int Quantidade, string? Observacao,
+    public record ProdutoRequest(string Nome, int CategoriaId, decimal Preco, decimal EstoqueMinimo, int? FornecedorId, int? PosicaoEstoqueId = null, int? UnidadeMedidaId = null);
+    public record MovimentoRequest(TipoMovimento Tipo, decimal Quantidade, string? Observacao,
         DateTime? DataEfetivaUtc, string? DocumentoOrigem, string? Motivo, decimal? CustoUnitario);
     public record ProdutoResponse(int Id, string Nome, int CategoriaId, string Categoria, decimal Preco,
-        int Estoque, int EstoqueMinimo, bool Ativo, bool EstoqueBaixo, int? FornecedorId, string? Fornecedor, int EstoqueReservado, int EstoqueDisponivel, int? PosicaoEstoqueId, string Localizacao, int UnidadeMedidaId, string Unidade, string UnidadeNome);
+        decimal Estoque, decimal EstoqueMinimo, bool Ativo, bool EstoqueBaixo, int? FornecedorId, string? Fornecedor, decimal EstoqueReservado, decimal EstoqueDisponivel, int? PosicaoEstoqueId, string Localizacao, int UnidadeMedidaId, string Unidade, string UnidadeNome);
 
     private static ProdutoResponse Map(Produto p, string? nomeCategoria = null) => new(p.Id, p.Nome, p.CategoriaId, nomeCategoria ?? p.CategoriaProduto?.Nome ?? "",
         p.Preco, p.Estoque, p.EstoqueMinimo, p.Ativo, p.EstaComEstoqueBaixo(), p.FornecedorId, p.Fornecedor?.Nome, p.EstoqueReservado, p.EstoqueDisponivel, p.PosicaoEstoqueId,
