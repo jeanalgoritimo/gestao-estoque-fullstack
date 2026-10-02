@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GestaoEstoque.Infrastructure.Persistence.Migrations
 {
-    
+
     partial class FractionalQuantities
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
