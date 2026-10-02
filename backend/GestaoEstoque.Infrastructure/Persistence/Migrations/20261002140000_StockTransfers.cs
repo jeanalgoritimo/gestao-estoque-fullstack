@@ -15,7 +15,7 @@ public partial class StockTransfers : Migration
             ProdutoId = t.Column<int>(nullable: false), PosicaoEstoqueId = t.Column<int>(nullable: true),
             Quantidade = t.Column<decimal>(type: "decimal(13,3)", precision: 13, scale: 3, nullable: false),
             Reservado = t.Column<decimal>(type: "decimal(13,3)", precision: 13, scale: 3, nullable: false),
-            Versao = t.Column<byte[]>(rowVersion: true, nullable: true)
+            Versao = t.Column<byte[]>(rowVersion: true, nullable: false)
         }, constraints: t =>
         {
             t.PrimaryKey("PK_SaldosLocais", x => x.Id);

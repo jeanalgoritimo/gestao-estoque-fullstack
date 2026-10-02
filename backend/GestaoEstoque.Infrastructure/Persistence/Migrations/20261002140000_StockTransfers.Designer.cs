@@ -29,7 +29,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                 b.Property<int?>("PosicaoEstoqueId").HasColumnType("int");
                 b.Property<decimal>("Quantidade").HasPrecision(13, 3).HasColumnType("decimal(13,3)");
                 b.Property<decimal>("Reservado").HasPrecision(13, 3).HasColumnType("decimal(13,3)");
-                b.Property<byte[]>("Versao").IsConcurrencyToken().ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
+                b.Property<byte[]>("Versao").IsConcurrencyToken().ValueGeneratedOnAddOrUpdate().IsRequired().HasColumnType("rowversion");
                 b.HasKey("Id"); b.HasIndex("PosicaoEstoqueId");
                 b.HasIndex("ProdutoId").IsUnique().HasDatabaseName("IX_SaldosLocais_ProdutoSemLocal").HasFilter("[PosicaoEstoqueId] IS NULL");
                 b.HasIndex("ProdutoId", "PosicaoEstoqueId").IsUnique().HasFilter("[PosicaoEstoqueId] IS NOT NULL");
@@ -114,7 +114,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                 b.Property<int?>("EncerradoPorId").HasColumnType("int");
                 b.Property<string>("EncerradoPorNome").HasMaxLength(120).HasColumnType("nvarchar(120)");
                 b.Property<string>("MotivoCancelamento").HasMaxLength(300).HasColumnType("nvarchar(300)");
-                b.Property<byte[]>("Versao").IsRowVersion().HasColumnType("rowversion");
+                b.Property<byte[]>("Versao").IsRowVersion().IsRequired().HasColumnType("rowversion");
                 b.HasKey("Id"); b.HasIndex("SolicitanteId"); b.HasIndex("AprovadoPorId"); b.HasIndex("EncerradoPorId");
                 b.ToTable("RequisicoesMaterial", (string)null);
             });
@@ -195,7 +195,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<int?>("EncerradoPorId").HasColumnType("int");
                     b.Property<string>("EncerradoPorNome").HasMaxLength(120).HasColumnType("nvarchar(120)");
                     b.Property<string>("MotivoCancelamento").HasMaxLength(150).HasColumnType("nvarchar(150)");
-                    b.Property<byte[]>("Versao").IsRowVersion().HasColumnType("rowversion");
+                    b.Property<byte[]>("Versao").IsRowVersion().IsRequired().HasColumnType("rowversion");
                     b.HasKey("Id");
                     b.HasIndex("FornecedorId");
                     b.HasIndex("CriadoPorId");
@@ -223,7 +223,7 @@ namespace GestaoEstoque.Infrastructure.Persistence.Migrations
                     b.Property<int?>("EncerradoPorId").HasColumnType("int");
                     b.Property<string>("EncerradoPorNome").HasMaxLength(120).HasColumnType("nvarchar(120)");
                     b.Property<string>("Motivo").HasMaxLength(150).HasColumnType("nvarchar(150)");
-                    b.Property<byte[]>("Versao").IsRowVersion().HasColumnType("rowversion");
+                    b.Property<byte[]>("Versao").IsRowVersion().IsRequired().HasColumnType("rowversion");
                     b.HasKey("Id");
                     b.HasIndex("ProdutoId").IsUnique().HasFilter("[Situacao] = 1");
                     b.HasIndex("AbertoPorId");
